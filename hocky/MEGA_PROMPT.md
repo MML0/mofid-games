@@ -2,6 +2,9 @@
 
 > Paste this whole file to the coding agent, or tell it: "Read `MEGA_PROMPT.md` and build it."
 > It is the single source of truth. Where it conflicts with older notes or prompts, this file wins.
+>
+> **Status (2026-10-19):** v1 is implemented in this folder (`main.py`, `settings_app.py`, `market_hockey/`). See `README.md`.
+> Additions since the first draft: the orb **magnet** (§11.5b) and the verified Persian text approach (§14.3).
 
 ---
 
@@ -382,6 +385,15 @@ Common per-type settings: `enabled`, `weight`, `class` (good/bad/neutral; this d
 
 `powerups.spawn_interval_min/max_s` (4 / 7), multiplied by the phase multiplier. `powerups.max_active_orbs` (2), `powerups.max_bad_orbs` (1), `powerups.orb_radius` (30), `powerups.orb_lifetime_s` (9), and `powerups.min_distance_from_ball` (120). Pick a free slot at random. The type is a weighted random choice among types that are enabled, allowed in the current phase, not cooling down and not conflicting. `powerups.no_repeat` (true) prevents the same type twice in a row. A debug action can force-spawn any type (from the panel, or the number keys in debug mode).
 
+### 11.5b Magnet (orbs are drawn toward the ball)
+
+Orbs drift slightly toward a nearby ball, which makes them easier to collect and gives them life. Every value is a setting under `powerups.magnet.*`:
+- `enabled` (on) and `strength` (900 px/s²).
+- `radius` (200 px) and `falloff` (1.5): the pull is `strength × (1 − d/radius)^falloff`.
+- `max_offset` (80 px from the orb's slot), `return_strength` (a spring back to the slot) and `damping`.
+- `only_owned_balls` (on): an untouched serve doesn't attract orbs.
+- `show_tether`: a faint dotted line from the slot to the orb while it drifts. The orb's glow brightens as it is pulled.
+
 ---
 
 ## 12. Trajectory prediction and ghost ball
@@ -435,7 +447,7 @@ Plain Pygame does not shape Arabic script by default. Implement `render/text.py`
 1. `pygame` (pygame-ce): if the `Font` has `set_script` and `set_direction`, use `set_script("Arab")` and `set_direction(pygame.DIRECTION_RTL)`.
 2. `reshaper`: `arabic_reshaper.reshape()` followed by `bidi.algorithm.get_display()`, then render.
 
-`text.shaping_backend` is `auto`, `pygame` or `reshaper`. `main.py --selftest-text` renders «واکنش به‌موقع!», «حجم معاملات افزایش یافت!», «بازار همیشه در حرکته؛ آماده‌ی تغییر باش.» and «گل بعدی ×2» to PNGs with each backend. **Look at them**: letters must be joined, the order must be right-to-left, the ZWNJ (U+200C in «به‌موقع») must break the join without drawing a box glyph, and the digits must be Latin. Make `auto` choose the backend that passes. **Cache** rendered text surfaces, keyed by (text, font, size, color); never re-render static text every frame.
+`text.shaping_backend` is `auto`, `harfbuzz` or `reshaper`. **Verified:** pygame-ce 2.5.8 (SDL_ttf 2.24) supports HarfBuzz shaping. IRANSansX renders correctly with both backends, and it also includes the Arabic Presentation Forms the reshaper fallback needs. Persian text is required for the exhibition, so never fall back to English. If a font fails, switch to another Persian font (IRANSansX, Vazirmatn, Dana) rather than dropping the text. `main.py --selftest-text` renders «واکنش به‌موقع!», «حجم معاملات افزایش یافت!», «بازار همیشه در حرکته؛ آماده‌ی تغییر باش.» and «گل بعدی ×2» to PNGs with each backend. **Look at them**: letters must be joined, the order must be right-to-left, the ZWNJ (U+200C in «به‌موقع») must break the join without drawing a box glyph, and the digits must be Latin. Make `auto` choose the backend that passes. **Cache** rendered text surfaces, keyed by (text, font, size, color); never re-render static text every frame.
 
 ### 14.4 Layers (back to front)
 
