@@ -10,6 +10,7 @@ right-to-left, so Latin digits inside Persian text keep their correct order.
 from __future__ import annotations
 
 import logging
+import math
 from collections import OrderedDict
 
 import pygame
@@ -122,17 +123,20 @@ class TextRenderer:
         return f.render(txt, True, color)
 
     def render(self, text: str, size: int, color, key: str = "persian", outline: int = 0,
-               outline_color=(0, 0, 0)) -> pygame.Surface:
+               outline_color=(0, 0, 0), glow: float = 0.0) -> pygame.Surface:
+        """outline > 0 adds a soft blurred drop shadow; glow > 0 adds a blurred neon halo in the text color."""
         text = latin_digits(str(text))
         color = tuple(int(c) for c in color[:3])
-        ck = (text, int(size), color, key, outline, tuple(outline_color), self.backend, self.cfg.get(f"fonts.{key}", key))
+        shadow_a = self.cfg["text.shadow_alpha"] if outline else 0.0
+        ck = (text, int(size), color, key, outline, tuple(outline_color), round(glow, 2), round(shadow_a, 2),
+              self.backend, self.cfg.get(f"fonts.{key}", key))
         surf = self.cache.get(ck)
         if surf is not None:
             self.cache.move_to_end(ck)
             return surf
         surf = self._compose(text, int(size), color, key)
-        if outline > 0:
-            surf = self._outline(text, int(size), surf, outline, outline_color, key)
+        if shadow_a > 0 or glow > 0:
+            surf = self._effects(text, int(size), surf, shadow_a, tuple(outline_color), key, glow, color)
         self.cache[ck] = surf
         if len(self.cache) > self.max_cache:
             self.cache.popitem(last=False)
@@ -156,15 +160,45 @@ class TextRenderer:
             x += p.get_width()
         return out
 
-    def _outline(self, text, size, surf, r, ocol, key) -> pygame.Surface:
-        base = self._compose(text, size, ocol, key)
-        w, h = surf.get_width() + 2 * r, surf.get_height() + 2 * r
-        out = pygame.Surface((w, h), pygame.SRCALPHA)
-        for dx in range(-r, r + 1):
-            for dy in range(-r, r + 1):
-                if dx * dx + dy * dy <= r * r + 1:
-                    out.blit(base, (r + dx, r + dy))
-        out.blit(surf, (r, r))
+    @staticmethod
+    def _blur(src: pygame.Surface, radius: int, fill) -> pygame.Surface:
+        """Smooth blur via an image pyramid: halve repeatedly, then double back up (gaussian-like, no blockiness)."""
+        w, h = src.get_size()
+        levels = max(1, min(5, int(round(math.log2(max(2, radius))))))
+        s = src
+        sizes = []
+        for _ in range(levels):
+            sizes.append(s.get_size())
+            nw, nh = max(1, s.get_width() // 2), max(1, s.get_height() // 2)
+            s = pygame.transform.smoothscale(s, (nw, nh))
+        for size in reversed(sizes):
+            s = pygame.transform.smoothscale(s, size)
+        return s
+
+    def _effects(self, text, size, surf, shadow_a, scol, key, glow, color) -> pygame.Surface:
+        pad = max(6, int(size * 0.22))
+        W, H = surf.get_width() + 2 * pad, surf.get_height() + 2 * pad
+        out = pygame.Surface((W, H), pygame.SRCALPHA)
+        out.fill((*color, 0))
+        if shadow_a > 0:
+            dark = self._compose(text, size, scol, key)
+            base = pygame.Surface((W, H), pygame.SRCALPHA)
+            base.fill((*scol, 0))  # same RGB in transparent pixels: no dark/light fringes when blurring
+            base.blit(dark, (pad, pad + max(1, int(size * 0.04))))
+            sh = self._blur(base, max(2, int(size * 0.06)), scol)
+            sh.set_alpha(int(255 * min(1.0, shadow_a)))
+            out.blit(sh, (0, 0))
+        if glow > 0:
+            base = pygame.Surface((W, H), pygame.SRCALPHA)
+            base.fill((*color, 0))
+            base.blit(surf, (pad, pad))
+            g = self._blur(base, max(2, int(size * 0.12)), color)
+            g.set_alpha(int(255 * min(1.0, glow)))
+            out.blit(g, (0, 0))
+            if glow > 1.0:
+                g.set_alpha(int(255 * min(1.0, glow - 1.0)))
+                out.blit(g, (0, 0))
+        out.blit(surf, (pad, pad))
         return out
 
     def clear(self) -> None:

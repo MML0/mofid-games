@@ -56,6 +56,9 @@ class GameApp:
         self.headless = headless
         seed = seed if seed is not None else (self.cfg["debug.seed"] or None)
         self.rng = random.Random(seed)
+        # SCALED windows are filtered by SDL; "nearest" makes every edge look pixelated when the window is resized
+        os.environ["SDL_RENDER_SCALE_QUALITY"] = "1" if self.cfg["display.scale_quality"] == "linear" else "0"
+        os.environ["SDL_HINT_RENDER_SCALE_QUALITY"] = os.environ["SDL_RENDER_SCALE_QUALITY"]
         pygame.init()
         self.screen = None
         self._display_key = None

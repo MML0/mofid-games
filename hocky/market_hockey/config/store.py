@@ -81,8 +81,33 @@ def nest(flat: dict[str, Any]) -> dict:
     return root
 
 
+V2_DEFAULT_CHANGES = {
+    "powerups.magnet.strength": (900.0, 2200.0),
+    "powerups.magnet.radius": (200, 260),
+    "powerups.magnet.max_offset": (80, 120),
+    "powerups.spawn_interval_min_s": (4.0, 2.5),
+    "powerups.spawn_interval_max_s": (7.0, 5.0),
+    "powerups.max_active_orbs": (2, 3),
+    "powerups.types.trajectory_reveal.class": ("bad", "good"),
+    "powerups.types.trajectory_reveal.toast_collector": ("مسیرت لو رفت!", "مسیر حرکت را تحلیل کن!"),
+    "powerups.types.trajectory_reveal.toast_opponent": ("مسیر حرکت را تحلیل کن!", ""),
+    "colors.wall": ("#CFE8EE", "#A8F0FF"),
+    "trails.duration_s": (0.35, 0.45),
+    "trails.glow": (0.6, 0.8),
+    "input.ai.noise": (0.06, 0.04),
+}
+
+
+def _v1_to_v2(flat: dict) -> dict:
+    """New defaults replace old defaults, but values the operator changed are kept."""
+    for key, (old, new) in V2_DEFAULT_CHANGES.items():
+        if key not in flat or flat[key] == old:
+            flat[key] = new
+    return flat
+
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
-MIGRATIONS: dict[int, Any] = {}
+MIGRATIONS: dict[int, Any] = {1: _v1_to_v2}
 
 
 class Config:

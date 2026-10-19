@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from market_hockey.config import Config, get_schema
+from market_hockey.config import SCHEMA_VERSION, Config, get_schema
 from market_hockey.config.schema import KINDS
 from market_hockey.config.store import coerce
 from market_hockey.ui.widgets import widget_kind
@@ -30,7 +30,7 @@ def test_roundtrip(tmp_path):
     path = tmp_path / "s.json"
     c.save(path)
     raw = json.loads(path.read_text(encoding="utf-8"))
-    assert raw["ball"]["base_speed"] == 777 and raw["_meta"]["schema_version"] == 1
+    assert raw["ball"]["base_speed"] == 777 and raw["_meta"]["schema_version"] == SCHEMA_VERSION
     assert "گل!" in path.read_text(encoding="utf-8")  # Persian kept readable
     c2 = Config.load(path)
     assert c2["ball.base_speed"] == 777 and c2["colors.p1"] == "#123456"
@@ -122,3 +122,19 @@ def test_live_link_roundtrip():
     assert got and got[0]["fps"] == 60 and cl.connected
     srv.close()
     cl.close()
+
+
+def test_v1_settings_migrate_but_keep_custom_values(tmp_path):
+    from market_hockey.config.store import V2_DEFAULT_CHANGES
+
+    path = tmp_path / "old.json"
+    old = {"_meta": {"schema_version": 1}, "ball": {"radius": 15},
+           "powerups": {"magnet": {"strength": 900.0, "radius": 333}, "max_active_orbs": 2,
+                        "types": {"trajectory_reveal": {"class": "bad"}}}}
+    path.write_text(json.dumps(old), encoding="utf-8")
+    c = Config.load(path)
+    assert c["ball.radius"] == 15  # untouched custom value
+    assert c["powerups.magnet.strength"] == V2_DEFAULT_CHANGES["powerups.magnet.strength"][1]  # old default -> new
+    assert c["powerups.magnet.radius"] == 333  # customized: kept
+    assert c["powerups.max_active_orbs"] == 3
+    assert c["powerups.types.trajectory_reveal.class"] == "good"

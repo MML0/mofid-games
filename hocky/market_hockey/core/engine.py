@@ -879,6 +879,7 @@ class Engine:
         damp = cfg["powerups.magnet.damping"]
         max_off = cfg["powerups.magnet.max_offset"]
         only_owned = cfg["powerups.magnet.only_owned_balls"]
+        lead = cfg["powerups.magnet.lead_s"]
         lim = self.geom.wall_face - cfg["powerups.orb_radius"] - 2
         live = self.live_balls()
         for o in list(self.orbs):
@@ -906,13 +907,14 @@ class Engine:
                 for b in live:
                     if b.held or (only_owned and b.owner is None):
                         continue
-                    d = math.hypot(b.x - o.x, b.y - o.y)
+                    tx, ty = b.x + b.vx * lead, b.y + b.vy * lead  # aim where the ball is about to be
+                    d = math.hypot(tx - o.x, ty - o.y)
                     if d < bd:
-                        best, bd = b, d
+                        best, bd = (tx, ty), d
                 if best is not None and bd > 1e-6:
                     f = strength * (1 - bd / radius) ** falloff
-                    ax += f * (best.x - o.x) / bd
-                    ay += f * (best.y - o.y) / bd
+                    ax += f * (best[0] - o.x) / bd
+                    ay += f * (best[1] - o.y) / bd
                     o.pulled = min(1.0, (1 - bd / radius) ** falloff * 1.5)
             ax += -k_ret * (o.x - o.hx) - damp * o.vx
             ay += -k_ret * (o.y - o.hy) - damp * o.vy
@@ -932,13 +934,13 @@ class Engine:
 
     def _check_orbs(self, b: Ball, ox: float, oy: float) -> None:
         cfg = self.cfg
-        orb_r = cfg["powerups.orb_radius"]
+        reach = cfg["powerups.orb_radius"] * cfg["powerups.hitbox_scale"] + b.r
         for o in self.orbs:
             if o.state not in ("spawning", "idle"):
                 continue
             if o.state == "spawning" and o.state_t < cfg["powerups.spawn_anim_s"] * 0.5:
                 continue
-            if seg_point_dist(ox, oy, b.x, b.y, o.x, o.y) > orb_r + b.r:
+            if seg_point_dist(ox, oy, b.x, b.y, o.x, o.y) > reach:
                 continue
             if b.owner is None and not cfg["powerups.unowned_ball_collects"]:
                 if o.wobble <= 0:
@@ -1040,7 +1042,8 @@ class Engine:
         cfg = self.cfg
         bens = self.effects.reveal_beneficiaries()
         always = cfg["prediction.debug_always_on"]
-        if not bens and not always:
+        assist = cfg["prediction.assist_always"] and self.state in (PLAYING, SERVE, GOAL)
+        if not bens and not always and not assist:
             if self.predictions:
                 self.predictions = {}
             return
@@ -1056,6 +1059,13 @@ class Engine:
             rcv = self.heading_to(b)
             if rcv is None:
                 continue
-            if always or rcv in bens:
-                new[b.id] = predict(self, b, rcv)
+            strong = always or rcv in bens
+            if strong:
+                pr = predict(self, b, rcv)
+            elif assist:
+                pr = predict(self, b, rcv, max_time=cfg["prediction.assist_time_s"], max_bounces=2)
+            else:
+                continue
+            pr.strong = strong
+            new[b.id] = pr
         self.predictions = new

@@ -38,3 +38,14 @@ def test_hypothetical_bounce_when_paddle_elsewhere(engine):
     pr = predict(engine, b, 1)
     assert pr.contact is not None and not pr.intercept and pr.out_dir is not None
     assert pr.out_dir[0] < 0  # would bounce back toward P1
+
+
+def test_faint_assist_is_always_on(engine):
+    playing(engine)
+    add_ball(engine, 0, 0, 600, 80, owner=0)
+    engine.request_prediction()
+    run(engine, 0.1)
+    assert engine.predictions and not any(p.strong for p in engine.predictions.values())
+    engine.cfg.set("prediction.assist_always", False)
+    run(engine, 0.1)
+    assert not engine.predictions

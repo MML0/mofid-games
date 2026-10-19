@@ -22,6 +22,7 @@ class Prediction:
     out_dir: tuple | None = None
     intercept: bool = False  # the receiver's paddle, where it is now, would hit the ball
     goal: bool = False  # the ball reaches the goal line without meeting the paddle line
+    strong: bool = True  # False = faint always-on aim assist
 
 
 class _B:

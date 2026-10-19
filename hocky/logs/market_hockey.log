@@ -38,3 +38,8 @@
 2026-10-19 03:37:38,932 INFO market_hockey.config.live_link: live link listening on 127.0.0.1:9201
 2026-10-19 03:44:46,263 INFO market_hockey.render.text: Persian text backend: harfbuzz
 2026-10-19 03:44:46,277 INFO market_hockey.config.live_link: live link listening on 127.0.0.1:9201
+2026-10-19 03:55:48,079 INFO market_hockey.render.text: Persian text backend: harfbuzz
+2026-10-19 03:58:16,501 INFO market_hockey.render.text: Persian text backend: harfbuzz
+2026-10-19 03:59:44,535 INFO market_hockey.render.text: Persian text backend: harfbuzz
+2026-10-19 04:01:40,585 INFO market_hockey.render.text: Persian text backend: harfbuzz
+2026-10-19 04:01:40,597 INFO market_hockey.config.live_link: live link listening on 127.0.0.1:9201

@@ -22,7 +22,7 @@ def test_all_ten_types_registered():
 def test_default_colors_follow_collector_rule(cfg):
     good = [t for t in registry.all_types() if cfg[f"powerups.types.{t}.class"] == "good"]
     assert "shrink" in good and "expand" in good and "speed_up" in good
-    assert cfg["powerups.types.trajectory_reveal.class"] == "bad"
+    assert cfg["powerups.types.trajectory_reveal.class"] == "good"  # it now helps the collector
     on = [t for t in registry.all_types() if cfg[f"powerups.types.{t}.enabled"]]
     assert sorted(on) == sorted(["expand", "shrink", "speed_up", "chaos", "double_ball", "trajectory_reveal"])
 
@@ -46,10 +46,26 @@ def test_effects_expire_and_restore(engine):
     assert abs(engine.paddles[1].size_mult - 1.0) < 0.02
 
 
-def test_trajectory_reveal_helps_opponent(engine):
+def test_trajectory_reveal_helps_collector_by_default(engine):
     playing(engine)
     _collect(engine, "trajectory_reveal", owner=0)
+    assert engine.effects.reveal_beneficiaries() == {0}
+    engine.effects.clear()
+    engine.cfg.set("powerups.types.trajectory_reveal.beneficiary", "opponent")
+    _collect(engine, "trajectory_reveal", owner=0)
     assert engine.effects.reveal_beneficiaries() == {1}
+
+
+def test_orb_hitbox_is_larger_than_the_drawn_orb(engine):
+    playing(engine)
+    r = engine.cfg["powerups.orb_radius"]
+    o = Orb(95, "expand", "good", 0, 0, r + engine.cfg["ball.radius"] + 6, 9)  # just outside the drawn orb
+    o.state = "idle"
+    engine.orbs.append(o)
+    engine.cfg.set("powerups.magnet.enabled", False)
+    add_ball(engine, -60, 0, 500, 0, owner=0)
+    ev = run(engine, 0.3)
+    assert any(e["type"] == "powerup_collected" for e in ev)
 
 
 def test_speed_effects_respect_limits_and_exclusivity(engine):

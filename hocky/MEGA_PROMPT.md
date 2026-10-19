@@ -5,6 +5,14 @@
 >
 > **Status (2026-10-19):** v1 is implemented in this folder (`main.py`, `settings_app.py`, `market_hockey/`). See `README.md`.
 > Additions since the first draft: the orb **magnet** (§11.5b) and the verified Persian text approach (§14.3).
+> **Changed after playtesting:** *Trajectory reveal* now helps the **collector** and is **green**. When the ball comes back, it shows where the ball lands on *your* paddle. Also added:
+> - a faint always-on aim assist for the receiver
+> - a larger orb hitbox and a stronger magnet that leads the ball
+> - more frequent orbs
+> - smoothed demo AI
+> - a dithered background, supersampled anti-aliasing and linear window scaling
+> - a comet trail with sparkles
+> - energy-barrier walls
 
 ---
 

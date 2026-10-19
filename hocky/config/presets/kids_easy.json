@@ -7,6 +7,8 @@
     "vsync": true,
     "fps_cap": 120,
     "hide_cursor": true,
+    "scale_quality": "linear",
+    "supersample": 2,
     "exhibition_mode": false,
     "output_scale": 1.0,
     "output_offset_x": 0,
@@ -36,7 +38,12 @@
     "thickness": 16,
     "restitution": 1.0,
     "band_alpha": 0.85,
-    "hatch": true
+    "hatch": true,
+    "style": "energy",
+    "glow": 0.85,
+    "flow_speed": 35.0,
+    "pulses": 3,
+    "hit_flash": true
   },
   "goals": {
     "line_width": 6,
@@ -63,9 +70,11 @@
     "label_size": 26,
     "orientation": "upright",
     "safe_margin": 20,
-    "alpha": 0.92
+    "alpha": 0.92,
+    "glow": 0.55
   },
   "text": {
+    "shadow_alpha": 0.55,
     "shaping_backend": "auto",
     "toast_size": 40,
     "banner_size": 64,
@@ -207,21 +216,26 @@
     }
   },
   "trails": {
-    "duration_s": 0.35,
+    "style": "comet",
+    "duration_s": 0.45,
+    "head_size": 1.15,
+    "falloff": 1.7,
+    "sparkles": 45.0,
     "width_scale": 0.9,
     "alpha": 0.9,
-    "glow": 0.6,
+    "glow": 0.8,
     "color_mode": "current_owner",
     "sparks_on_hit": 14,
     "speedup_length_mult": 1.6
   },
   "powerups": {
     "enabled": true,
-    "spawn_interval_min_s": 4.0,
-    "spawn_interval_max_s": 7.0,
-    "max_active_orbs": 2,
+    "spawn_interval_min_s": 2.5,
+    "spawn_interval_max_s": 5.0,
+    "max_active_orbs": 3,
     "max_bad_orbs": 1,
     "orb_radius": 30,
+    "hitbox_scale": 1.35,
     "orb_lifetime_s": 9.0,
     "spawn_anim_s": 0.35,
     "min_distance_from_ball": 120,
@@ -233,10 +247,11 @@
     "bob_px": 4.0,
     "magnet": {
       "enabled": true,
-      "strength": 900.0,
-      "radius": 200,
+      "strength": 2200.0,
+      "radius": 260,
+      "lead_s": 0.1,
       "falloff": 1.5,
-      "max_offset": 80,
+      "max_offset": 120,
       "return_strength": 6.0,
       "damping": 4.0,
       "only_owned_balls": true,
@@ -316,15 +331,16 @@
       },
       "trajectory_reveal": {
         "enabled": true,
-        "class": "bad",
+        "class": "good",
         "weight": 1.0,
         "duration_s": 7.0,
         "unlock_phase": 2,
         "stacking": "refresh",
         "max_stack": 3,
         "cooldown_s": 3.0,
-        "toast_collector": "مسیرت لو رفت!",
-        "toast_opponent": "مسیر حرکت را تحلیل کن!"
+        "toast_collector": "مسیر حرکت را تحلیل کن!",
+        "toast_opponent": "",
+        "beneficiary": "collector"
       },
       "slow_down": {
         "enabled": false,
@@ -388,6 +404,11 @@
     "max_time_s": 2.5,
     "max_bounces": 4,
     "debug_always_on": false,
+    "assist_always": true,
+    "assist_alpha": 0.22,
+    "assist_time_s": 1.1,
+    "assist_ghost": true,
+    "assist_arrow": false,
     "dot_spacing": 14,
     "dot_radius": 3.0,
     "march_speed": 60.0,
@@ -411,6 +432,8 @@
     "particles": 40
   },
   "fx": {
+    "dither": true,
+    "dither_strength": 1.0,
     "flash_max_alpha": 0.35,
     "reduce_flashing": false,
     "max_particles": 600,
@@ -436,7 +459,7 @@
     "arena_outer": "#062A3A",
     "lines": "#1F7A99",
     "goal": "#F3716D",
-    "wall": "#CFE8EE",
+    "wall": "#A8F0FF",
     "wall_hatch": "#004C6A",
     "text": "#FFFFFF",
     "timer_final": "#F3716D"
@@ -475,7 +498,8 @@
       "difficulty": 0.35,
       "reaction_s": 0.15,
       "max_speed": 1.5,
-      "noise": 0.06
+      "noise": 0.04,
+      "smoothing": 7.0
     },
     "mouse": {
       "player": "p1"
@@ -518,8 +542,8 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 1,
-    "saved_at": "2026-10-19 03:11:27",
+    "schema_version": 2,
+    "saved_at": "2026-10-19 04:00:47",
     "app": "Market Hockey"
   }
 }

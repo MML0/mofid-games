@@ -1,4 +1,10 @@
-"""Draws the engine state onto a logical canvas. Everything outside the circle is masked to pure black last."""
+"""Draws the engine state onto a logical canvas. Everything outside the circle is masked to pure black last.
+
+Quality notes:
+- the background is a dithered numpy gradient (no banding steps);
+- static line art (goal arcs, walls, tracks) and the paddles are drawn supersampled and smoothed down;
+- glows, trails and particles are soft radial sprites composited additively.
+"""
 
 from __future__ import annotations
 
@@ -9,13 +15,13 @@ import pygame
 
 from ..core.geometry import pp
 from .colors import boost, hex_rgb, mix, scale
-from .glow import AddLayer, GlowCache
+from .glow import AddLayer, GlowCache, radial_background
 from .icons import IconCache
 from .particles import Particles
 from .text import TextRenderer
 
-STATIC_PREFIXES = ("display.canvas", "arena.", "walls.", "goals.", "center_zone.", "colors.", "paddles.",
-                   "powerups.orb_radius", "hud.")
+STATIC_PREFIXES = ("display.canvas", "display.supersample", "arena.", "walls.", "goals.", "center_zone.", "colors.",
+                   "paddles.", "powerups.orb_radius", "hud.", "fx.dither")
 MASK_PREFIXES = ("display.canvas", "arena.mask", "arena.center")
 
 
@@ -37,10 +43,11 @@ class Renderer:
         self.cfg = cfg
         self.rng = rng or random.Random()
         self.text = TextRenderer(cfg)
-        self.glow = GlowCache()
+        self.glow = GlowCache(4000, cfg["fx.dither_strength"] if cfg["fx.dither"] else 0.0)
         self.icons = IconCache()
         self.particles = Particles(self.rng)
         self._cfg_v = -1
+        self._static_dirty_since = None
         self.size = None
         self.canvas = self.add = self.static = self.mask = self.dim = self.out = None
         self.c: dict = {}
@@ -51,6 +58,7 @@ class Renderer:
         self.rings: list[dict] = []
         self.toasts: list[dict] = []
         self.flights: list[dict] = []
+        self.wall_hits: list[tuple] = []
         self.score_pop = [-9.0, -9.0]
         self.goal_flash: tuple | None = None
         self.flash: tuple | None = None
@@ -58,6 +66,7 @@ class Renderer:
         self.ambient = []
         self._amb_scroll = 0.0
         self._amb_bias = (0.0, None, 0)
+        self._sparkle_acc: dict[int, float] = {}
         self.debug_draw = None  # set by app: callable(renderer, engine, surface)
 
     # ====================================================================== setup
@@ -71,14 +80,16 @@ class Renderer:
         c["p1b"], c["p2b"] = boost(c["p1"], b), boost(c["p2"], b)
         c["team"] = [c["p1"], c["p2"]]
         c["teamb"] = [c["p1b"], c["p2b"]]
+        c["core"] = [mix(c["p1b"], (255, 255, 255), 0.55), mix(c["p2b"], (255, 255, 255), 0.55)]
         c["class"] = {"good": c["good"], "bad": c["bad"], "neutral": c["neutral"]}
+        c["wallb"] = boost(c["wall"], 0.2)
         self.c = c
 
     def _ensure(self, engine) -> None:
         cfg = self.cfg
         g = engine.geom
         changes = cfg.changes_since(self._cfg_v) if self._cfg_v >= 0 else {"*"}
-        if not changes and self.canvas is not None:
+        if not changes and self.canvas is not None and self._static_dirty_since is None:
             return
         self._cfg_v = cfg.version
         allc = "*" in changes
@@ -87,6 +98,8 @@ class Renderer:
             self._colors()
         if allc or any(p.startswith(("fonts.", "text.shaping")) for p in changes):
             self.text.clear()
+        if allc or any(p.startswith("fx.dither") for p in changes):
+            self.glow = GlowCache(4000, cfg["fx.dither_strength"] if cfg["fx.dither"] else 0.0)
         if self.canvas is None or size != self.size:
             self.size = size
             self.canvas = pygame.Surface(size)
@@ -95,24 +108,32 @@ class Renderer:
             allc = True
         if allc or any(p.startswith(MASK_PREFIXES) for p in changes):
             self._build_mask(g)
-        if allc or any(p.startswith(STATIC_PREFIXES) for p in changes):
+        if allc or self.static is None:
             self._build_static(engine)
+            self._static_dirty_since = None
+        elif any(p.startswith(STATIC_PREFIXES) for p in changes) or self._static_dirty_since is not None:
+            # throttle rebuilds while a slider is being dragged
+            if self._static_dirty_since is None:
+                self._static_dirty_since = self.time
+            if self.time - self._static_dirty_since >= 0.12 or not changes:
+                self._build_static(engine)
+                self._static_dirty_since = None
 
     def to_c(self, x, y):
         g = self._g
         return (g.cx + x, g.cy - y)
 
-    def _arc_pts(self, r, a0, a1, steps=None):
+    def _arc_pts(self, r, a0, a1, steps=None, k=1.0):
         g = self._g
-        steps = steps or max(8, int(abs(a1 - a0) / 1.5))
+        steps = steps or max(8, int(abs(a1 - a0) / (1.5 / k)))
         out = []
-        for k in range(steps + 1):
-            a = math.radians(a0 + (a1 - a0) * k / steps)
-            out.append((g.cx + r * math.cos(a), g.cy - r * math.sin(a)))
+        for i in range(steps + 1):
+            a = math.radians(a0 + (a1 - a0) * i / steps)
+            out.append(((g.cx + r * math.cos(a)) * k, (g.cy - r * math.sin(a)) * k))
         return out
 
-    def _band(self, r_in, r_out, a0, a1):
-        return self._arc_pts(r_out, a0, a1) + self._arc_pts(r_in, a1, a0)
+    def _band(self, r_in, r_out, a0, a1, k=1.0):
+        return self._arc_pts(r_out, a0, a1, k=k) + self._arc_pts(r_in, a1, a0, k=k)
 
     def _build_mask(self, g) -> None:
         W, H = g.W, g.H
@@ -126,7 +147,6 @@ class Renderer:
             f = feather / 1.5
             small = pygame.transform.smoothscale(mask, (max(8, int(W / f)), max(8, int(H / f))))
             mask = pygame.transform.smoothscale(small, (W, H))
-            # re-assert hard black well outside the feather band
             hard = pygame.Surface((W, H), pygame.SRCALPHA)
             hard.fill((0, 0, 0, 255))
             pygame.draw.circle(hard, (0, 0, 0, 0), (int(g.cx), int(g.cy)), int(g.mask_r + feather + 1))
@@ -136,86 +156,175 @@ class Renderer:
         pygame.draw.circle(dim, (0, 0, 0, 255), (int(g.cx), int(g.cy)), int(g.mask_r))
         self.dim = dim
 
+    # ---------------------------------------------------------------- static layer (supersampled)
+    @staticmethod
+    def _poly_a(dst, pts, color, alpha=1.0):
+        """Alpha-blend a polygon onto a SRCALPHA surface (pygame.draw itself does not blend)."""
+        if alpha <= 0 or len(pts) < 3:
+            return
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        x0, y0 = int(min(xs)) - 2, int(min(ys)) - 2
+        w, h = int(max(xs)) - x0 + 3, int(max(ys)) - y0 + 3
+        tmp = pygame.Surface((max(1, w), max(1, h)), pygame.SRCALPHA)
+        tmp.fill((*color[:3], 0))
+        pygame.draw.polygon(tmp, (*color[:3], 255), [(x - x0, y - y0) for x, y in pts])
+        tmp.set_alpha(int(255 * min(1.0, alpha)))
+        dst.blit(tmp, (x0, y0))
+
+    @staticmethod
+    def _circle_a(dst, color, center, r, alpha=1.0, width=0):
+        if alpha <= 0 or r <= 0:
+            return
+        rr = int(r) + 3
+        tmp = pygame.Surface((2 * rr, 2 * rr), pygame.SRCALPHA)
+        tmp.fill((*color[:3], 0))
+        pygame.draw.circle(tmp, (*color[:3], 255), (rr, rr), int(r), int(width))
+        tmp.set_alpha(int(255 * min(1.0, alpha)))
+        dst.blit(tmp, (int(center[0]) - rr, int(center[1]) - rr))
+
     def _build_static(self, engine) -> None:
         cfg = self.cfg
         g = engine.geom
         self._g = g
         c = self.c
-        S = pygame.Surface((g.W, g.H))
-        S.fill((0, 0, 0))
-        N = 90
-        for i in range(N):
-            r = g.mask_r * (1 - i / N)
-            col = mix(c["arena_outer"], c["arena_inner"], (i / N) ** 0.8)
-            pygame.draw.circle(S, col, (int(g.cx), int(g.cy)), max(1, int(r)))
-        bg = c["arena_inner"]
-        # center line (between the two halves, from top wall to bottom wall)
+        k = int(cfg["display.supersample"])
+        dith = cfg["fx.dither_strength"] if cfg["fx.dither"] else 0.0
+        S = radial_background(g.W, g.H, g.cx, g.cy, g.mask_r, c["arena_inner"], c["arena_outer"], dith)
+        art = pygame.Surface((g.W * k, g.H * k), pygame.SRCALPHA)
+        art.fill((*c["arena_outer"], 0))
+        P = lambda x, y: ((g.cx + x) * k, (g.cy - y) * k)  # noqa: E731
+        bg = c["arena_outer"]
+        # center line (between the halves, from top wall to bottom wall)
         if cfg["arena.show_center_line"]:
-            col = mix(c["arena_outer"], c["lines"], cfg["arena.center_line_alpha"])
             a = math.radians(90 + g.rot)
             dx, dy = math.cos(a), math.sin(a)
-            L = g.wall_face - 6
-            seg, gap = 18, 12
+            L = g.wall_face - 8
+            seg, gap = 16, 12
             t = -L
             while t < L:
                 t2 = min(L, t + seg)
-                p1, p2 = self.to_c(dx * t, dy * t), self.to_c(dx * t2, dy * t2)
-                pygame.draw.line(S, col, p1, p2, 2)
+                p1, p2 = P(dx * t, dy * t), P(dx * t2, dy * t2)
+                nx, ny = -dy * 1.0 * k, -dx * 1.0 * k
+                self._poly_a(art, [(p1[0] + nx, p1[1] - ny), (p2[0] + nx, p2[1] - ny), (p2[0] - nx, p2[1] + ny),
+                                   (p1[0] - nx, p1[1] + ny)], c["lines"], cfg["arena.center_line_alpha"])
                 t = t2 + gap
-        # paddle tracks
+        # paddle tracks: dotted arcs
         if cfg["arena.show_tracks"]:
             for i in (0, 1):
-                w = pp(cfg, i, "width")
-                lo, hi = g.paddle_range(i, w)
-                lo2, hi2 = g.paddle_range(i, 0)
+                lo, hi = g.paddle_range(i, 0)
                 rb = g.paddle_back_radius(i)
-                col = mix(bg, c["teamb"][i], cfg["arena.track_alpha"])
-                pts = self._arc_pts(rb, lo2, hi2)
-                for k in range(0, len(pts) - 1, 2):
-                    pygame.draw.line(S, col, pts[k], pts[k + 1], 2)
+                a = lo
+                while a <= hi:
+                    x, y = rb * math.cos(math.radians(a)), rb * math.sin(math.radians(a))
+                    self._circle_a(art, c["teamb"][i], P(x, y), 1.6 * k, cfg["arena.track_alpha"] * 1.6)
+                    a += 2.2
         # slot rings
         if cfg["center_zone.show_slot_rings"] and cfg["center_zone.layout"] != "random":
-            col = mix(bg, c["lines"], cfg["center_zone.slot_ring_alpha"])
-            rr = cfg["powerups.orb_radius"] + 5
+            rr = (cfg["powerups.orb_radius"] + 5) * k
             for x, y in g.slots:
-                pygame.draw.circle(S, col, [int(v) for v in self.to_c(x, y)], int(rr), 2)
-        # rim
+                self._circle_a(art, c["lines"], P(x, y), rr, cfg["center_zone.slot_ring_alpha"] * 1.4, width=max(1, int(1.5 * k)))
+        # rim line
         rim_w = cfg["arena.rim_line_width"]
         if rim_w > 0:
-            pygame.draw.circle(S, mix(bg, c["lines"], 0.8), (int(g.cx), int(g.cy)), int(g.R), rim_w)
-        # goal arcs with glow
+            self._poly_a(art, self._band(g.R - rim_w / 2, g.R + rim_w / 2, 0, 360, k), c["lines"], 0.75)
+            if cfg["arena.rim_glow"] > 0:
+                self._poly_a(art, self._band(g.R - rim_w * 2, g.R + rim_w * 2, 0, 360, k), c["lines"],
+                             0.18 * cfg["arena.rim_glow"])
+        # goal arcs: soft glow bands + crisp core
         lw = cfg["goals.line_width"]
         gl = cfg["goals.glow"]
         for arc in g.goals:
-            for k, (wmul, a) in enumerate(((5.0, 0.10), (3.0, 0.22), (1.8, 0.45))):
-                if gl <= 0:
-                    break
-                col = mix(c["arena_outer"], c["goal"], a * gl)
-                pygame.draw.polygon(S, col, self._band(g.R - lw * wmul / 2, g.R + lw * wmul / 2, arc.start, arc.end))
-            pygame.draw.polygon(S, c["goal"], self._band(g.R - lw / 2, g.R + lw / 2, arc.start, arc.end))
+            if gl > 0:
+                for wmul, a in ((7.0, 0.07), (4.0, 0.14), (2.2, 0.3)):
+                    self._poly_a(art, self._band(g.R - lw * wmul / 2, g.R + lw * wmul / 2, arc.start, arc.end, k),
+                                 c["goal"], a * gl)
+            self._poly_a(art, self._band(g.R - lw / 2, g.R + lw / 2, arc.start, arc.end, k), c["goal"], 1.0)
+            self._poly_a(art, self._band(g.R - lw * 0.15, g.R + lw * 0.15, arc.start, arc.end, k),
+                         mix(c["goal"], (255, 255, 255), 0.5), 0.8)
         # bumper walls
-        wc = mix(c["arena_outer"], c["wall"], cfg["walls.band_alpha"])
-        hc = mix(wc, c["wall_hatch"], 0.85)
+        if cfg["walls.style"] == "energy":
+            self._walls_energy_static(art, g, k)
+        else:
+            self._walls_classic_static(art, g, k)
+        small = pygame.transform.smoothscale(art, (g.W, g.H)) if k > 1 else art
+        S.blit(small, (0, 0))
+        if cfg["walls.style"] == "energy" and cfg["walls.glow"] > 0:
+            # soft static halo along each wall's inner face (glow stamps give naturally soft ends)
+            for w in g.walls:
+                a = w.start + 1.0
+                while a <= w.end - 1.0:
+                    ar = math.radians(a)
+                    p = ((g.cx + g.wall_face * math.cos(ar)), (g.cy - g.wall_face * math.sin(ar)))
+                    spr = self.glow.sprite(c["wall"], g.t * 2.2, 0.16 * cfg["walls.glow"])
+                    S.blit(spr, (int(p[0] - spr.get_width() / 2), int(p[1] - spr.get_height() / 2)),
+                           special_flags=pygame.BLEND_ADD)
+                    a += 1.5
+        self.static = S.convert() if pygame.display.get_surface() else S
+
+    def _walls_energy_static(self, art, g, k) -> None:
+        cfg = self.cfg
+        c = self.c
+        wc, base = c["wall"], mix(c["wall_hatch"], (0, 0, 0), 0.45)
+        glow = cfg["walls.glow"]
+        t = g.t
+        face = g.wall_face
         for w in g.walls:
-            pygame.draw.polygon(S, mix(c["arena_outer"], c["wall"], 0.18),
-                                self._band(g.wall_face - 8, g.R + 4, w.start - 1, w.end + 1))
-            pygame.draw.polygon(S, wc, self._band(g.wall_face, g.R, w.start, w.end))
+            a0, a1 = w.start, w.end
+            # deep base
+            self._poly_a(art, self._band(face, g.R, a0, a1, k), base, 0.92)
+            # luminous gradient from the inner face outward
+            n = 6
+            for j in range(n):
+                r0 = face + t * 0.7 * j / n
+                self._poly_a(art, self._band(r0, face + t * 0.7, a0, a1, k), wc, 0.07 + 0.02 * j)
+            # pattern: small diamonds riding inside the band
+            if cfg["walls.hatch"]:
+                mid = face + t * 0.55
+                step = 5.0
+                a = a0 + step
+                while a < a1 - step * 0.6:
+                    ar = math.radians(a)
+                    cx, cy = mid * math.cos(ar), mid * math.sin(ar)
+                    ux, uy = math.cos(ar), math.sin(ar)  # radial
+                    vx, vy = -uy, ux  # tangential
+                    s1, s2 = t * 0.24, t * 0.38
+                    pts = [(cx + ux * s1, cy + uy * s1), (cx + vx * s2, cy + vy * s2), (cx - ux * s1, cy - uy * s1),
+                           (cx - vx * s2, cy - vy * s2)]
+                    self._poly_a(art, [((g.cx + x) * k, (g.cy - y) * k) for x, y in pts], wc, 0.28)
+                    a += step
+            # crisp inner face line + its glow, thin outer edge
+            self._poly_a(art, self._band(face - 3.5, face + 3.5, a0, a1, k), wc, 0.30 * glow)
+            self._poly_a(art, self._band(face - 1.4, face + 1.4, a0, a1, k), mix(wc, (255, 255, 255), 0.35), 1.0)
+            self._poly_a(art, self._band(g.R - 1.0, g.R, a0, a1, k), wc, 0.45)
+            # emitter nodes at both ends
+            for a in (a0, a1):
+                ar = math.radians(a)
+                rc = g.R - t / 2
+                p = ((g.cx + rc * math.cos(ar)) * k, (g.cy - rc * math.sin(ar)) * k)
+                self._circle_a(art, base, p, t * 0.78 * k, 1.0)
+                self._circle_a(art, wc, p, t * 0.78 * k, 0.9, width=max(1, int(1.6 * k)))
+                self._circle_a(art, mix(wc, (255, 255, 255), 0.5), p, t * 0.3 * k, 1.0)
+
+    def _walls_classic_static(self, art, g, k) -> None:
+        cfg = self.cfg
+        c = self.c
+        for w in g.walls:
+            self._poly_a(art, self._band(g.wall_face, g.R, w.start, w.end, k), c["wall"], cfg["walls.band_alpha"])
             for a in (w.start, w.end):
                 ar = math.radians(a)
                 rc = g.R - g.t / 2
-                pygame.draw.circle(S, wc, [int(v) for v in self.to_c(rc * math.cos(ar), rc * math.sin(ar))],
-                                   max(1, int(g.t / 2)))
+                self._circle_a(art, c["wall"], ((g.cx + rc * math.cos(ar)) * k, (g.cy - rc * math.sin(ar)) * k),
+                               g.t / 2 * k, cfg["walls.band_alpha"])
             if cfg["walls.hatch"]:
-                step = 5.0
-                a = w.start + step / 2
-                while a < w.end - step / 4:
-                    p1 = self.to_c((g.wall_face + 3) * math.cos(math.radians(a)), (g.wall_face + 3) * math.sin(math.radians(a)))
-                    a2 = a + step * 0.55
-                    p2 = self.to_c((g.R - 3) * math.cos(math.radians(a2)), (g.R - 3) * math.sin(math.radians(a2)))
-                    pygame.draw.line(S, hc, p1, p2, 3)
-                    a += step
-            pygame.draw.lines(S, mix(wc, (255, 255, 255), 0.5), False, self._arc_pts(g.wall_face, w.start, w.end), 2)
-        self.static = S.convert() if pygame.display.get_surface() else S
+                a = w.start + 2.5
+                while a < w.end - 1.2:
+                    p1 = ((g.cx + (g.wall_face + 3) * math.cos(math.radians(a))) * k,
+                          (g.cy - (g.wall_face + 3) * math.sin(math.radians(a))) * k)
+                    a2 = math.radians(a + 2.75)
+                    p2 = ((g.cx + (g.R - 3) * math.cos(a2)) * k, (g.cy - (g.R - 3) * math.sin(a2)) * k)
+                    pygame.draw.line(art, (*c["wall_hatch"], 255), p1, p2, 3 * k)
+                    a += 5.0
 
     # ====================================================================== events
     def handle_events(self, events, engine) -> None:
@@ -234,9 +343,13 @@ class Renderer:
                 if e.get("smart"):
                     self.particles.burst(e["x"], e["y"], c["smart"], 40, (150, 520), (0.3, 0.8), cap=cap)
                     self.toast(cfg["text.smart_hit"], c["smart"], e["player"])
-            elif et == "wall_bounce" and cfg["fx.wall_ripples"]:
-                self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.4, r0=6, r1=40,
-                                       color=scale(c["wall"], 0.8), w=2))
+            elif et == "wall_bounce":
+                if cfg["walls.hit_flash"] and e.get("wall", -1) >= 0:
+                    self.wall_hits.append((e["wall"], math.degrees(math.atan2(e["y"], e["x"])), self.time))
+                    self.wall_hits = self.wall_hits[-8:]
+                if cfg["fx.wall_ripples"]:
+                    self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.4, r0=6, r1=40,
+                                           color=scale(c["wallb"], 0.8), w=2))
             elif et == "goal":
                 sc = e["scorer"]
                 col = c["teamb"][sc]
@@ -297,15 +410,11 @@ class Renderer:
         self.particles.burst(e["x"], e["y"], col_team, 24, (80, 300), (0.3, 0.8), cap=cap)
         self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.5, r0=cfg["powerups.orb_radius"],
                                r1=cfg["powerups.orb_radius"] * 3, color=col_cls, w=4))
-        aff = e.get("affects")
         t = engine.types.get(e["type_id"])
-        icon = t.icon if t else ""
-        self.flights.append(dict(t0=self.time, dur=0.5, x=e["x"], y=e["y"], affects=aff, icon=icon,
-                                 type_id=e["type_id"], color=col_cls))
+        self.flights.append(dict(t0=self.time, dur=0.5, x=e["x"], y=e["y"], affects=e.get("affects"),
+                                 icon=t.icon if t else "", type_id=e["type_id"], color=col_cls))
         if e.get("toast_c"):
             self.toast(e["toast_c"], col_team, e["collector"], cls_color=col_cls)
-            if e.get("banner"):
-                pass
         if e.get("toast_o"):
             self.toast(e["toast_o"], c["teamb"][1 - e["collector"]], 1 - e["collector"], cls_color=col_cls)
 
@@ -320,6 +429,7 @@ class Renderer:
     # ====================================================================== render
     def render(self, engine, alpha: float, dt: float) -> pygame.Surface:
         self.time += dt
+        self._g = engine.geom
         self._ensure(engine)
         g = engine.geom
         self._g = g
@@ -334,18 +444,19 @@ class Renderer:
         if cfg["fx.ambient_chart"]:
             self._ambient(dt)
         self._draw_flash()
+        self._walls_fx(engine)
         if st not in ("ATTRACT", "RESULT", "FINAL"):
             self._hud(engine)
         self._final_pulse(engine)
         self._goal_flash(engine)
         self._orbs(engine)
         self._predictions(engine)
-        self._trails(engine, alpha)
+        self._trails(engine, alpha, dt)
         self._shields(engine)
         self._paddles(engine, alpha)
         self._balls(engine, alpha)
         self._rings()
-        self.particles.draw(add, self.to_c)
+        self.particles.draw(add, self.to_c, self.glow)
         add.composite(C)
         self._flights(engine)
 
@@ -387,7 +498,7 @@ class Renderer:
         spacing = 30.0
         if not self.ambient:
             y = 0.0
-            for k in range(int(2 * R / spacing) + 3):
+            for _ in range(int(2 * R / spacing) + 3):
                 y = max(-0.22 * R, min(0.22 * R, y + self.rng.gauss(0, 14)))
                 self.ambient.append([y, None])
         self._amb_scroll += 22 * dt
@@ -405,15 +516,14 @@ class Renderer:
         pts = [(self.to_c(x0 + k * spacing, y), col) for k, (y, col) in enumerate(self.ambient)]
         for k in range(1, len(pts)):
             col = scale(pts[k][1], a * 2.5) if pts[k][1] else base
-            self.add.mark(pygame.draw.line(self.add.surf, col, pts[k - 1][0], pts[k][0], 2))
+            self.add.mark(pygame.draw.aaline(self.add.surf, col, pts[k - 1][0], pts[k][0], 2))
 
     def _draw_flash(self) -> None:
         if not self.flash:
             return
         t0, col, inten = self.flash
         cfg = self.cfg
-        dur = 0.35
-        k = 1 - (self.time - t0) / dur
+        k = 1 - (self.time - t0) / 0.35
         if k <= 0:
             self.flash = None
             return
@@ -421,6 +531,54 @@ class Renderer:
         a = min(0.6, mx * inten) * k * k
         g = self._g
         self.add.mark(pygame.draw.circle(self.add.surf, scale(col, a), (int(g.cx), int(g.cy)), int(g.mask_r)))
+
+    def _walls_fx(self, engine) -> None:
+        cfg = self.cfg
+        if cfg["walls.style"] != "energy":
+            return
+        g = self._g
+        c = self.c
+        wc = c["wallb"]
+        glow = cfg["walls.glow"]
+        flow = cfg["walls.flow_speed"]
+        n = cfg["walls.pulses"]
+        face = g.wall_face
+        t = g.t
+        for wi, w in enumerate(g.walls):
+            if flow > 0 and n > 0:
+                for k in range(n):
+                    ph = (self.time * flow / max(1.0, w.span) + k / n) % 1.0
+                    fade = math.sin(math.pi * ph)
+                    for a, inten in ((w.start + w.span * ph, 0.55), (w.end - w.span * ((ph + 0.5 / n) % 1.0), 0.28)):
+                        ar = math.radians(a)
+                        pos = self.to_c((face + 2) * math.cos(ar), (face + 2) * math.sin(ar))
+                        self.add.blit(self.glow.sprite(wc, t * 1.7, inten * fade * glow), pos)
+            for a in (w.start, w.end):
+                ar = math.radians(a)
+                rc = g.R - t / 2
+                pulse = 0.4 + 0.25 * math.sin(self.time * 3.2 + a * 0.1)
+                self.add.blit(self.glow.sprite(wc, t * 1.6, pulse * glow), self.to_c(rc * math.cos(ar), rc * math.sin(ar)))
+        keep = []
+        for wi, ang, t0 in self.wall_hits:
+            age = self.time - t0
+            if age > 0.7:
+                continue
+            keep.append((wi, ang, t0))
+            w = g.walls[wi]
+            k = 1 - age / 0.7
+            if age < 0.25:
+                ar = math.radians(ang)
+                self.add.blit(self.glow.sprite(wc, t * 3.2, 1.3 * (1 - age / 0.25)),
+                              self.to_c(face * math.cos(ar), face * math.sin(ar)))
+            spread = 110 * age
+            a0 = w.unwrap(ang)
+            for side in (-1, 1):
+                a = a0 + side * spread
+                if w.start <= a <= w.end:
+                    ar = math.radians(a)
+                    self.add.blit(self.glow.sprite(wc, t * 2.0, 0.9 * k),
+                                  self.to_c((face + 2) * math.cos(ar), (face + 2) * math.sin(ar)))
+        self.wall_hits = keep
 
     def _final_pulse(self, engine) -> None:
         cfg = self.cfg
@@ -431,8 +589,8 @@ class Renderer:
         frac = engine.time_left - math.floor(engine.time_left)
         k = 0.25 * frac ** 2
         g = self._g
-        self.add.mark(pygame.draw.circle(self.add.surf, scale(self.c["timer_final"], k), (int(g.cx), int(g.cy)),
-                                         int(g.wall_face - 4), 10))
+        self.add.mark(pygame.draw.aacircle(self.add.surf, scale(self.c["timer_final"], k), (int(g.cx), int(g.cy)),
+                                           int(g.wall_face - 4), 10))
 
     def _goal_flash(self, engine) -> None:
         if not self.goal_flash:
@@ -445,28 +603,33 @@ class Renderer:
             return
         g = self._g
         arc = g.goals[idx]
-        k = (1 - t / dur)
+        k = 1 - t / dur
         lw = self.cfg["goals.line_width"]
-        pts = self._arc_pts(g.R, arc.start, arc.end)
-        self.add.mark(pygame.draw.lines(self.add.surf, scale(self.c["goal"], 0.9 * k), False, pts, int(lw * 3)))
-        # a pulse running outward along the arc from the crossing point
+        col = self.c["goal"]
+        a = arc.start
+        while a <= arc.end:
+            ar = math.radians(a)
+            self.add.blit(self.glow.sprite(col, lw * 3.0, 0.45 * k), self.to_c(g.R * math.cos(ar), g.R * math.sin(ar)))
+            a += 2.5
         a0 = arc.unwrap(ang)
         spread = arc.span * min(1.0, t / 0.5)
         for side in (-1, 1):
             a = a0 + side * spread
             if arc.start <= a <= arc.end:
-                x, y = g.R * math.cos(math.radians(a)), g.R * math.sin(math.radians(a))
-                self.add.blit(self.glow.sprite(self.c["goal"], 40, 1.2 * k), self.to_c(x, y))
+                ar = math.radians(a)
+                self.add.blit(self.glow.sprite(col, 44, 1.3 * k), self.to_c(g.R * math.cos(ar), g.R * math.sin(ar)))
 
     # ---------------------------------------------------------------- HUD
     def _rot(self, surf, extra=0.0):
         ang = self._g.rot + extra
         return pygame.transform.rotate(surf, ang) if abs(ang) > 0.01 else surf
 
-    def _text_at(self, text, size, color, x, y, key="persian", alpha=1.0, scale_k=1.0, extra_rot=0.0, outline=2):
-        s = self.text.render(text, size, color, key, outline=outline, outline_color=(0, 8, 12))
+    def _text_at(self, text, size, color, x, y, key="persian", alpha=1.0, scale_k=1.0, extra_rot=0.0, outline=2,
+                 glow=0.0):
+        s = self.text.render(text, size, color, key, outline=outline, outline_color=(0, 6, 10), glow=glow)
         if abs(scale_k - 1.0) > 0.01:
-            s = pygame.transform.rotozoom(s, 0, scale_k)
+            s = pygame.transform.smoothscale(s, (max(1, int(s.get_width() * scale_k)),
+                                                 max(1, int(s.get_height() * scale_k))))
         s = self._rot(s, extra_rot)
         if alpha < 0.999:
             s = s.copy()
@@ -478,7 +641,7 @@ class Renderer:
         cfg = self.cfg
         if engine.golden:
             return "+"
-        tl = engine.time_left if engine.state not in ("INTRO", "COUNTDOWN") else engine.match_duration
+        tl = engine.time_left
         if engine.state in ("INTRO", "COUNTDOWN"):
             tl = float(cfg["match.duration_s"])
         secs = int(math.ceil(max(0.0, tl) - 1e-6))
@@ -492,6 +655,7 @@ class Renderer:
         g = self._g
         c = self.c
         ha = cfg["hud.alpha"]
+        hg = cfg["hud.glow"]
         if cfg["match.timer_enabled"]:
             txt = self.timer_text(engine)
             col = c["text"]
@@ -504,12 +668,13 @@ class Renderer:
                 k = 1.0 + 0.14 * frac ** 3 + (0.15 if engine.time_left <= 5 else 0)
             if engine.golden:
                 col = c["smart"]
-            self._text_at(txt, cfg["hud.timer_size"], col, *g.timer_pos, key="digits", alpha=ha, scale_k=k)
+            self._text_at(txt, cfg["hud.timer_size"], col, *g.timer_pos, key="digits", alpha=ha, scale_k=k,
+                          glow=hg * 0.6)
         for i in (0, 1):
             t = self.time - self.score_pop[i]
             k = 1.0 + (0.5 * math.sin(math.pi * t / 0.6) if 0 <= t < 0.6 else 0)
             self._text_at(str(engine.scores[i]), cfg["hud.score_size"], c["teamb"][i], *g.score_pos[i],
-                          key="digits", alpha=ha, scale_k=k)
+                          key="digits", alpha=ha, scale_k=k, glow=hg)
             if cfg["hud.show_player_labels"]:
                 x, y = g.score_pos[i]
                 self._text_at(cfg[f"text.player_{i + 1}"], cfg["hud.label_size"], c["teamb"][i], x,
@@ -549,12 +714,12 @@ class Renderer:
                     for s in range(n):
                         f = s / n
                         px, py = p1[0] + (p2[0] - p1[0]) * f, p1[1] + (p2[1] - p1[1]) * f
-                        self.add.mark(pygame.draw.circle(self.add.surf, scale(cls_col, 0.35), (int(px), int(py)), 2))
+                        self.add.mark(pygame.draw.aacircle(self.add.surf, scale(cls_col, 0.35), (int(px), int(py)), 2))
             blink = 1.0
             if o.cls == "bad":
                 blink = 0.55 + 0.45 * (0.5 + 0.5 * math.sin(self.time * math.tau * 1.5))
-            gi = (0.45 + 0.6 * o.pulled) * blink * a
-            self.add.blit(self.glow.sprite(cls_col, orb_r * 2.3 * max(0.3, k), gi), self.to_c(x, y))
+            gi = (0.5 + 0.7 * o.pulled) * blink * a
+            self.add.blit(self.glow.sprite(cls_col, orb_r * 2.4 * max(0.3, k), gi), self.to_c(x, y))
             body = self.icons.badge(icon, o.type_id, orb_r, cls_col, o.cls == "bad", cfg["powerups.icon_scale"])
             if abs(k - 1) > 0.01:
                 sz = max(2, int(body.get_width() * k))
@@ -580,25 +745,25 @@ class Renderer:
         cfg = self.cfg
         c = self.c
         spacing = cfg["prediction.dot_spacing"]
-        dr = cfg["prediction.dot_radius"]
         phase = (self.time * cfg["prediction.march_speed"]) % spacing
         for bid, pr in engine.predictions.items():
             pts = pr.points
             if len(pts) < 2:
                 continue
+            strong = getattr(pr, "strong", True)
+            ka = 1.0 if strong else cfg["prediction.assist_alpha"]
+            dr = cfg["prediction.dot_radius"] * (1.0 if strong else 0.8)
             col = c["teamb"][pr.receiver] if cfg["prediction.color_mode"] == "receiver" else (255, 255, 255)
             dotc = mix(col, (255, 255, 255), 0.35)
-            total = 0.0
             seglens = []
+            total = 0.0
             for k in range(1, len(pts)):
                 L = math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1])
                 seglens.append(L)
                 total += L
             if total < 1:
                 continue
-            d = phase
-            k = 0
-            acc = 0.0
+            d, k, acc = phase, 0, 0.0
             while d < total:
                 while k < len(seglens) and acc + seglens[k] < d:
                     acc += seglens[k]
@@ -608,45 +773,48 @@ class Renderer:
                 f = (d - acc) / max(1e-6, seglens[k])
                 x = pts[k][0] + (pts[k + 1][0] - pts[k][0]) * f
                 y = pts[k][1] + (pts[k + 1][1] - pts[k][1]) * f
-                fade = 0.35 + 0.65 * (d / total)
+                fade = (0.35 + 0.65 * (d / total)) if strong else (0.25 + 0.75 * (d / total))
                 sx, sy = self.to_c(x, y)
-                self.add.mark(pygame.draw.circle(self.add.surf, scale(dotc, fade), (int(sx), int(sy)), max(1, int(dr))))
+                self.add.blit(self.glow.sprite(dotc, dr * 2.6, fade * ka * 1.4), (sx, sy))
                 d += spacing
-            if pr.contact:
-                gx, gy = pr.contact
-                sx, sy = self.to_c(gx, gy)
+            if not pr.contact:
+                continue
+            gx, gy = pr.contact
+            sx, sy = self.to_c(gx, gy)
+            if strong or cfg["prediction.assist_ghost"]:
                 r = int(cfg["ball.radius"])
                 pulse = 0.75 + 0.25 * math.sin(self.time * 8)
-                ga = cfg["prediction.ghost_alpha"] * pulse
+                ga = cfg["prediction.ghost_alpha"] * pulse * (1.0 if strong else ka * 2.0)
                 ghost = pygame.Surface((4 * r, 4 * r), pygame.SRCALPHA)
-                pygame.draw.circle(ghost, (*dotc, int(255 * ga)), (2 * r, 2 * r), r, 2)
-                pygame.draw.circle(ghost, (*dotc, int(110 * ga)), (2 * r, 2 * r), max(1, r - 3))
+                pygame.draw.aacircle(ghost, (*dotc, int(255 * min(1, ga))), (2 * r, 2 * r), r, 2)
+                pygame.draw.aacircle(ghost, (*dotc, int(110 * min(1, ga))), (2 * r, 2 * r), max(1, r - 3))
                 self.canvas.blit(ghost, (int(sx - 2 * r), int(sy - 2 * r)))
-                if pr.out_dir and not pr.goal:
-                    L = cfg["prediction.arrow_length"]
-                    ex, ey = gx + pr.out_dir[0] * L, gy + pr.out_dir[1] * L
-                    p1, p2 = (sx, sy), self.to_c(ex, ey)
-                    if pr.intercept:
-                        self.add.mark(pygame.draw.line(self.add.surf, dotc, p1, p2, 3))
-                    else:
-                        n = 6
-                        for s in range(0, n, 2):
-                            a0, a1 = s / n, (s + 1) / n
-                            q1 = (p1[0] + (p2[0] - p1[0]) * a0, p1[1] + (p2[1] - p1[1]) * a0)
-                            q2 = (p1[0] + (p2[0] - p1[0]) * a1, p1[1] + (p2[1] - p1[1]) * a1)
-                            self.add.mark(pygame.draw.line(self.add.surf, dotc, q1, q2, 3))
-                    ang = math.atan2(p2[1] - p1[1], p2[0] - p1[0])
-                    hs = 11
-                    for s in (-0.6, 0.6):
-                        q = (p2[0] - hs * math.cos(ang + s), p2[1] - hs * math.sin(ang + s))
-                        self.add.mark(pygame.draw.line(self.add.surf, dotc, p2, q, 3))
+            if pr.out_dir and not pr.goal and (strong or cfg["prediction.assist_arrow"]):
+                L = cfg["prediction.arrow_length"]
+                ex, ey = gx + pr.out_dir[0] * L, gy + pr.out_dir[1] * L
+                p1, p2 = (sx, sy), self.to_c(ex, ey)
+                ac = scale(dotc, ka)
+                if pr.intercept:
+                    self.add.mark(pygame.draw.aaline(self.add.surf, ac, p1, p2, 3))
+                else:
+                    n = 6
+                    for s in range(0, n, 2):
+                        a0, a1 = s / n, (s + 1) / n
+                        q1 = (p1[0] + (p2[0] - p1[0]) * a0, p1[1] + (p2[1] - p1[1]) * a0)
+                        q2 = (p1[0] + (p2[0] - p1[0]) * a1, p1[1] + (p2[1] - p1[1]) * a1)
+                        self.add.mark(pygame.draw.aaline(self.add.surf, ac, q1, q2, 3))
+                ang = math.atan2(p2[1] - p1[1], p2[0] - p1[0])
+                for s in (-0.6, 0.6):
+                    q = (p2[0] - 11 * math.cos(ang + s), p2[1] - 11 * math.sin(ang + s))
+                    self.add.mark(pygame.draw.aaline(self.add.surf, ac, p2, q, 3))
 
     # ---------------------------------------------------------------- trails
-    def _trails(self, engine, alpha) -> None:
+    def _trails(self, engine, alpha, dt) -> None:
         cfg = self.cfg
         c = self.c
         base_dur = cfg["trails.duration_s"]
         live_ids = set()
+        cap = cfg["fx.max_particles"]
         for b in engine.balls:
             if b.removed:
                 continue
@@ -658,19 +826,32 @@ class Renderer:
                 tr.clear()
                 continue
             tr.append((self.time, x, y, b.owner))
+            # star sparkles shed by the moving ball
+            rate = cfg["trails.sparkles"]
+            if rate > 0 and not b.scored and dt > 0:
+                sp = math.hypot(b.vx, b.vy)
+                acc = self._sparkle_acc.get(b.id, 0.0) + rate * dt * min(2.0, sp / 600.0)
+                col = c["core"][b.owner] if b.owner is not None else c["neutral_ball"]
+                while acc >= 1.0:
+                    acc -= 1.0
+                    back = math.atan2(-b.vy, -b.vx)
+                    self.particles.burst(x + self.rng.uniform(-b.r, b.r) * 0.6, y + self.rng.uniform(-b.r, b.r) * 0.6,
+                                         col, 1, (10, 70), (0.35, 0.8), (0.8, 1.8), cap=cap, drag=1.5,
+                                         direction=back, spread=1.2, twinkle=True)
+                self._sparkle_acc[b.id] = acc
         for bid in list(self.trails):
             if bid not in live_ids:
                 if bid not in self.dead_trails:
                     self.dead_trails[bid] = (self.time, self.trails[bid])
                 del self.trails[bid]
+                self._sparkle_acc.pop(bid, None)
         for bid, (t0, tr) in list(self.dead_trails.items()):
             if self.time - t0 > base_dur * 2:
                 del self.dead_trails[bid]
-        mode = cfg["trails.color_mode"]
-        ta, tg, ws = cfg["trails.alpha"], cfg["trails.glow"], cfg["trails.width_scale"]
         balls = {b.id: b for b in engine.balls}
         items = [(bid, tr, balls.get(bid)) for bid, tr in self.trails.items()]
         items += [(bid, tr, None) for bid, (t0, tr) in self.dead_trails.items()]
+        comet = cfg["trails.style"] == "comet"
         for bid, tr, b in items:
             dur = base_dur
             if b is not None and engine.effects.ball_speed_mult(b.id) > 1.01:
@@ -679,98 +860,179 @@ class Renderer:
                 tr.pop(0)
             if len(tr) < 2:
                 continue
-            r = (b.r if b is not None else cfg["ball.radius"])
-            owner_now = b.owner if b is not None else tr[-1][3]
-            ball_a = engine.effects.ball_alpha(bid) if b is not None else 0.6
-            flash = self.time - self.trail_flash.get(bid, -9)
-            smart = b is not None and engine.time < b.smart_until
-            pts = []
-            for (t, x, y, own) in tr:
-                own_c = owner_now if mode == "current_owner" else own
-                col = c["teamb"][own_c] if own_c is not None else c["neutral_ball"]
-                if flash < 0.12:
-                    col = mix(col, (255, 255, 255), 0.6 * (1 - flash / 0.12))
-                f = 1 - (self.time - t) / dur
-                pts.append((self.to_c(x, y), col, max(0.0, f)))
-            surf = self.add.surf
-            for k in range(1, len(pts)):
-                (p0, _, _), (p1, col, f) = pts[k - 1], pts[k]
-                if f <= 0:
-                    continue
-                w = max(1, int(2 * r * ws * f))
-                if tg > 0:
-                    gw = int(w * 2.4) + 2
-                    self.add.mark(pygame.draw.line(surf, scale(col, 0.32 * tg * f * ta * ball_a), p0, p1, gw))
-                cc = scale(col, f * ta * ball_a)
-                self.add.mark(pygame.draw.line(surf, cc, p0, p1, w))
-                if w > 3:
-                    pygame.draw.circle(surf, cc, (int(p1[0]), int(p1[1])), w // 2)
-                if smart and k % 2 == 0:
-                    sc = scale(c["smart"], f * 0.9)
-                    self.add.mark(pygame.draw.circle(surf, sc, (int(p1[0]), int(p1[1])), max(1, w // 3)))
+            if comet:
+                self._comet(engine, bid, tr, b, dur)
+            else:
+                self._ribbon(engine, bid, tr, b, dur)
+
+    def _comet(self, engine, bid, tr, b, dur) -> None:
+        """Soft glowing star trail: dense additive stamps whose size and brightness fall off with age."""
+        cfg = self.cfg
+        c = self.c
+        mode = cfg["trails.color_mode"]
+        r = b.r if b is not None else cfg["ball.radius"]
+        owner_now = b.owner if b is not None else tr[-1][3]
+        ball_a = engine.effects.ball_alpha(bid) if b is not None else 0.6
+        ta, tg = cfg["trails.alpha"], cfg["trails.glow"]
+        head = cfg["trails.head_size"]
+        falloff = cfg["trails.falloff"]
+        flash = self.time - self.trail_flash.get(bid, -9)
+        smart = b is not None and engine.time < b.smart_until
+        step = max(2.5, r * 0.3)
+        # walk from the head (newest) to the tail
+        seq = tr[::-1]
+        dist_to_next = 0.0
+        for i in range(len(seq) - 1):
+            t1, x1, y1, o1 = seq[i]
+            t2, x2, y2, o2 = seq[i + 1]
+            seg = math.hypot(x2 - x1, y2 - y1)
+            if seg < 1e-6:
+                continue
+            pos = dist_to_next
+            while pos < seg:
+                f = pos / seg
+                tt = t1 + (t2 - t1) * f
+                age = (self.time - tt) / dur
+                if age >= 1.0:
+                    return
+                k = (1.0 - age) ** falloff
+                x, y = x1 + (x2 - x1) * f, y1 + (y2 - y1) * f
+                own = owner_now if mode == "current_owner" else o1
+                col = c["teamb"][own] if own is not None else c["neutral_ball"]
+                core = c["core"][own] if own is not None else (255, 255, 255)
+                rad = r * head * (0.22 + 0.78 * k)
+                sx, sy = self.to_c(x, y)
+                inten = round(k * ta * ball_a * 10) / 10
+                if inten > 0:
+                    self.add.blit(self.glow.sprite(col, rad * 2.8, inten * 0.42 * tg), (sx, sy))
+                    if k > 0.25:
+                        self.add.blit(self.glow.sprite(core, rad * 1.15, inten * 0.85), (sx, sy))
+                if flash < 0.18 and age < 0.5:
+                    self.add.blit(self.glow.sprite((255, 255, 255), rad * 1.6, 0.9 * (1 - flash / 0.18) * k), (sx, sy))
+                if smart and age < 0.7:
+                    self.add.blit(self.glow.sprite(c["smart"], rad * 1.4, 0.5 * k), (sx, sy))
+                pos += step
+            dist_to_next = pos - seg
+
+    def _ribbon(self, engine, bid, tr, b, dur) -> None:
+        cfg = self.cfg
+        c = self.c
+        r = b.r if b is not None else cfg["ball.radius"]
+        owner_now = b.owner if b is not None else tr[-1][3]
+        ball_a = engine.effects.ball_alpha(bid) if b is not None else 0.6
+        ta, tg, ws = cfg["trails.alpha"], cfg["trails.glow"], cfg["trails.width_scale"]
+        pts = []
+        for (t, x, y, own) in tr:
+            own_c = owner_now if cfg["trails.color_mode"] == "current_owner" else own
+            col = c["teamb"][own_c] if own_c is not None else c["neutral_ball"]
+            pts.append((self.to_c(x, y), col, max(0.0, 1 - (self.time - t) / dur)))
+        surf = self.add.surf
+        for k in range(1, len(pts)):
+            (p0, _, _), (p1, col, f) = pts[k - 1], pts[k]
+            if f <= 0:
+                continue
+            w = max(1, int(2 * r * ws * f))
+            if tg > 0:
+                self.add.mark(pygame.draw.line(surf, scale(col, 0.32 * tg * f * ta * ball_a), p0, p1, int(w * 2.4) + 2))
+            self.add.mark(pygame.draw.aaline(surf, scale(col, f * ta * ball_a), p0, p1, w))
 
     # ---------------------------------------------------------------- shields
     def _shields(self, engine) -> None:
         g = self._g
         for eff in engine.effects.of_kind("shield"):
-            j = eff.target[1]
-            arc = g.goals[j]
+            arc = g.goals[eff.target[1]]
             span = arc.span * eff.data.get("coverage", 100) / 100
             a0 = arc.center - span / 2
             pulse = 0.6 + 0.4 * math.sin(self.time * 6)
-            pts = self._arc_pts(g.R - 6, a0, a0 + span)
-            self.add.mark(pygame.draw.lines(self.add.surf, scale(self.c["good"], 0.5 * pulse), False, pts, 12))
-            self.add.mark(pygame.draw.lines(self.add.surf, scale(self.c["good"], 0.9), False, pts, 3))
+            a = a0
+            while a <= a0 + span:
+                ar = math.radians(a)
+                self.add.blit(self.glow.sprite(self.c["good"], 14, 0.55 * pulse),
+                              self.to_c((g.R - 6) * math.cos(ar), (g.R - 6) * math.sin(ar)))
+                a += 2.0
 
-    # ---------------------------------------------------------------- paddles
+    # ---------------------------------------------------------------- paddles (supersampled)
     def _paddles(self, engine, alpha) -> None:
         cfg = self.cfg
         c = self.c
+        k = int(cfg["display.supersample"])
+        stacking = cfg["paddles.size_stacking"]
         for p in engine.paddles:
             i = p.idx
             th = p.prev_theta + (p.theta - p.prev_theta) * alpha
             sh = engine.paddle_shape(i, th)
-            outline = [self.to_c(x, y) for x, y in sh.outline(30)]
-            team = c["team"][i]
-            teamb = c["teamb"][i]
+            outline = [self.to_c(x, y) for x, y in sh.outline(40)]
+            team, teamb = c["team"][i], c["teamb"][i]
             present = p.present or engine.state == "ATTRACT"
             dimk = 1.0 if present else 0.35
-            pygame.draw.polygon(self.canvas, scale(mix(team, (0, 0, 0), 0.35), dimk), outline)
-            # glow
-            surf = self.add.surf
-            self.add.mark(pygame.draw.lines(surf, scale(teamb, 0.22 * dimk), False, outline, 16))
-            self.add.mark(pygame.draw.lines(surf, scale(teamb, 0.45 * dimk), False, outline, 7))
-            pygame.draw.lines(self.canvas, scale(teamb, dimk), True, outline, 4)
-            pygame.draw.aalines(self.canvas, scale(mix(teamb, (255, 255, 255), 0.4), dimk), True, outline)
-            # size effect cues
-            mult = engine.effects.paddle_mult(i, cfg["paddles.size_stacking"])
+            mult = engine.effects.paddle_mult(i, stacking)
+            # soft neon glow along the dome
+            for j in range(0, len(outline), 3):
+                self.add.blit(self.glow.sprite(teamb, 16, 0.42 * dimk), outline[j])
+            # body on a supersampled sprite
+            xs = [q[0] for q in outline]
+            ys = [q[1] for q in outline]
+            pad = 8
+            x0, y0 = int(min(xs)) - pad, int(min(ys)) - pad
+            w, h = int(max(xs)) - x0 + pad, int(max(ys)) - y0 + pad
+            spr = pygame.Surface((w * k, h * k), pygame.SRCALPHA)
+            spr.fill((*team, 0))
+            pts = [((qx - x0) * k, (qy - y0) * k) for qx, qy in outline]
+            fill = scale(mix(team, (0, 0, 0), 0.38), dimk)
+            pygame.draw.polygon(spr, (*fill, 255), pts)
+            # inner highlight band just inside the dome edge
+            inner = [((qx - x0) * k, (qy - y0) * k) for qx, qy in
+                     (self.to_c(ax, ay) for ax, ay in sh.outline(40, inset=6.0))][3:-3]
+            if len(inner) > 1:
+                pygame.draw.lines(spr, (*scale(mix(team, (255, 255, 255), 0.12), dimk), 255), False, inner, max(1, int(5 * k)))
+            edge = scale(teamb, dimk)
             if mult > 1.02:
-                k = 0.6 + 0.4 * math.sin(self.time * 7)
-                self.add.mark(pygame.draw.lines(surf, scale(c["good"], 0.8 * k), False, outline, 4))
-            elif mult < 0.98:
-                if int(self.time * 12) % 3 != 0:
-                    self.add.mark(pygame.draw.lines(surf, scale(c["bad"], 0.85), False, outline, 3))
-            # active effects affecting this player: icons with countdown rings, behind the paddle
+                pulse = 0.6 + 0.4 * math.sin(self.time * 7)
+                edge = mix(edge, c["good"], 0.55 * pulse + 0.2)
+            elif mult < 0.98 and int(self.time * 12) % 3 != 0:
+                edge = mix(edge, c["bad"], 0.6)
+            pygame.draw.lines(spr, (*edge, 255), True, pts, max(2, int(3.5 * k)))
+            pygame.draw.lines(spr, (*scale(mix(teamb, (255, 255, 255), 0.55), dimk), 255), False, pts, max(1, int(1.2 * k)))
+            if k > 1:
+                spr = pygame.transform.smoothscale(spr, (w, h))
+            self.canvas.blit(spr, (x0, y0))
+            # active effects for this player: icon + countdown ring behind the paddle
             effs = engine.effects.player_effects(i)
             if effs:
                 n = len(effs)
                 rb = sh.rb + min(22.0, max(14.0, (engine.geom.R - sh.rb) * 0.55))
-                for k, eff in enumerate(effs):
+                for kk, eff in enumerate(effs):
                     t = engine.types.get(eff.type_id)
                     cls = cfg.get(f"powerups.types.{eff.type_id}.class", "neutral")
                     ccol = c["class"].get(cls, c["neutral"])
                     if eff.collector is not None and eff.collector != i and cls == "good":
                         ccol = c["bad"]  # good for the collector = bad for this player
-                    a = math.radians(th + (k - (n - 1) / 2) * 7.5)
-                    x, y = rb * math.cos(a), rb * math.sin(a)
-                    sx, sy = self.to_c(x, y)
+                    a = math.radians(th + (kk - (n - 1) / 2) * 7.5)
+                    sx, sy = self.to_c(rb * math.cos(a), rb * math.sin(a))
                     ic = self.icons.icon(t.icon if t else "", eff.type_id, 18)
                     self.canvas.blit(ic, (int(sx - 9), int(sy - 9)))
                     rect = pygame.Rect(0, 0, 28, 28)
                     rect.center = (int(sx), int(sy))
-                    self.add.mark(pygame.draw.arc(surf, ccol, rect, math.pi / 2, math.pi / 2 + math.tau * eff.frac, 3))
+                    self.add.mark(pygame.draw.arc(self.add.surf, ccol, rect, math.pi / 2, math.pi / 2 + math.tau * eff.frac, 3))
 
     # ---------------------------------------------------------------- balls
+    def _ball_sprite(self, ring, core, tint, r, a) -> pygame.Surface:
+        key = ("ball", ring, core, tint, int(r), int(a * 20))
+        s = self.icons.cache.get(key)
+        if s is None:
+            k = 3
+            R = int((2 * r + 8) * k)
+            big = pygame.Surface((R, R), pygame.SRCALPHA)
+            big.fill((*ring, 0))
+            C = R // 2
+            pygame.draw.circle(big, (*ring, int(255 * max(a, 0.6))), (C, C), int((r + 3) * k), int(3 * k))
+            pygame.draw.circle(big, (*core, int(255 * a)), (C, C), int(r * k))
+            pygame.draw.circle(big, (*mix(core, tint, 0.35), int(200 * a)), (C + int(r * 0.25 * k), C + int(r * 0.25 * k)),
+                               max(1, int(r * 0.45 * k)))
+            s = pygame.transform.smoothscale(big, (R // k, R // k))
+            self.icons.cache[key] = s
+        return s
+
     def _balls(self, engine, alpha) -> None:
         cfg = self.cfg
         c = self.c
@@ -804,19 +1066,14 @@ class Renderer:
                 self.particles.burst(x, y, (255, 150, 60), 2, (60, 200), (0.15, 0.35), (1.5, 3.0), cap=cap,
                                      direction=ang, spread=0.5)
             if engine.time < b.smart_until and self.rng.random() < 0.6:
-                self.particles.burst(x, y, c["smart"], 1, (20, 90), (0.2, 0.5), cap=cap)
+                self.particles.burst(x, y, c["smart"], 1, (20, 90), (0.2, 0.5), cap=cap, twinkle=True)
             if engine.effects.ball_has(b.id, "wobble") is not None and self.rng.random() < 0.5:
                 self.particles.burst(x, y, c["neutral"], 1, (20, 80), (0.2, 0.5), cap=cap)
-            body = pygame.Surface((int(4 * r + 8), int(4 * r + 8)), pygame.SRCALPHA)
-            C2 = body.get_width() // 2
             ring = c["smart"] if engine.time < b.smart_until else col
-            pygame.draw.circle(body, (*ring, int(255 * max(a, 0.6 if not b.scored else a))), (C2, C2), int(r + 3), 3)
-            pygame.draw.circle(body, (*c["ball_core"], int(255 * a)), (C2, C2), int(r))
-            pygame.draw.circle(body, (*mix(c["ball_core"], col, 0.35), int(200 * a)), (C2 + int(r * 0.25), C2 + int(r * 0.25)),
-                               max(1, int(r * 0.45)))
+            body = self._ball_sprite(ring, c["ball_core"], col, r, a)
+            self.canvas.blit(body, (int(sx - body.get_width() / 2), int(sy - body.get_height() / 2)))
             if b.owner is not None and engine.effects.for_player(b.owner, "bull") is not None:
-                pygame.draw.circle(body, (*c["smart"], int(200 * a)), (C2, C2), int(r + 7), 2)
-            self.canvas.blit(body, (int(sx - C2), int(sy - C2)))
+                self.add.mark(pygame.draw.aacircle(self.add.surf, scale(c["smart"], 0.8), (int(sx), int(sy)), int(r + 7), 2))
 
     def _rings(self) -> None:
         keep = []
@@ -828,8 +1085,9 @@ class Renderer:
             r = rg["r0"] + (rg["r1"] - rg["r0"]) * (1 - (1 - t) ** 2)
             col = scale(rg["color"], (1 - t) * 0.9)
             sx, sy = self.to_c(rg["x"], rg["y"])
-            self.add.mark(pygame.draw.circle(self.add.surf, col, (int(sx), int(sy)), max(1, int(r)),
-                                             max(1, int(rg["w"] * (1 - t * 0.5)))))
+            w = max(1, int(rg["w"] * (1 - t * 0.5)))
+            if r > w:
+                self.add.mark(pygame.draw.aacircle(self.add.surf, col, (int(sx), int(sy)), int(r), w))
         self.rings = keep
 
     def _flights(self, engine) -> None:
@@ -842,8 +1100,7 @@ class Renderer:
             aff = fl["affects"]
             tx, ty = fl["x"], fl["y"]
             if aff and aff[0] == "player":
-                sh = engine.paddle_shape(aff[1])
-                tx, ty = sh.apex()
+                tx, ty = engine.paddle_shape(aff[1]).apex()
             elif aff and aff[0] == "ball":
                 for b in engine.balls:
                     if b.id == aff[1]:
@@ -852,8 +1109,7 @@ class Renderer:
             x = fl["x"] + (tx - fl["x"]) * e
             y = fl["y"] + (ty - fl["y"]) * e
             size = int(34 * (1 - 0.4 * t))
-            ic = self.icons.icon(fl["icon"], fl["type_id"], size)
-            ic = ic.copy()
+            ic = self.icons.icon(fl["icon"], fl["type_id"], size).copy()
             ic.set_alpha(int(255 * (1 - t * 0.6)))
             sx, sy = self.to_c(x, y)
             self.canvas.blit(ic, (int(sx - size / 2), int(sy - size / 2)))
@@ -867,9 +1123,9 @@ class Renderer:
         self.canvas.blit(self.dim, (0, 0))
         for side in (-1, 1):
             a = math.radians(90 + g.rot + side * 180 * prog)
-            x, y = g.R * math.cos(a), g.R * math.sin(a)
             spr = self.glow.sprite((255, 255, 255), 60, 1.0)
-            self.canvas.blit(spr, [int(v - 60) for v in self.to_c(x, y)], special_flags=pygame.BLEND_ADD)
+            x, y = self.to_c(g.R * math.cos(a), g.R * math.sin(a))
+            self.canvas.blit(spr, (int(x - 60), int(y - 60)), special_flags=pygame.BLEND_ADD)
 
     def _attract(self, engine) -> None:
         cfg = self.cfg
@@ -879,9 +1135,9 @@ class Renderer:
         R = g.R
         pulse = 0.65 + 0.35 * math.sin(self.time * 2.4)
         self._text_at(cfg["text.title"], int(cfg["text.banner_size"] * 1.8), (255, 255, 255), 0, R * 0.16,
-                      key="persian_title", outline=3)
+                      key="persian_title", outline=3, glow=0.35)
         self._text_at(cfg["text.subtitle"], int(cfg["text.banner_size"] * 0.6), self.c["p1b"], 0, R * 0.0,
-                      key="latin")
+                      key="latin", glow=0.5)
         self._text_at(cfg["text.attract_prompt"], cfg["text.toast_size"], (255, 255, 255), 0, -R * 0.3, alpha=pulse)
 
     def _countdown(self, engine) -> None:
@@ -901,7 +1157,7 @@ class Renderer:
             col = mix(self.c["p1b"], (255, 255, 255), 0.45)
         elif label == "2":
             col = mix(self.c["p2b"], (255, 255, 255), 0.45)
-        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3)
+        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3, glow=0.8)
 
     def _telegraph(self, engine) -> None:
         live = engine.live_balls()
@@ -920,8 +1176,8 @@ class Renderer:
             p1 = (sx - s * math.cos(a - 0.7), sy - s * math.sin(a - 0.7))
             p2 = (sx - s * math.cos(a + 0.7), sy - s * math.sin(a + 0.7))
             colk = scale(col, 1 - ph)
-            pygame.draw.line(self.canvas, colk, p1, (sx, sy), 4)
-            pygame.draw.line(self.canvas, colk, p2, (sx, sy), 4)
+            pygame.draw.aaline(self.canvas, colk, p1, (sx, sy), 4)
+            pygame.draw.aaline(self.canvas, colk, p2, (sx, sy), 4)
 
     def _result(self, engine) -> None:
         cfg = self.cfg
@@ -934,7 +1190,7 @@ class Renderer:
         if engine.state == "FINAL":
             k = 1 + 0.5 * (1 - ease_out_elastic(min(1.0, st_t / 0.6)))
             self._text_at(cfg["text.final"], int(cfg["text.banner_size"] * 1.5), (255, 255, 255), 0, 0,
-                          key="persian_title", scale_k=k, outline=3)
+                          key="persian_title", scale_k=k, outline=3, glow=0.5)
             return
         w = engine.winner
         if w is not None:
@@ -948,20 +1204,24 @@ class Renderer:
             ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
             bx, by = gx * R * 0.5, gy * R * 0.5
             self._text_at(cfg["text.winner"], int(cfg["text.banner_size"] * 1.1), c["teamb"][w], bx + ux * R * 0.27,
-                          by + uy * R * 0.27, key="persian_title", outline=3)
+                          by + uy * R * 0.27, key="persian_title", outline=3, glow=0.6)
             k = 1 + 0.08 * math.sin(self.time * 4)
             ic = self.icons.icon("trophy", "_trophy", int(84 * k), c["smart"])
             sx, sy = self.to_c(bx + ux * R * 0.48, by + uy * R * 0.48)
             ic = self._rot(ic)
+            self.add.begin()
+            self.add.blit(self.glow.sprite(c["smart"], 70, 0.5), (sx, sy))
+            self.add.composite(self.canvas)
             self.canvas.blit(ic, (int(sx - ic.get_width() / 2), int(sy - ic.get_height() / 2)))
         else:
             self._text_at(cfg["text.draw"], int(cfg["text.banner_size"] * 1.3), (255, 255, 255), 0, R * 0.18,
-                          key="persian_title", outline=3)
+                          key="persian_title", outline=3, glow=0.4)
         for i in (0, 1):
             gx, gy = g.goal_dir[i]
             dx, dy = math.cos(math.radians(270 + g.rot)), math.sin(math.radians(270 + g.rot))
             self._text_at(str(engine.scores[i]), int(cfg["hud.score_size"] * 1.5), c["teamb"][i],
-                          gx * R * 0.5 + dx * R * 0.04, gy * R * 0.5 + dy * R * 0.04, key="digits", outline=3)
+                          gx * R * 0.5 + dx * R * 0.04, gy * R * 0.5 + dy * R * 0.04, key="digits", outline=3,
+                          glow=cfg["hud.glow"])
         self._text_at(cfg["text.slogan"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255), 0, -R * 0.55,
                       alpha=min(1.0, st_t / 0.8))
 
@@ -986,12 +1246,13 @@ class Renderer:
             else:
                 gx, gy = g.goal_dir[side]
                 rr = g.R * cfg["text.toast_radius"]
-                px, py = -gy, gx  # perpendicular
+                px, py = -gy, gx
                 off = (n - 0.5) * t["size"] * 1.35
                 x, y = gx * rr + px * off, gy * rr + py * off
                 if cfg["hud.orientation"] == "toward_players":
                     extra = -90.0 if side == 0 else 90.0
-            self._text_at(t["text"], t["size"], t["color"], x, y, alpha=a, scale_k=k, extra_rot=extra, outline=3)
+            self._text_at(t["text"], t["size"], t["color"], x, y, alpha=a, scale_k=k, extra_rot=extra, outline=3,
+                          glow=0.35)
         self.toasts = keep
 
     def _absent(self, engine) -> None:
@@ -1000,11 +1261,9 @@ class Renderer:
         cfg = self.cfg
         for p in engine.paddles:
             if not p.present:
-                sh = engine.paddle_shape(p.idx)
-                ax, ay = sh.apex()
-                k = 0.7
+                ax, ay = engine.paddle_shape(p.idx).apex()
                 extra = 0.0
                 if cfg["hud.orientation"] == "toward_players":
                     extra = -90.0 if p.idx == 0 else 90.0
                 self._text_at(cfg["text.step_in"], int(cfg["text.toast_size"] * 0.7), self.c["teamb"][p.idx],
-                              ax * k, ay * k, alpha=0.6 + 0.4 * math.sin(self.time * 4), extra_rot=extra)
+                              ax * 0.7, ay * 0.7, alpha=0.6 + 0.4 * math.sin(self.time * 4), extra_rot=extra)

@@ -35,13 +35,16 @@ class PaddleShape:
         self.cos_alpha = (rho - d) / rho
         self.af = math.atan2(self.fy, self.fx)
 
-    def outline(self, n: int = 28) -> list[tuple[float, float]]:
-        """Dome outline from the left chord end around to the right chord end (arena coords)."""
+    def outline(self, n: int = 28, inset: float = 0.0) -> list[tuple[float, float]]:
+        """Dome outline from the left chord end around to the right chord end (arena coords).
+
+        inset > 0 returns the same arc pulled `inset` px toward the inside (for highlights)."""
         pts = []
         a0 = self.af + self.alpha  # left end (counter-clockwise side of facing = player's left)
+        rr = max(1.0, self.rho - inset)
         for k in range(n + 1):
             a = a0 - 2 * self.alpha * k / n
-            pts.append((self.qx + self.rho * math.cos(a), self.qy + self.rho * math.sin(a)))
+            pts.append((self.qx + rr * math.cos(a), self.qy + rr * math.sin(a)))
         return pts
 
     def apex(self) -> tuple[float, float]:

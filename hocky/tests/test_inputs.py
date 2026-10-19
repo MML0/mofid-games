@@ -88,3 +88,24 @@ def test_engine_has_no_keyboard_code():
 
     src = open(eng.__file__, encoding="utf-8").read()
     assert "import pygame" not in src and "K_" not in src
+
+
+def test_ai_motion_is_smooth(cfg, engine):
+    """The demo robots must not jitter: no sudden reversals or jumps in velocity."""
+    import random
+    from conftest import add_ball, playing
+
+    from market_hockey.inputs.ai import AIAdapter
+
+    playing(engine)
+    add_ball(engine, 0, 0, -500, 60, owner=1)
+    ai = AIAdapter(cfg, random.Random(4))
+    us = []
+    for k in range(240):
+        us.append(ai.sample(0, k / 60, 1 / 60, engine).u)
+        engine.step(1 / 60, {}, [True, True])
+    vel = [(b - a) * 60 for a, b in zip(us, us[1:])]
+    acc = [abs(b - a) * 60 for a, b in zip(vel, vel[1:])]
+    assert max(acc) < 40  # range/s^2: bounded acceleration, no twitching
+    reversals = sum(1 for a, b in zip(vel, vel[1:]) if a * b < 0 and abs(a) > 0.05 and abs(b) > 0.05)
+    assert reversals <= 3

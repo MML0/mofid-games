@@ -15,6 +15,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `display.vsync` | True | bool | restart | VSync — Sync to the display refresh (applies on restart). |
 | `display.fps_cap` | 120 | 30 … 240 fps | live | Render FPS cap |
 | `display.hide_cursor` | True | bool | live | Hide mouse cursor |
+| `display.scale_quality` | linear | linear, nearest | restart | Window scaling filter — linear = smooth edges when the window/projector size differs from the canvas. |
+| `display.supersample` | 2 | 1 … 3 × | live | Anti-aliasing (supersampling) — Static art and paddles are drawn at this multiple and smoothed down. |
 | `display.exhibition_mode` | False | bool | live | Exhibition mode — Disables debug hotkeys (Ctrl+Shift+D still toggles debug). |
 | `display.output_scale` | 1.0 | 0.5 … 2.0 × | live | Output scale — Uniform zoom applied to the final image. |
 | `display.output_offset_x` | 0 | -1000 … 1000 px | live | Output offset X |
@@ -45,7 +47,12 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `walls.thickness` | 16 | 4 … 60 px | live | Wall thickness — Drawn inward from the rim; the ball bounces on the inner face. |
 | `walls.restitution` | 1.0 | 0.5 … 1.2 | live | Wall bounciness |
 | `walls.band_alpha` | 0.85 | 0.1 … 1 | live | Wall opacity |
-| `walls.hatch` | True | bool | live | Wall hatch pattern |
+| `walls.hatch` | True | bool | live | Wall pattern |
+| `walls.style` | energy | energy, classic | live | Wall style — energy = glowing force-field barrier. |
+| `walls.glow` | 0.85 | 0 … 1.5 | live | Wall glow |
+| `walls.flow_speed` | 35.0 | 0 … 200 °/s | live | Energy flow speed |
+| `walls.pulses` | 3 | 0 … 10 | live | Energy pulses per wall |
+| `walls.hit_flash` | True | bool | live | Flash when hit |
 | `goals.line_width` | 6 | 1 … 24 px | live | Goal line width |
 | `goals.glow` | 0.6 | 0 … 1 | live | Goal line glow |
 | `center_zone.layout` | pentagon | pentagon, cross, ring, random | live | Slot layout — Where power-up orbs can appear. |
@@ -72,6 +79,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `hud.orientation` | upright | upright, toward_players | live | Message orientation — toward_players rotates each player's messages to face them. |
 | `hud.safe_margin` | 20 | 0 … 120 px | live | Safe margin from rim |
 | `hud.alpha` | 0.92 | 0.1 … 1 | live | HUD opacity |
+| `hud.glow` | 0.55 | 0 … 1.5 | live | HUD glow |
+| `text.shadow_alpha` | 0.55 | 0 … 1 | live | Text soft shadow |
 | `text.shaping_backend` | auto | auto, harfbuzz, reshaper | live | Persian shaping — auto = HarfBuzz (SDL_ttf) when available, otherwise arabic-reshaper. |
 | `fonts.persian` | IRANSansX-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Persian text font |
 | `fonts.persian_title` | IRANSansX-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Title font |
@@ -216,10 +225,14 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
-| `trails.duration_s` | 0.35 | 0.05 … 2.0 s | live | Trail length (time) |
+| `trails.style` | comet | comet, ribbon | live | Trail style — comet = soft glowing star trail. |
+| `trails.duration_s` | 0.45 | 0.05 … 2.0 s | live | Trail length (time) |
+| `trails.head_size` | 1.15 | 0.3 … 3.0 × radius | live | Trail head size |
+| `trails.falloff` | 1.7 | 0.4 … 5.0 | live | Trail fade curve — Higher = fades faster behind the ball. |
+| `trails.sparkles` | 45.0 | 0 … 300 /s | live | Star sparkles |
 | `trails.width_scale` | 0.9 | 0.1 … 2 × ball | live | Trail width |
 | `trails.alpha` | 0.9 | 0 … 1 | live | Trail opacity |
-| `trails.glow` | 0.6 | 0 … 1.5 | live | Trail glow |
+| `trails.glow` | 0.8 | 0 … 2.0 | live | Trail glow |
 | `trails.color_mode` | current_owner | current_owner, history | live | Color mode — current_owner recolors the whole trail on a hit; history keeps old segments' colors. |
 | `trails.sparks_on_hit` | 14 | 0 … 80 | live | Sparks per hit |
 | `trails.speedup_length_mult` | 1.6 | 1 … 4 × | live | Trail length when sped up |
@@ -229,11 +242,12 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
 | `powerups.enabled` | True | bool | live | Power-ups enabled |
-| `powerups.spawn_interval_min_s` | 4.0 | 0.5 … 30 s | live | Spawn interval min |
-| `powerups.spawn_interval_max_s` | 7.0 | 0.5 … 60 s | live | Spawn interval max |
-| `powerups.max_active_orbs` | 2 | 0 … 8 | live | Max orbs at once |
+| `powerups.spawn_interval_min_s` | 2.5 | 0.5 … 30 s | live | Spawn interval min |
+| `powerups.spawn_interval_max_s` | 5.0 | 0.5 … 60 s | live | Spawn interval max |
+| `powerups.max_active_orbs` | 3 | 0 … 8 | live | Max orbs at once |
 | `powerups.max_bad_orbs` | 1 | 0 … 8 | live | Max red orbs at once |
 | `powerups.orb_radius` | 30 | 10 … 90 px | live | Orb radius |
+| `powerups.hitbox_scale` | 1.35 | 0.5 … 3.0 × orb | live | Orb hitbox size — Collection radius relative to the drawn orb. |
 | `powerups.orb_lifetime_s` | 9.0 | 1 … 60 s | live | Orb lifetime |
 | `powerups.spawn_anim_s` | 0.35 | 0.05 … 2 s | live | Spawn animation |
 | `powerups.min_distance_from_ball` | 120 | 0 … 500 px | live | Min spawn distance from ball |
@@ -244,10 +258,11 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.icon_scale` | 0.62 | 0.3 … 1 × orb | live | Icon size |
 | `powerups.bob_px` | 4.0 | 0 … 20 px | live | Idle bob |
 | `powerups.magnet.enabled` | True | bool | live | Magnet enabled |
-| `powerups.magnet.strength` | 900.0 | 0 … 8000 px/s² | live | Pull strength |
-| `powerups.magnet.radius` | 200 | 0 … 700 px | live | Pull radius |
+| `powerups.magnet.strength` | 2200.0 | 0 … 10000 px/s² | live | Pull strength |
+| `powerups.magnet.radius` | 260 | 0 … 700 px | live | Pull radius |
+| `powerups.magnet.lead_s` | 0.1 | 0 … 0.5 s | live | Lead — Pull toward where the ball is about to be. |
 | `powerups.magnet.falloff` | 1.5 | 0.3 … 4 | live | Falloff — Higher = pull only when the ball is very close. |
-| `powerups.magnet.max_offset` | 80 | 0 … 400 px | live | Max drift from slot |
+| `powerups.magnet.max_offset` | 120 | 0 … 400 px | live | Max drift from slot |
 | `powerups.magnet.return_strength` | 6.0 | 0 … 60 /s² | live | Return spring |
 | `powerups.magnet.damping` | 4.0 | 0 … 40 /s | live | Damping |
 | `powerups.magnet.only_owned_balls` | True | bool | live | Only toward balls someone has touched |
@@ -314,15 +329,16 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.double_ball.split_angle_deg` | 18.0 | 2 … 60 ° | live | Split angle |
 | `powerups.types.double_ball.extra_lifetime_s` | 10.0 | 1 … 60 s | live | Extra ball lifetime |
 | `powerups.types.trajectory_reveal.enabled` | True | bool | live | Enabled |
-| `powerups.types.trajectory_reveal.class` | bad | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
+| `powerups.types.trajectory_reveal.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
 | `powerups.types.trajectory_reveal.weight` | 1.0 | 0 … 10 | live | Spawn weight |
 | `powerups.types.trajectory_reveal.duration_s` | 7.0 | 0.5 … 30 s | live | Duration |
 | `powerups.types.trajectory_reveal.unlock_phase` | 2 | 1 … 3 | live | Unlocks in phase — 1 = early, 2 = mid, 3 = peak. |
 | `powerups.types.trajectory_reveal.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.trajectory_reveal.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.trajectory_reveal.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
-| `powerups.types.trajectory_reveal.toast_collector` | مسیرت لو رفت! | str | live | Message (collector side) |
-| `powerups.types.trajectory_reveal.toast_opponent` | مسیر حرکت را تحلیل کن! | str | live | Message (opponent side) |
+| `powerups.types.trajectory_reveal.toast_collector` | مسیر حرکت را تحلیل کن! | str | live | Message (collector side) |
+| `powerups.types.trajectory_reveal.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.trajectory_reveal.beneficiary` | collector | collector, opponent | live | Who sees the path |
 | `powerups.types.slow_down.enabled` | False | bool | live | Enabled |
 | `powerups.types.slow_down.class` | bad | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
 | `powerups.types.slow_down.weight` | 1.0 | 0 … 10 | live | Spawn weight |
@@ -379,6 +395,11 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `prediction.max_time_s` | 2.5 | 0.3 … 6 s | live | Look-ahead time |
 | `prediction.max_bounces` | 4 | 0 … 10 | live | Max wall bounces |
 | `prediction.debug_always_on` | False | bool | live | Always show (debug) |
+| `prediction.assist_always` | True | bool | live | Faint aim assist — A ghostly hint of where the ball is heading, for the receiver. |
+| `prediction.assist_alpha` | 0.22 | 0.02 … 1 | live | Assist opacity |
+| `prediction.assist_time_s` | 1.1 | 0.2 … 4 s | live | Assist look-ahead |
+| `prediction.assist_ghost` | True | bool | live | Assist ghost ball |
+| `prediction.assist_arrow` | False | bool | live | Assist bounce arrow |
 | `prediction.dot_spacing` | 14 | 4 … 60 px | live | Dot spacing |
 | `prediction.dot_radius` | 3.0 | 1 … 10 px | live | Dot radius |
 | `prediction.march_speed` | 60.0 | 0 … 300 px/s | live | Dot march speed |
@@ -406,6 +427,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `countdown.go_s` | 0.6 | 0.2 … 2 s | live | 'Go' time |
 | `countdown.size` | 300 | 60 … 600 px | live | Number size |
 | `countdown.particles` | 40 | 0 … 200 | live | Particles per beat |
+| `fx.dither` | True | bool | live | Dither gradients — Removes visible banding steps in the background and glows. |
+| `fx.dither_strength` | 1.0 | 0 … 3 | live | Dither strength |
 | `fx.flash_max_alpha` | 0.35 | 0 … 0.6 | live | Flash intensity — Kept ≤ 0.6 for photosensitivity safety. |
 | `fx.reduce_flashing` | False | bool | live | Reduce flashing |
 | `fx.max_particles` | 600 | 0 … 3000 | live | Max particles |
@@ -434,7 +457,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `colors.arena_outer` | #062A3A | color | live | Arena edge |
 | `colors.lines` | #1F7A99 | color | live | Arena lines |
 | `colors.goal` | #F3716D | color | live | Goal lines (brand red) |
-| `colors.wall` | #CFE8EE | color | live | Bumper walls |
+| `colors.wall` | #A8F0FF | color | live | Bumper walls (energy) |
 | `colors.wall_hatch` | #004C6A | color | live | Wall hatch (brand dark blue) |
 | `colors.text` | #FFFFFF | color | live | Text |
 | `colors.timer_final` | #F3716D | color | live | Timer (final seconds) |
@@ -472,7 +495,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `input.ai.difficulty` | 0.6 | 0 … 1 | live | AI difficulty |
 | `input.ai.reaction_s` | 0.15 | 0.02 … 1 s | live | AI reaction time |
 | `input.ai.max_speed` | 1.5 | 0.1 … 5 range/s | live | AI max speed |
-| `input.ai.noise` | 0.06 | 0 … 0.5 range | live | AI aim noise |
+| `input.ai.noise` | 0.04 | 0 … 0.5 range | live | AI aim noise |
+| `input.ai.smoothing` | 7.0 | 1 … 30 | live | AI movement smoothness — Lower = softer, more human motion. |
 | `input.mouse.player` | p1 | p1, p2 | live | Mouse controls |
 | `input.network.port` | 9100 | 1024 … 65535 | restart | UDP port |
 | `input.network.bind` | 127.0.0.1 | 127.0.0.1, 0.0.0.0 | restart | Listen on — 0.0.0.0 accepts trackers on other machines. |

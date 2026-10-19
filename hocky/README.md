@@ -56,7 +56,7 @@ If `pygame-ce` has no wheel for your Python, create the venv with Python 3.12.
 
 ### Power-ups
 
-Green means good for whoever collects it, and red means it helps the opponent. Each icon pictures its effect. Orbs float in the 5 center slots and are **pulled gently toward a ball**. The magnet is set in `Power-ups → Magnet`: strength, radius, falloff, max drift and return spring.
+Green means good for whoever collects it, and red means it helps the opponent. Each icon pictures its effect. Orbs float in the center slots and are **pulled toward a ball** (aiming where it is about to be). Their hitbox is a bit larger than the drawn orb (`powerups.hitbox_scale`). The magnet is set in `Power-ups → Magnet`: strength, radius, falloff, max drift and return spring.
 
 | | Power-up | Default | Effect |
 |---|---|---|---|
@@ -65,13 +65,20 @@ Green means good for whoever collects it, and red means it helps the opponent. E
 | 🟢 | Speed up («نوسان بازار») | on | the ball speeds up (×1.4, 6 s) with a flame trail |
 | 🟢 | Random path | on | the ball's direction jumps (or wobbles), always toward the opponent |
 | 🟢 | Double ball («حجم معاملات») | on | splits into 2 balls, each with its own owner and trail |
-| 🔴 | Trajectory reveal | on | your **opponent** sees a tiny dotted path, a ghost ball where it meets their paddle, and the bounce-out arrow |
+| 🟢 | Trajectory reveal («تحلیل بازار») | on | **you** see where the returning ball will land on your paddle (dotted path, ghost ball, bounce arrow); `beneficiary` can flip it to the opponent |
 | 🔴 | Slow down («بازار آرام») | off | the ball slows down |
 | 🟢 | Dim ball («اصلاح بازار») | off | the ball dims (never invisible) |
 | 🟢 | Shield («حد نوسان») | off | a barrier over your goal blocks one ball |
 | 🟢 | Bull market | off | your next goal counts double |
 
 The PDF's match **phases** (no power-ups in the warm-up, more in the peak) and the **Smart Move** («واکنش به‌موقع!»: a fast flick right at contact) are both implemented and configurable.
+
+### Look and feel
+
+- A **faint aim assist** is always on: a ghostly dotted hint of where the ball is heading, shown for the receiver. It can be turned off in `Trajectory → Faint aim assist`. The trajectory power-up makes this guide bright and adds the bounce arrow.
+- The **comet trail** is built from soft additive glow with star sparkles (`Trails`). Choose `ribbon` for the older look.
+- The **walls** are energy barriers with flowing pulses, glowing emitter nodes and a flash when hit (`Arena & Walls`). Choose `classic` for the hatched band.
+- **Quality**: the background is a dithered gradient, so it has no banding. The arcs and paddles are drawn supersampled (`display.supersample`), the window is scaled with linear filtering, and text gets a soft shadow and glow.
 
 ## Live editing and saving
 
