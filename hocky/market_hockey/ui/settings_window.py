@@ -16,9 +16,10 @@ from ..powerups import registry
 from ..render.colors import delta_e, hex_rgb
 from . import theme
 from .preview import draw_preview
-from .widgets import SettingRow
+from .widgets import ScrollFrame, SettingRow
 
 SEARCH_TAB = "🔍 Search results"
+GLOBAL = "__global__"
 
 
 def color_warnings(cfg) -> list[str]:
@@ -44,6 +45,16 @@ class ControlPanel:
         self.pending: dict = {}
         self.undo: list = []
         self.current_tab = TABS[0]
+        self.current_sub = None
+        # sidebar entries: (label, tab, sub) — Power-ups get one page per type so no page is huge
+        self.nav_items: list[tuple[str, str, str | None]] = []
+        for t in TABS:
+            if t == "Power-ups":
+                self.nav_items.append(("Power-ups", t, GLOBAL))
+                for ptype in registry.all_types().values():
+                    self.nav_items.append((f"   ◦ {ptype.name}", t, f"{ptype.order:02d} · "))
+            else:
+                self.nav_items.append((t, t, None))
         self.was_connected = False
         self.game_proc = None
         self._preview_job = None
@@ -114,10 +125,10 @@ class ControlPanel:
         ttk.Label(side, text="Search (⌘/Ctrl+F)", style="MutedBg.TLabel").pack(anchor="w")
         self.nav = tk.Listbox(side, bg=theme.CARD, fg=theme.FG, selectbackground=theme.ACCENT,
                               selectforeground="#00110F", activestyle="none", highlightthickness=0, bd=0,
-                              font=("TkDefaultFont", 13), width=22, height=22, exportselection=False)
+                              font=("TkDefaultFont", 13), width=28, height=26, exportselection=False)
         self.nav.pack(fill="y", expand=True, pady=6)
-        for t in TABS:
-            self.nav.insert("end", "  " + t)
+        for label, _t, _sub in self.nav_items:
+            self.nav.insert("end", "  " + label)
         self.nav.bind("<<ListboxSelect>>", self._on_nav)
 
         # content
@@ -127,18 +138,12 @@ class ControlPanel:
         mid.columnconfigure(0, weight=1)
         self.header = ttk.Label(mid, text="", style="Header.TLabel")
         self.header.grid(row=0, column=0, sticky="w", pady=(4, 6))
-        self.canvas = tk.Canvas(mid, bg=theme.BG, highlightthickness=0, bd=0)
-        self.canvas.grid(row=1, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(mid, orient="vertical", command=self.canvas.yview)
-        sb.grid(row=1, column=1, sticky="ns")
-        self.canvas.configure(yscrollcommand=sb.set)
-        self.inner = ttk.Frame(self.canvas)
-        self._inner_id = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
-        self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self._inner_id, width=e.width))
-        self.canvas.bind_all("<MouseWheel>", self._wheel)
-        self.canvas.bind_all("<Button-4>", lambda e: self.canvas.yview_scroll(-3, "units"))
-        self.canvas.bind_all("<Button-5>", lambda e: self.canvas.yview_scroll(3, "units"))
+        self.scroller = ScrollFrame(mid)
+        self.scroller.grid(row=1, column=0, sticky="nsew")
+        self.inner = self.scroller.inner
+        r.bind_all("<MouseWheel>", self._wheel)
+        r.bind_all("<Button-4>", lambda e: self.scroller.scroll_units(-1))
+        r.bind_all("<Button-5>", lambda e: self.scroller.scroll_units(1))
 
         # right panel
         right = ttk.Frame(body, padding=(6, 4))
@@ -189,34 +194,50 @@ class ControlPanel:
         d = e.delta
         if abs(d) >= 120:
             d = d / 120
-        self.canvas.yview_scroll(int(-d * (1 if sys.platform == "darwin" else 3)), "units")
+        if e.widget is not None and str(e.widget).startswith(str(self.scroller)):
+            self.scroller.scroll_units(-d * (0.5 if sys.platform == "darwin" else 1.5))
 
     # ================================================================== tabs
     def _on_nav(self, _e=None) -> None:
         sel = self.nav.curselection()
         if not sel:
             return
-        name = self.nav.get(sel[0]).strip()
-        if name == SEARCH_TAB.strip():
-            self._on_search()
-            return
-        self.show_tab(name)
+        i = sel[0]
+        if self._has_search_entry():
+            if i == 0:
+                self._on_search()
+                return
+            i -= 1
+        _label, tab, sub = self.nav_items[i]
+        self.show_tab(tab, sub)
+
+    def _has_search_entry(self) -> bool:
+        return self.nav.size() > len(self.nav_items)
 
     def _clear(self) -> None:
         for w in self.inner.winfo_children():
             w.destroy()
         self.rows.clear()
-        self.canvas.yview_moveto(0)
+        self.scroller.to_top()
 
-    def show_tab(self, tab: str) -> None:
-        self.current_tab = tab
+    def show_tab(self, tab: str, sub: str | None = None) -> None:
+        if tab == "Power-ups" and sub is None:
+            sub = GLOBAL
+        self.current_tab, self.current_sub = tab, sub
         self._clear()
-        self.header.configure(text=tab)
-        if tab in TABS:
-            i = TABS.index(tab) + (1 if self.nav.get(0).strip() == SEARCH_TAB.strip() else 0)
-            self.nav.selection_clear(0, "end")
-            self.nav.selection_set(i)
+        title = tab
+        for idx, (label, t, sb_) in enumerate(self.nav_items):
+            if t == tab and sb_ == sub:
+                self.nav.selection_clear(0, "end")
+                self.nav.selection_set(idx + (1 if self._has_search_entry() else 0))
+                if sub not in (None, GLOBAL):
+                    title = f"Power-ups › {label.strip(' ◦')}"
+        self.header.configure(text=title)
         params = [p for p in self.schema.values() if p.tab == tab]
+        if sub == GLOBAL:
+            params = [p for p in params if not p.group[:2].isdigit()]
+        elif sub:
+            params = [p for p in params if p.group.startswith(sub)]
         groups: dict[str, list] = {}
         for p in params:
             groups.setdefault(p.group, []).append(p)
@@ -230,9 +251,10 @@ class ControlPanel:
                                               "'Same settings for both players' to edit Player 2 separately.",
                              style="MutedBg.TLabel", wraplength=700)
             note.pack(anchor="w", pady=8)
-        if tab == "Power-ups":
-            ttk.Label(self.inner, text="Add a power-up: drop a file in market_hockey/powerups/types/ — it appears "
-                                       "here automatically.", style="MutedBg.TLabel").pack(anchor="w", pady=8)
+        if tab == "Power-ups" and sub == GLOBAL:
+            ttk.Label(self.inner, text="Each power-up has its own page in the sidebar (◦). Add a power-up by dropping "
+                                       "a file in market_hockey/powerups/types/ — it appears there automatically.",
+                      style="MutedBg.TLabel", wraplength=700).pack(anchor="w", pady=8)
 
     def _group(self, title: str, plist: list) -> None:
         lf = ttk.LabelFrame(self.inner, text=title, style="Card.TLabelframe", padding=(4, 6))
@@ -243,11 +265,11 @@ class ControlPanel:
 
     def _on_search(self) -> None:
         q = self.search.get().strip().lower()
-        has_tab = self.nav.get(0).strip() == SEARCH_TAB.strip()
+        has_tab = self._has_search_entry()
         if not q:
             if has_tab:
                 self.nav.delete(0)
-                self.show_tab(self.current_tab if self.current_tab in TABS else TABS[0])
+                self.show_tab(self.current_tab, self.current_sub)
             return
         if not has_tab:
             self.nav.insert(0, "  " + SEARCH_TAB)
@@ -256,9 +278,10 @@ class ControlPanel:
         self._clear()
         hits = [p for p in self.schema.values()
                 if q in p.label.lower() or q in p.path.lower() or q in p.group.lower() or q in p.help.lower()]
-        self.header.configure(text=f"{len(hits)} settings match “{q}”")
+        shown = min(len(hits), 60)
+        self.header.configure(text=f"{len(hits)} settings match “{q}”" + (f" (showing {shown})" if shown < len(hits) else ""))
         groups: dict[str, list] = {}
-        for p in hits[:150]:
+        for p in hits[:60]:
             groups.setdefault(f"{p.tab} › {p.group}", []).append(p)
         for gname, plist in groups.items():
             self._group(gname, plist)
@@ -275,7 +298,7 @@ class ControlPanel:
             self._mark_dirty()
             self.schedule_preview()
             if p.path == "paddles.link_players" and self.current_tab == "Paddles":
-                self.root.after(50, lambda: self.show_tab("Paddles"))
+                self.root.after(50, lambda: self.show_tab("Paddles", None))
             if p.path.startswith("colors."):
                 self._update_warnings()
         if warn:

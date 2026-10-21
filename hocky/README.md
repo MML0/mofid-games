@@ -82,6 +82,7 @@ The PDF's match **phases** (no power-ups in the warm-up, more in the peak) and t
 
 ## Live editing and saving
 
+- Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
 - `settings_app.py` edits **every** setting (424) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.

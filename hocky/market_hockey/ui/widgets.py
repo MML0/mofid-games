@@ -178,3 +178,54 @@ class SettingRow:
                 self.var.set(v)
         finally:
             self._mute = False
+
+
+class ScrollFrame(ttk.Frame):
+    """Vertical scrolling without a Canvas.
+
+    Tk 9 on macOS lays out widgets embedded in a Canvas window item in roughly quadratic time (140 rows took
+    ~16 s and froze the panel), so the content frame is simply `place`d inside a clipping viewport and moved.
+    """
+
+    def __init__(self, parent, **kw):
+        super().__init__(parent, **kw)
+        self.viewport = ttk.Frame(self)
+        self.viewport.pack(side="left", fill="both", expand=True)
+        self.sb = ttk.Scrollbar(self, orient="vertical", command=self._on_scrollbar)
+        self.sb.pack(side="right", fill="y")
+        self.inner = ttk.Frame(self.viewport)
+        self.inner.place(x=0, y=0, relwidth=1.0)
+        self.offset = 0.0
+        self.inner.bind("<Configure>", lambda e: self._sync())
+        self.viewport.bind("<Configure>", lambda e: self._sync())
+
+    def _limits(self):
+        h = max(1, self.inner.winfo_reqheight())
+        vh = max(1, self.viewport.winfo_height())
+        return h, vh
+
+    def _sync(self):
+        h, vh = self._limits()
+        self.offset = max(0.0, min(self.offset, max(0.0, h - vh)))
+        self.inner.place_configure(y=-int(self.offset))
+        if h <= vh:
+            self.sb.set(0.0, 1.0)
+        else:
+            self.sb.set(self.offset / h, (self.offset + vh) / h)
+
+    def _on_scrollbar(self, *args):
+        h, vh = self._limits()
+        if args and args[0] == "moveto":
+            self.offset = float(args[1]) * h
+        elif args and args[0] == "scroll":
+            n = int(args[1])
+            self.offset += n * (vh * 0.9 if args[2] == "pages" else 40)
+        self._sync()
+
+    def scroll_units(self, n: float):
+        self.offset += n * 40
+        self._sync()
+
+    def to_top(self):
+        self.offset = 0.0
+        self._sync()
