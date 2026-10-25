@@ -83,7 +83,11 @@ class NetworkAdapter(InputAdapter):
         for _ in range(200 if self.sock else 0):
             try:
                 data, _ = self.sock.recvfrom(65535)
-            except (BlockingIOError, InterruptedError, OSError):
+            except (BlockingIOError, InterruptedError):
+                break
+            except ConnectionResetError:  # Windows reports ICMP port-unreachable on UDP; just skip it
+                continue
+            except OSError:
                 break
             try:
                 msg = json.loads(data.decode("utf-8"))

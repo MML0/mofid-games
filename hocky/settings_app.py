@@ -4,7 +4,9 @@
     python settings_app.py
 """
 
+from market_hockey.paths import install_crash_log
 from market_hockey.ui.settings_window import main
 
 if __name__ == "__main__":
+    install_crash_log("control_panel")
     main()

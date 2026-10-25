@@ -11,7 +11,7 @@ from tkinter import messagebox, simpledialog, ttk
 
 from ..config import TABS, Config, get_schema
 from ..config.live_link import LiveLinkClient
-from ..paths import BACKUP_PATH, PRESETS_DIR, ROOT, SETTINGS_PATH
+from ..paths import BACKUP_PATH, PRESETS_DIR, ROOT, SETTINGS_PATH, launch_command
 from ..powerups import registry
 from ..render.colors import delta_e, hex_rgb
 from . import theme
@@ -38,6 +38,9 @@ class ControlPanel:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.schema = get_schema()
+        if not SETTINGS_PATH.exists():
+            from ..config.generate_defaults import main as generate
+            generate()
         self.cfg = Config.load(SETTINGS_PATH)
         self.saved = self.cfg.snapshot()
         self.link = LiveLinkClient(self.cfg["live_link.game_port"])
@@ -401,7 +404,7 @@ class ControlPanel:
         if self.game_proc is not None and self.game_proc.poll() is None:
             self.status("The game is already running from this panel")
             return
-        args = [sys.executable, str(ROOT / "main.py")]
+        args = launch_command("game")
         if self.windowed.get():
             args.append("--windowed")
         try:
@@ -480,6 +483,13 @@ class ControlPanel:
 
 
 def main() -> None:
+    if sys.platform == "win32":  # sharp text on high-DPI Windows screens
+        try:
+            import ctypes
+
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        except (AttributeError, OSError):
+            pass
     root = tk.Tk()
     ControlPanel(root)
     root.mainloop()

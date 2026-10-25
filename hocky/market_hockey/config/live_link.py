@@ -61,6 +61,8 @@ class LiveLinkServer:
                 data, addr = self.sock.recvfrom(65535)
             except (BlockingIOError, InterruptedError):
                 break
+            except ConnectionResetError:  # Windows reports ICMP port-unreachable on UDP; just skip it
+                continue
             except OSError:
                 break
             msg = _decode(data)
@@ -132,7 +134,11 @@ class LiveLinkClient:
         for _ in range(200):
             try:
                 data, _ = self.sock.recvfrom(65535)
-            except (BlockingIOError, InterruptedError, OSError):
+            except (BlockingIOError, InterruptedError):
+                break
+            except ConnectionResetError:  # Windows reports ICMP port-unreachable on UDP; just skip it
+                continue
+            except OSError:
                 break
             msg = _decode(data)
             if msg is not None:

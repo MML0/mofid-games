@@ -154,6 +154,20 @@ The engine only consumes *"player position 0..1 along their arc"*. Set `Inputs �
 - **CCTV pose** (MediaPipe / YOLO-pose): run the model in a separate process and send the ankle midpoint per person. Don't import vision models into the game.
 - **Other inputs**: `ai` (single-player vs CPU), `mouse` (debug) and `replay` (record with `input.record`, play back from `input.replay_file`).
 
+## Windows build (.exe)
+
+GitHub Actions builds a ready-to-run Windows folder on every push to `main` that touches `hocky/`. You can also start a build from **Actions → Build Windows → Run workflow**. Download **MarketHockey-windows** from the run's *Artifacts*, unzip it to a writable folder (not *Program Files*), and run `MarketHockey.exe` / `ControlPanel.exe`. Settings, presets and logs are stored next to the `.exe` files.
+
+To build locally on Windows:
+
+```bat
+py -3.12 -m venv .venv
+.venv\Scripts\pip install -r requirements-build.txt
+.venv\Scripts\pyinstaller --noconfirm packaging\MarketHockey.spec
+```
+
+Then copy the `config`, `assets` and an empty `logs` folder into `dist\MarketHockey\`. The recipe is `packaging/MarketHockey.spec`. If a packaged run fails, look in `logs/game_crash.log` / `logs/control_panel_crash.log`.
+
 ## Tools
 
 - `main.py --screenshot-states DIR`: headless PNGs of every state

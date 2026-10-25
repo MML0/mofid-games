@@ -25,13 +25,14 @@ def discover() -> None:
         return
     from . import types as pkg
 
-    for mod in sorted(pkgutil.iter_modules(pkg.__path__), key=lambda m: m.name):
-        if mod.name.startswith("_"):
-            continue
+    names = sorted(m.name for m in pkgutil.iter_modules(pkg.__path__) if not m.name.startswith("_"))
+    if not names:  # some packaged builds cannot list modules; use the built-in list
+        names = list(getattr(pkg, "BUILTIN", []))
+    for name in names:
         try:
-            importlib.import_module(f"{pkg.__name__}.{mod.name}")
+            importlib.import_module(f"{pkg.__name__}.{name}")
         except Exception:  # a broken power-up file must never take the game down
-            log.exception("failed to load power-up module %s", mod.name)
+            log.exception("failed to load power-up module %s", name)
     _DISCOVERED = True
 
 

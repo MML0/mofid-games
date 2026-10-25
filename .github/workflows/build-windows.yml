@@ -1,0 +1,111 @@
+# Builds every game in this repo as a ready-to-run Windows folder (.exe + config + assets).
+#
+#   • Actions tab → "Build Windows" → "Run workflow"      → download the result under "Artifacts"
+#   • push to main that touches a game folder           → same, automatically
+#   • push a tag like v1.0.0                            → also attaches the zips to a GitHub Release
+#
+# Add a game: copy the `hocky` entry under matrix.include (folder = the game's folder, app = its .spec name).
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "hocky/**"
+      - ".github/workflows/build-windows.yml"
+
+permissions:
+  contents: write   # needed to publish Releases for tags
+
+jobs:
+  build:
+    name: ${{ matrix.title }} (Windows)
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - folder: hocky
+            app: MarketHockey
+            title: Market Hockey
+          # - folder: second-game          # ← the next game goes here
+          #   app: SecondGame
+          #   title: Second Game
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: ${{ matrix.folder }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ matrix.folder }}/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+
+      - name: Run tests
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python -m pytest -q
+
+      - name: Build .exe files
+        run: |
+          python tools/make_placeholder_sounds.py
+          pyinstaller --noconfirm packaging/${{ matrix.app }}.spec
+
+      - name: Assemble the folder (settings + assets live next to the .exe)
+        run: |
+          $out = "dist/${{ matrix.app }}"
+          Copy-Item -Recurse -Force assets "$out/assets"
+          Copy-Item -Recurse -Force config "$out/config"
+          New-Item -ItemType Directory -Force "$out/logs" | Out-Null
+          Copy-Item README.md "$out/README.md"
+
+      - name: Smoke test the built game (headless screenshots)
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: |
+          $shots = Join-Path $env:RUNNER_TEMP "shots"
+          $exe = Resolve-Path "dist/${{ matrix.app }}/${{ matrix.app }}.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList @("--screenshot-states", $shots) -Wait -PassThru
+          $count = (Get-ChildItem $shots -Filter *.png -ErrorAction SilentlyContinue | Measure-Object).Count
+          Write-Host "exit code $($p.ExitCode), screenshots: $count"
+          Get-ChildItem "dist/${{ matrix.app }}/logs" -Filter *crash* -ErrorAction SilentlyContinue | Get-Content
+          if ($p.ExitCode -ne 0 -or $count -lt 5) { throw "The built game failed its smoke test" }
+          Remove-Item "dist/${{ matrix.app }}/logs/*" -Force -ErrorAction SilentlyContinue
+
+      - name: Zip
+        run: Compress-Archive -Path "dist/${{ matrix.app }}" -DestinationPath "dist/${{ matrix.app }}-windows.zip" -Force
+
+      - name: Upload build (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-windows
+          path: ${{ matrix.folder }}/dist/${{ matrix.app }}
+          retention-days: 30
+
+      - name: Upload screenshots from the Windows build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-screenshots
+          path: ${{ runner.temp }}/shots
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Publish Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.folder }}/dist/${{ matrix.app }}-windows.zip

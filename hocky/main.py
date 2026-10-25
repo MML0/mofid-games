@@ -25,7 +25,9 @@ def main() -> int:
     args = ap.parse_args()
 
     from market_hockey import app
-    from market_hockey.paths import SETTINGS_PATH
+    from market_hockey.paths import SETTINGS_PATH, install_crash_log
+
+    install_crash_log("game")
 
     if args.screenshot_states:
         for p in app.capture_states(args.screenshot_states, seed=args.seed or 7):

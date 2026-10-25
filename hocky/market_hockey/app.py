@@ -19,7 +19,7 @@ from .config import Config
 from .config.live_link import LiveLinkServer
 from .core.engine import ATTRACT, RESULT, Engine
 from .inputs.manager import InputManager
-from .paths import LOGS_DIR, ROOT, SETTINGS_PATH
+from .paths import LOGS_DIR, ROOT, SETTINGS_PATH, launch_command
 from .render.overlays import draw_calibration, draw_debug
 from .render.renderer import Renderer
 
@@ -36,11 +36,12 @@ def setup_logging() -> None:
     fh = logging.handlers.RotatingFileHandler(LOGS_DIR / "market_hockey.log", maxBytes=2_000_000, backupCount=3,
                                               encoding="utf-8")
     fh.setFormatter(fmt)
-    sh = logging.StreamHandler()
-    sh.setFormatter(fmt)
-    sh.setLevel(logging.WARNING)
     root.addHandler(fh)
-    root.addHandler(sh)
+    if sys.stderr is not None:  # a windowed .exe has no console
+        sh = logging.StreamHandler()
+        sh.setFormatter(fmt)
+        sh.setLevel(logging.WARNING)
+        root.addHandler(sh)
 
 
 class GameApp:
@@ -59,6 +60,7 @@ class GameApp:
         # SCALED windows are filtered by SDL; "nearest" makes every edge look pixelated when the window is resized
         os.environ["SDL_RENDER_SCALE_QUALITY"] = "1" if self.cfg["display.scale_quality"] == "linear" else "0"
         os.environ["SDL_HINT_RENDER_SCALE_QUALITY"] = os.environ["SDL_RENDER_SCALE_QUALITY"]
+        os.environ.setdefault("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2")  # no blurry scaling at 125–200% on Windows
         pygame.init()
         self.screen = None
         self._display_key = None
@@ -241,7 +243,7 @@ class GameApp:
         if self.panel_proc is not None and self.panel_proc.poll() is None:
             return
         try:
-            self.panel_proc = subprocess.Popen([sys.executable, str(ROOT / "settings_app.py")], cwd=str(ROOT))
+            self.panel_proc = subprocess.Popen(launch_command("panel"), cwd=str(ROOT))
         except OSError as exc:
             log.error("could not open the control panel: %s", exc)
 
