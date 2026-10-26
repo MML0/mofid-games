@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240px" height="240px" viewBox="0 0 240 240">
+<title>Orb — slow_down (good)</title>
+<defs><radialGradient id="glow_slow_down_good" cx="120" cy="120" r="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#39E46F" stop-opacity="0.55"/><stop offset="0.5" stop-color="#39E46F" stop-opacity="0.22"/><stop offset="1" stop-color="#39E46F" stop-opacity="0"/></radialGradient></defs>
+
+<g id="Glow"><circle cx="120" cy="120" r="120" fill="url(#glow_slow_down_good)"/></g>
+<g id="Body"><circle cx="120" cy="120" r="60" fill="#06161E" fill-opacity="0.92"/></g>
+<g id="Ring"><circle cx="120" cy="120" r="60" fill="none" stroke="#39E46F" stroke-width="13.33"/></g>
+<g id="Icon" transform="translate(82.8 82.8) scale(0.74)"><polyline points="8,42 10.8,45.09 13.6,47.88 16.4,50.09 19.2,51.51 22,52 24.8,51.51 27.6,50.09 30.4,47.88 33.2,45.09 36,42 38.8,38.91 41.6,36.12 44.4,33.91 47.2,32.49 50,32 52.8,32.49 55.6,33.91 58.4,36.12 61.2,38.91 64,42 66.8,45.09 69.6,47.88 72.4,50.09 75.2,51.51 78,52 80.8,51.51 83.6,50.09 86.4,47.88 89.2,45.09 92,42" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="34,68 50,82 66,68" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g id="Lifetime_ring"><circle cx="120" cy="120" r="67" fill="none" stroke="#6E6E6E" stroke-width="2" stroke-dasharray="294.68 9999" transform="rotate(-90 120 120)"/></g>
+</svg>

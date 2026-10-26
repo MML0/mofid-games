@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+<title>Icon — expand (dark)</title>
+<defs></defs>
+
+<g id="Icon_expand"><rect x="32" y="42" width="36" height="16" rx="8" fill="#13252E"/>
+<line x1="28" y1="50" x2="4" y2="50" stroke="#13252E" stroke-width="7.5" stroke-linecap="round"/>
+<polygon points="4,50 17.64,41.64 17.64,58.36" fill="#13252E"/>
+<line x1="72" y1="50" x2="96" y2="50" stroke="#13252E" stroke-width="7.5" stroke-linecap="round"/>
+<polygon points="96,50 82.36,58.36 82.36,41.64" fill="#13252E"/></g>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080px" height="1080px" viewBox="0 0 1080 1080">
+<title>Arena layer — background</title>
+<defs><radialGradient id="arena_bg" cx="540" cy="540" r="540" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#03141C"/><stop offset="0.25" stop-color="#031B25"/><stop offset="0.5" stop-color="#04202D"/><stop offset="0.75" stop-color="#052533"/><stop offset="0.9" stop-color="#052837"/><stop offset="1" stop-color="#062A3A"/></radialGradient><radialGradient id="wall_glow" cx="540" cy="540" r="520" gradientUnits="userSpaceOnUse"><stop offset="0.97" stop-color="#A8F0FF" stop-opacity="0.55"/><stop offset="0.99" stop-color="#A8F0FF" stop-opacity="0.08"/><stop offset="1" stop-color="#A8F0FF" stop-opacity="0"/></radialGradient></defs>
+
+<g id="Background"><rect width="1080" height="1080" fill="#000000"/><circle cx="540" cy="540" r="540" fill="url(#arena_bg)"/></g>
+</svg>

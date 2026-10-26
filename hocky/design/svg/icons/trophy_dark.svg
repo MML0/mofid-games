@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+<title>Icon — trophy (dark)</title>
+<defs></defs>
+
+<g id="Icon_trophy"><polygon points="24,14 76,14 70,48 58,60 42,60 30,48" fill="#13252E"/>
+<circle cx="23" cy="30" r="12" fill="none" stroke="#13252E" stroke-width="7.5"/>
+<circle cx="77" cy="30" r="12" fill="none" stroke="#13252E" stroke-width="7.5"/>
+<rect x="46" y="60" width="8" height="20" rx="10" fill="#13252E"/>
+<rect x="30" y="81" width="40" height="10" rx="5" fill="#13252E"/></g>
+</svg>

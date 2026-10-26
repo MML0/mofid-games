@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+<title>Icon — trajectory_reveal (white, 100×100)</title>
+<defs></defs>
+
+<g id="Icon_trajectory_reveal"><circle cx="10" cy="86" r="4" fill="#FFFFFF"/>
+<circle cx="17.75" cy="87.82" r="4" fill="#FFFFFF"/>
+<circle cx="25.5" cy="88.18" r="4" fill="#FFFFFF"/>
+<circle cx="33.25" cy="85.85" r="4" fill="#FFFFFF"/>
+<circle cx="41" cy="80" r="4" fill="#FFFFFF"/>
+<circle cx="48.75" cy="70.35" r="4" fill="#FFFFFF"/>
+<circle cx="56.5" cy="57.18" r="4" fill="#FFFFFF"/>
+<circle cx="64.25" cy="41.32" r="4" fill="#FFFFFF"/>
+<circle cx="76" cy="24" r="15" fill="none" stroke="#FFFFFF" stroke-width="6.5"/>
+<circle cx="76" cy="24" r="5" fill="#FFFFFF"/></g>
+</svg>

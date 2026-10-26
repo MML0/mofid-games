@@ -70,6 +70,7 @@ jobs:
           Copy-Item -Recurse -Force config "$out/config"
           New-Item -ItemType Directory -Force "$out/logs" | Out-Null
           Copy-Item README.md "$out/README.md"
+          if (Test-Path docs/MarketHockey_Guide_FA.pdf) { Copy-Item docs/MarketHockey_Guide_FA.pdf "$out/" }
 
       - name: Smoke test the built game (headless screenshots)
         env:

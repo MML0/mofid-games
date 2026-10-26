@@ -1,0 +1,209 @@
+{
+  "p1": {
+    "hex": "#00A796",
+    "rgb": [
+      0,
+      167,
+      150
+    ],
+    "name": "Player 1 · Turquoise (brand)"
+  },
+  "p1_glow": {
+    "hex": "#00CBB7",
+    "rgb": [
+      0,
+      203,
+      183
+    ],
+    "name": "Player 1 · glow / trail"
+  },
+  "p1_core": {
+    "hex": "#8CE7DE",
+    "rgb": [
+      140,
+      231,
+      222
+    ],
+    "name": "Player 1 · trail core"
+  },
+  "p2": {
+    "hex": "#832C73",
+    "rgb": [
+      131,
+      44,
+      115
+    ],
+    "name": "Player 2 · Purple (brand)"
+  },
+  "p2_glow": {
+    "hex": "#B7379F",
+    "rgb": [
+      183,
+      55,
+      159
+    ],
+    "name": "Player 2 · glow / trail"
+  },
+  "p2_core": {
+    "hex": "#DEA5D3",
+    "rgb": [
+      222,
+      165,
+      211
+    ],
+    "name": "Player 2 · trail core"
+  },
+  "neutral_ball": {
+    "hex": "#E8F4F8",
+    "rgb": [
+      232,
+      244,
+      248
+    ],
+    "name": "Ball · untouched"
+  },
+  "ball_core": {
+    "hex": "#FFFFFF",
+    "rgb": [
+      255,
+      255,
+      255
+    ],
+    "name": "Ball · core"
+  },
+  "good": {
+    "hex": "#39E46F",
+    "rgb": [
+      57,
+      228,
+      111
+    ],
+    "name": "Power-up · good (green)"
+  },
+  "bad": {
+    "hex": "#FF3B3B",
+    "rgb": [
+      255,
+      59,
+      59
+    ],
+    "name": "Power-up · bad (red)"
+  },
+  "neutral": {
+    "hex": "#9B6BFF",
+    "rgb": [
+      155,
+      107,
+      255
+    ],
+    "name": "Power-up · neutral (violet)"
+  },
+  "smart": {
+    "hex": "#FFD54A",
+    "rgb": [
+      255,
+      213,
+      74
+    ],
+    "name": "Smart hit · gold"
+  },
+  "goal": {
+    "hex": "#F3716D",
+    "rgb": [
+      243,
+      113,
+      109
+    ],
+    "name": "Goal line (brand red)"
+  },
+  "wall": {
+    "hex": "#A8F0FF",
+    "rgb": [
+      168,
+      240,
+      255
+    ],
+    "name": "Bumper wall"
+  },
+  "wall_glow": {
+    "hex": "#9DEEFF",
+    "rgb": [
+      157,
+      238,
+      255
+    ],
+    "name": "Bumper wall · glow"
+  },
+  "wall_hatch": {
+    "hex": "#004C6A",
+    "rgb": [
+      0,
+      76,
+      106
+    ],
+    "name": "Wall base / pattern"
+  },
+  "arena_inner": {
+    "hex": "#03141C",
+    "rgb": [
+      3,
+      20,
+      28
+    ],
+    "name": "Arena · center"
+  },
+  "arena_outer": {
+    "hex": "#062A3A",
+    "rgb": [
+      6,
+      42,
+      58
+    ],
+    "name": "Arena · edge"
+  },
+  "lines": {
+    "hex": "#1F7A99",
+    "rgb": [
+      31,
+      122,
+      153
+    ],
+    "name": "Arena lines"
+  },
+  "text": {
+    "hex": "#FFFFFF",
+    "rgb": [
+      255,
+      255,
+      255
+    ],
+    "name": "Text"
+  },
+  "timer_final": {
+    "hex": "#F3716D",
+    "rgb": [
+      243,
+      113,
+      109
+    ],
+    "name": "Timer · final seconds"
+  },
+  "orb_body": {
+    "hex": "#06161E",
+    "rgb": [
+      6,
+      22,
+      30
+    ],
+    "name": "Orb body"
+  },
+  "brand_dark_blue": {
+    "hex": "#004C6A",
+    "rgb": [
+      0,
+      76,
+      106
+    ],
+    "name": "Mofid dark blue (brand)"
+  }
+}

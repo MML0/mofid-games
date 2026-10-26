@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+<title>Icon — dim_ball (white, 100×100)</title>
+<defs></defs>
+
+<g id="Icon_dim_ball"><circle cx="50" cy="50" r="34" fill="none" stroke="#FFFFFF" stroke-width="7.5"/>
+<path d="M 50 16 A 34 34 0 0 0 50 84 Z" fill="#FFFFFF"/></g>
+</svg>

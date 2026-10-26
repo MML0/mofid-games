@@ -1,0 +1,25 @@
+:root {
+  --p1: #00A796;  /* Player 1 · Turquoise (brand) */
+  --p1-glow: #00CBB7;  /* Player 1 · glow / trail */
+  --p1-core: #8CE7DE;  /* Player 1 · trail core */
+  --p2: #832C73;  /* Player 2 · Purple (brand) */
+  --p2-glow: #B7379F;  /* Player 2 · glow / trail */
+  --p2-core: #DEA5D3;  /* Player 2 · trail core */
+  --neutral-ball: #E8F4F8;  /* Ball · untouched */
+  --ball-core: #FFFFFF;  /* Ball · core */
+  --good: #39E46F;  /* Power-up · good (green) */
+  --bad: #FF3B3B;  /* Power-up · bad (red) */
+  --neutral: #9B6BFF;  /* Power-up · neutral (violet) */
+  --smart: #FFD54A;  /* Smart hit · gold */
+  --goal: #F3716D;  /* Goal line (brand red) */
+  --wall: #A8F0FF;  /* Bumper wall */
+  --wall-glow: #9DEEFF;  /* Bumper wall · glow */
+  --wall-hatch: #004C6A;  /* Wall base / pattern */
+  --arena-inner: #03141C;  /* Arena · center */
+  --arena-outer: #062A3A;  /* Arena · edge */
+  --lines: #1F7A99;  /* Arena lines */
+  --text: #FFFFFF;  /* Text */
+  --timer-final: #F3716D;  /* Timer · final seconds */
+  --orb-body: #06161E;  /* Orb body */
+  --brand-dark-blue: #004C6A;  /* Mofid dark blue (brand) */
+}

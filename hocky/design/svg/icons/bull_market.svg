@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+<title>Icon — bull_market (white, 100×100)</title>
+<defs></defs>
+
+<g id="Icon_bull_market"><circle cx="50" cy="60" r="20" fill="#FFFFFF"/>
+<polyline points="7.38,48 8.09,42.68 9.32,37.49 11.03,32.56 13.14,28.02 15.57,23.96 18.24,20.49 21.03,17.71 23.85,15.66 26.58,14.42 29.12,14 31.37,14.42 33.25,15.66" fill="none" stroke="#FFFFFF" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="92.62,48 91.91,42.68 90.68,37.49 88.97,32.56 86.86,28.02 84.43,23.96 81.76,20.49 78.97,17.71 76.15,15.66 73.42,14.42 70.88,14 68.63,14.42 66.75,15.66" fill="none" stroke="#FFFFFF" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

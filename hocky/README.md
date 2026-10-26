@@ -19,6 +19,14 @@ python3 -m venv .venv                       # already done in this folder
 On Windows, use `.venv\Scripts\python` instead of `.venv/bin/python`.
 If `pygame-ce` has no wheel for your Python, create the venv with Python 3.12.
 
+## User guide (Persian)
+
+`docs/MarketHockey_Guide_FA.pdf` (راهنمای بازیکن) is a 2-page guide for players covering the goal, the controls and the orbs. To edit it, change `docs/guide/guide_fa.html`, then rebuild the PDF with `.venv/bin/python tools/build_guide.py` (needs Chrome or Edge).
+
+## Design kit (Illustrator)
+
+`design/` holds every visual as editable vectors (SVG + a vector PDF), the palette (.ase), fonts, outlined Persian text and reference screenshots. See `design/README.md` (in Persian). To regenerate it from the current settings, run `python3 tools/export_design_kit.py`.
+
 ## Controls
 
 | Key | Action |

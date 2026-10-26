@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="90px" height="90px" viewBox="0 0 90 90">
+<title>Ball (P2)</title>
+<defs><radialGradient id="bglow_P2" cx="45" cy="45" r="45" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B7379F" stop-opacity="0.85"/><stop offset="0.35" stop-color="#B7379F" stop-opacity="0.35"/><stop offset="1" stop-color="#B7379F" stop-opacity="0"/></radialGradient></defs>
+
+<g id="Glow"><circle cx="45" cy="45" r="45" fill="url(#bglow_P2)"/></g><g id="Ring"><circle cx="45" cy="45" r="18" fill="none" stroke="#B7379F" stroke-width="3"/></g><g id="Core"><circle cx="45" cy="45" r="15" fill="#FFFFFF"/><circle cx="48.75" cy="48.75" r="6.75" fill="#E5B9DD" fill-opacity="0.8"/></g>
+</svg>

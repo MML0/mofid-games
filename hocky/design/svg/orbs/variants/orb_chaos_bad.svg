@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240px" height="240px" viewBox="0 0 240 240">
+<title>Orb — chaos (bad)</title>
+<defs><radialGradient id="glow_chaos_bad" cx="120" cy="120" r="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF3B3B" stop-opacity="0.55"/><stop offset="0.5" stop-color="#FF3B3B" stop-opacity="0.22"/><stop offset="1" stop-color="#FF3B3B" stop-opacity="0"/></radialGradient></defs>
+
+<g id="Glow"><circle cx="120" cy="120" r="120" fill="url(#glow_chaos_bad)"/></g>
+<g id="Body"><circle cx="120" cy="120" r="60" fill="#06161E" fill-opacity="0.92"/></g>
+<g id="Ring"><circle cx="120" cy="120" r="60" fill="none" stroke="#FF3B3B" stroke-width="13.33" stroke-dasharray="16.16 10.77"/><circle cx="120" cy="120" r="44.67" fill="none" stroke="#FF3B3B" stroke-opacity="0.35" stroke-width="2"/></g>
+<g id="Icon" transform="translate(82.8 82.8) scale(0.74)"><polyline points="10,76 13.6,75.68 17.2,74.73 20.8,73.17 24.4,71.03 28,68.38 31.6,65.28 35.2,61.8 38.8,58.03 42.4,54.07 46,50 49.6,45.93 53.2,41.97 56.8,38.2 60.4,34.72 64,31.62 67.6,28.97 71.2,26.83 74.8,25.27 78.4,24.32 82,24" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="88,24 76.02,34.61 73.11,18.14" fill="#FFFFFF"/>
+<polyline points="10,24 13.6,24.32 17.2,25.27 20.8,26.83 24.4,28.97 28,31.62 31.6,34.72 35.2,38.2 38.8,41.97 42.4,45.93 46,50 49.6,54.07 53.2,58.03 56.8,61.8 60.4,65.28 64,68.38 67.6,71.03 71.2,73.17 74.8,74.73 78.4,75.68 82,76" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="88,76 73.11,81.86 76.02,65.39" fill="#FFFFFF"/></g>
+<g id="Lifetime_ring"><circle cx="120" cy="120" r="67" fill="none" stroke="#6E6E6E" stroke-width="2" stroke-dasharray="294.68 9999" transform="rotate(-90 120 120)"/></g>
+</svg>

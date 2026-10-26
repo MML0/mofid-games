@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240px" height="240px" viewBox="0 0 240 240">
+<title>Orb — expand (good)</title>
+<defs><radialGradient id="glow_expand" cx="120" cy="120" r="120" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#39E46F" stop-opacity="0.55"/><stop offset="0.5" stop-color="#39E46F" stop-opacity="0.22"/><stop offset="1" stop-color="#39E46F" stop-opacity="0"/></radialGradient></defs>
+
+<g id="Glow"><circle cx="120" cy="120" r="120" fill="url(#glow_expand)"/></g>
+<g id="Body"><circle cx="120" cy="120" r="60" fill="#06161E" fill-opacity="0.92"/></g>
+<g id="Ring"><circle cx="120" cy="120" r="60" fill="none" stroke="#39E46F" stroke-width="13.33"/></g>
+<g id="Icon" transform="translate(82.8 82.8) scale(0.74)"><rect x="32" y="42" width="36" height="16" rx="8" fill="#FFFFFF"/>
+<line x1="28" y1="50" x2="4" y2="50" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round"/>
+<polygon points="4,50 17.64,41.64 17.64,58.36" fill="#FFFFFF"/>
+<line x1="72" y1="50" x2="96" y2="50" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round"/>
+<polygon points="96,50 82.36,58.36 82.36,41.64" fill="#FFFFFF"/></g>
+<g id="Lifetime_ring"><circle cx="120" cy="120" r="67" fill="none" stroke="#6E6E6E" stroke-width="2" stroke-dasharray="294.68 9999" transform="rotate(-90 120 120)"/></g>
+</svg>

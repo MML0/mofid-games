@@ -16,6 +16,8 @@ Interactive projection-floor games for the Mofid Securities (کارگزاری م
 
 Tagged versions (`v1.0.0`, …) also appear under **Releases** as a zip.
 
+**User guide (Persian):** [`hocky/docs/MarketHockey_Guide_FA.pdf`](hocky/docs/MarketHockey_Guide_FA.pdf). It is a 2-page guide for players covering how to play, how to move, and what each orb in the middle does. It is included in the Windows download.
+
 ## Developing
 
 Each game folder has its own `README.md`, `requirements.txt` and tests. Builds are made by
