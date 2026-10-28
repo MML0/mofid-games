@@ -11,7 +11,7 @@ class Expand(PowerUpType):
     default_class = "good"
     duration = 8.0
     unlock_phase = 1
-    toast_c = "بالکرت بزرگ شد!"
+    toast_c = "پدلت بزرگ شد!"
 
     def extra_schema(self, sb, p):
         sb.f(f"{p}.multiplier", 1.5, 1.05, 3.0, 0.05, "×", "Size multiplier")

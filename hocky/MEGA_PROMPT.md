@@ -13,6 +13,13 @@
 > - a dithered background, supersampled anti-aliasing and linear window scaling
 > - a comet trail with sparkles
 > - energy-barrier walls
+> **Second playtest (2026-10-28):**
+> - The random path is now a staged sequence: pause, announcement, spinning path roulette, fire, then once more unless the ball is near the player.
+> - The double ball spawns 0.5 s late, smaller and slower.
+> - The faint assist is smaller and fainter, and shows a tiny bounce arrow.
+> - Trajectory reveal now lasts 12 s.
+> - New supervisor web page for player names, start, live score, results and the history/leaderboard.
+> - The paddle is now called «پدل» instead of «بالکر».
 
 ---
 

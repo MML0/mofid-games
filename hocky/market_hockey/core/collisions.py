@@ -104,6 +104,7 @@ class HitParams:
     fwd_y: float = 0.0
     vmin: float = 300.0
     vmax: float = 1500.0
+    tip_limit: float | None = None  # rounded tips: extra radians allowed beyond the dome's edge angle (None = off)
 
 
 def contact_offset(nx: float, ny: float, sh: PaddleShape) -> float:
@@ -116,6 +117,17 @@ def paddle_response(vx, vy, nx, ny, sh: PaddleShape, vpx, vpy, hp: HitParams, fr
     vn = (vx - vpx) * nx + (vy - vpy) * ny  # normal speed relative to the (moving) paddle surface
     if vn >= 0:
         return None
+    if front and hp.tip_limit is not None:
+        # a corner hit would otherwise use a sideways normal; treat the tip as the continuation of the dome
+        beta = math.atan2(nx * sh.rx + ny * sh.ry, nx * sh.fx + ny * sh.fy)
+        lim = sh.alpha + hp.tip_limit
+        if abs(beta) > lim:
+            b2 = math.copysign(lim, beta)
+            cnx = sh.fx * math.cos(b2) + sh.rx * math.sin(b2)
+            cny = sh.fy * math.cos(b2) + sh.ry * math.sin(b2)
+            cvn = (vx - vpx) * cnx + (vy - vpy) * cny
+            if cvn < 0:
+                nx, ny, vn = cnx, cny, cvn
     e = hp.restitution
     ox = vx - (1 + e) * vn * nx
     oy = vy - (1 + e) * vn * ny

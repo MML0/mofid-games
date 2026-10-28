@@ -12,7 +12,7 @@ from typing import Any
 
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 6
 
 TABS = [
     "Display & Projection",
@@ -186,6 +186,8 @@ def _core(sb: SchemaBuilder) -> None:
     sb.i("hud.score_size", 110, 20, 300, 1, "px", "Score size")
     sb.i("hud.score_spread", 110, 0, 400, 1, "px", "Score distance from center line")
     sb.b("hud.show_player_labels", False, "Show player labels")
+    sb.b("hud.show_names", True, "Show player names", "Names entered on the supervisor page appear near the scores.")
+    sb.i("hud.name_size", 30, 10, 90, 1, "px", "Name size")
     sb.i("hud.label_size", 26, 10, 80, 1, "px", "Label size")
     sb.section("HUD & Text", "Layout")
     sb.e("hud.orientation", "upright", ("upright", "toward_players"), "Message orientation",
@@ -202,8 +204,8 @@ def _core(sb: SchemaBuilder) -> None:
     sb.font("fonts.digits", "IRANSansX-Black.ttf", "Digits font", "Timer, scores and countdown (always Latin digits).")
     sb.font("fonts.latin", "IRANSansX-Bold.ttf", "Latin text font")
     sb.section("HUD & Text", "Messages")
-    sb.i("text.toast_size", 40, 14, 120, 1, "px", "Message size")
-    sb.i("text.banner_size", 64, 20, 200, 1, "px", "Banner size")
+    sb.i("text.toast_size", 34, 14, 120, 1, "px", "Message size")
+    sb.i("text.banner_size", 56, 20, 200, 1, "px", "Banner size")
     sb.f("text.toast_duration", 1.8, 0.3, 6, 0.1, "s", "Message duration")
     sb.f("text.toast_radius", 0.52, 0.1, 0.9, 0.01, "×R", "Message distance from center")
     strings = [
@@ -240,6 +242,9 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("match.auto_loop_delay_s", 8.0, 1, 60, 0.5, "s", "Auto-loop idle time")
     sb.b("match.attract_demo", True, "Attract demo (AI vs AI)")
     sb.f("match.attract_opacity", 0.55, 0.1, 1, 0.01, "", "Demo opacity")
+    sb.b("match.attract_toasts", False, "Power-up messages in the demo", "Off keeps the waiting screen clean.")
+    sb.b("match.clear_names_after_game", True, "Clear player names after each game",
+         "Names stay on the result screen, then clear for the next pair of players.")
     sb.f("match.intro_s", 0.9, 0.0, 4, 0.1, "s", "Intro length")
     sb.f("match.goal_pause_s", 1.4, 0.2, 5, 0.1, "s", "Pause after goal")
     sb.b("match.timer_runs_during_goal_pause", False, "Timer runs during goal pause")
@@ -304,8 +309,11 @@ def _core(sb: SchemaBuilder) -> None:
         p = f"paddles.{pid}"
         sb.section("Paddles", f"{name} — shape & track")
         sb.i(f"{p}.width", 130, 40, 400, 1, "px", "Width")
-        sb.f(f"{p}.shape_ratio", 1.0, 0.25, 1.0, 0.01, "", "Dome depth", "1.0 = true semicircle; lower = flatter dome, gentler angles.")
-        sb.i(f"{p}.rim_padding", 36, 0, 220, 1, "px", "Rim padding", "Distance from the rim to the paddle's flat back edge.")
+        sb.f(f"{p}.shape_ratio", 1.0, 0.1, 1.0, 0.01, "", "Dome depth (curvature)",
+             "How curved the paddle is. The physical bounce turns by about 2× the surface tilt where the ball touches: "
+             "1.0 = semicircle (tip hits go very sideways), 0.25 = shallow (tip ≈ 40°), 0.1 = almost flat.")
+        sb.i(f"{p}.rim_padding", 36, 0, 220, 1, "px", "Rim padding",
+             "Gap between the red goal line (rim) and the paddle's flat back edge. 52 px ≈ 10% of the rim radius.")
         sb.f(f"{p}.end_margin_deg", 4.0, 0, 30, 0.5, "°", "End margin", "Keeps the paddle away from the bumper walls.")
         sb.i(f"{p}.min_width", 60, 20, 300, 1, "px", "Minimum width (effects)")
         sb.i(f"{p}.max_width", 260, 60, 600, 1, "px", "Maximum width (effects)")
@@ -315,15 +323,28 @@ def _core(sb: SchemaBuilder) -> None:
         sb.f(f"{p}.max_speed_deg_s", 320, 30, 1500, 5, "°/s", "Max slide speed")
         sb.f(f"{p}.follow_stiffness", 30, 1, 120, 1, "", "Spring stiffness")
         sb.section("Paddles", f"{name} — bounce")
-        sb.f(f"{p}.restitution", 1.0, 0.5, 1.3, 0.01, "", "Bounciness")
-        sb.f(f"{p}.velocity_transfer", 0.35, 0, 1, 0.01, "", "Paddle motion transfer", "How much the paddle's sideways motion drags the ball.")
-        sb.f(f"{p}.aim_blend", 0.4, 0, 1, 0.01, "", "Arcade aim blend", "0 = pure physical reflection, 1 = pure hit-position steering.")
-        sb.f(f"{p}.max_aim_angle_deg", 60, 0, 85, 1, "°", "Max aim angle")
-        sb.f(f"{p}.max_outgoing_angle_deg", 72, 10, 89, 1, "°", "Max outgoing angle", "Never sends the ball backward from a dome hit.")
+        sb.f(f"{p}.restitution", 1.0, 0.5, 1.3, 0.01, "", "Bounciness", "1.0 = the ball keeps its speed off the paddle.")
+        sb.f(f"{p}.velocity_transfer", 0.1, 0, 1, 0.01, "", "Sliding drag (paddle motion → ball)",
+             "How much a SLIDING paddle drags the ball sideways with it. 0 = none (pure reflection). "
+             "Keyboard paddles slide very fast, so values above ~0.15 throw the ball sideways even on a center hit.")
+        sb.f(f"{p}.aim_blend", 0.4, 0, 1, 0.01, "", "Arcade steering blend",
+             "0 = purely physical: the angle comes from the dome's curvature at the contact point. "
+             "1 = purely 'distance from center': angle = (hit offset ÷ half-width) × Arcade max angle.")
+        sb.f(f"{p}.max_aim_angle_deg", 60, 0, 85, 1, "°", "Arcade max angle (at the tip)",
+             "Only matters when Arcade steering blend > 0.")
+        sb.f(f"{p}.max_outgoing_angle_deg", 55, 10, 89, 1, "°", "Max outgoing angle (safety cap)",
+             "No bounce leaves more than this from straight back toward the opponent.")
+        sb.f(f"{p}.max_impulse_speed", 450, 0, 3000, 10, "px/s", "Paddle speed used for bounces",
+             "Caps how fast the paddle 'swings' in the bounce physics. Keyboard paddles slide ~1500 px/s, a walking "
+             "player ~200–400 px/s; lower = calmer, more realistic hits while moving.")
+        sb.b(f"{p}.rounded_tips", True, "Rounded tips",
+             "A hit on the very tip uses the dome's own edge angle instead of a sharp corner, so tip bounces follow the curvature.")
+        sb.f(f"{p}.tip_extra_deg", 5, 0, 45, 1, "°", "Tip extra angle", "How much steeper than the dome's edge a tip hit may be.")
         sb.f(f"{p}.min_forward", 0.15, -1, 0.8, 0.01, "", "Min forward component", "Outgoing ball always moves this much toward the opponent (-1 = off).")
         sb.b(f"{p}.allow_backward", False, "Allow backward deflection")
         sb.f(f"{p}.hit_speed_gain", 1.0, 0.8, 1.6, 0.01, "×", "Hit speed gain")
-        sb.f(f"{p}.paddle_speed_to_ball", 0.25, 0, 1.5, 0.01, "", "Flick power", "Extra ball speed from fast paddle motion.")
+        sb.f(f"{p}.paddle_speed_to_ball", 0.1, 0, 1.5, 0.01, "", "Flick power",
+             "Extra ball SPEED (not direction) from a fast-moving paddle.")
         sb.i(f"{p}.hit_cooldown_ms", 60, 0, 300, 5, "ms", "Hit cooldown")
 
     # ------------------------------------------------------------------ trails
@@ -380,10 +401,15 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("prediction.debug_always_on", False, "Always show (debug)")
     sb.section("Trajectory", "Faint aim assist (always on)")
     sb.b("prediction.assist_always", True, "Faint aim assist", "A ghostly hint of where the ball is heading, for the receiver.")
-    sb.f("prediction.assist_alpha", 0.22, 0.02, 1, 0.01, "", "Assist opacity")
+    sb.f("prediction.assist_alpha", 0.13, 0.02, 1, 0.01, "", "Assist opacity")
+    sb.f("prediction.assist_dot_scale", 0.55, 0.1, 2, 0.05, "×", "Assist dot size")
+    sb.f("prediction.assist_path_fraction", 0.45, 0.05, 1, 0.05, "", "Assist path shown",
+         "Only the last part of the path, near the paddle, is drawn.")
+    sb.f("prediction.assist_ghost_scale", 0.6, 0.2, 1.5, 0.05, "× ball", "Assist ghost size")
+    sb.i("prediction.assist_arrow_length", 30, 5, 150, 1, "px", "Assist bounce arrow length")
     sb.f("prediction.assist_time_s", 1.1, 0.2, 4, 0.05, "s", "Assist look-ahead")
     sb.b("prediction.assist_ghost", True, "Assist ghost ball")
-    sb.b("prediction.assist_arrow", False, "Assist bounce arrow")
+    sb.b("prediction.assist_arrow", True, "Assist bounce arrow", "A tiny faint arrow: how it will bounce off.")
     sb.section("Trajectory", "Look")
     sb.i("prediction.dot_spacing", 14, 4, 60, 1, "px", "Dot spacing")
     sb.f("prediction.dot_radius", 3.0, 1, 10, 0.5, "px", "Dot radius")
@@ -509,6 +535,15 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("live_link.enabled", True, "Live link enabled", live=False)
     sb.i("live_link.game_port", 9201, 1024, 65535, 1, "", "Game UDP port", live=False)
     sb.f("live_link.state_hz", 4.0, 0.5, 30, 0.5, "Hz", "Telemetry rate")
+    sb.section("Live Link & Debug", "Supervisor web page")
+    sb.b("web.enabled", True, "Supervisor page enabled", "A local web page to enter player names, start matches and see results.",
+         live=False)
+    sb.i("web.port", 8765, 1024, 65535, 1, "", "Web port", live=False)
+    sb.e("web.bind", "0.0.0.0", ("0.0.0.0", "127.0.0.1"), "Listen on",
+         "0.0.0.0 = phones/tablets on the same network can open the page; 127.0.0.1 = this computer only.", live=False)
+    sb.b("web.show_url_on_arena", False, "Show the page address on the waiting screen",
+         "Off by default: the addresses are printed in the terminal when the game starts.")
+    sb.b("web.open_browser", False, "Open the page when the game starts", live=False)
     sb.section("Live Link & Debug", "Debug")
     sb.b("debug.overlay", False, "Debug overlay (F3)")
     sb.b("debug.colliders", False, "Show colliders")

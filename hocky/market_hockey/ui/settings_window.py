@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import tkinter as tk
+import webbrowser
 from tkinter import messagebox, simpledialog, ttk
 
 from ..config import TABS, Config, get_schema
@@ -99,6 +100,7 @@ class ControlPanel:
                 ("Start Match", lambda: self.link.command("start_match"), "TButton"),
                 ("Pause / Resume", lambda: self.link.command("toggle_pause"), "TButton"),
                 ("Reset Match", lambda: self.link.command("reset_match"), "TButton"),
+                ("Supervisor page ↗", self.open_supervisor, "TButton"),
                 ("Save", self.save, "Accent.TButton"),
                 ("Save Preset…", self.save_preset, "TButton")):
             ttk.Button(btns, text=text, command=cmd, style=style).pack(side="left", padx=3)
@@ -399,6 +401,16 @@ class ControlPanel:
         self.push_all()
         self._refresh_rows()
         self.status("All settings reset to defaults (press Save to keep)")
+
+    def open_supervisor(self) -> None:
+        """The game serves the names / start / results page (Live Link & Debug → Supervisor web page)."""
+        host = "127.0.0.1"
+        url = f"http://{host}:{self.cfg['web.port']}/"
+        try:
+            webbrowser.open(url)
+            self.status(f"Opened {url} (the game must be running)")
+        except Exception as exc:  # noqa: BLE001
+            self.status(f"Could not open the browser: {exc}", warn=True)
 
     def launch_game(self) -> None:
         if self.game_proc is not None and self.game_proc.poll() is None:

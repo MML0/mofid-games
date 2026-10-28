@@ -12,8 +12,8 @@ class Shrink(PowerUpType):
     default_class = "good"
     duration = 8.0
     unlock_phase = 1
-    toast_c = "بالکر حریف کوچک شد!"
-    toast_o = "بالکرت کوچک شد!"
+    toast_c = "پدل حریف کوچک شد!"
+    toast_o = "پدلت کوچک شد!"
 
     def extra_schema(self, sb, p):
         sb.f(f"{p}.multiplier", 0.6, 0.2, 0.95, 0.05, "×", "Size multiplier")

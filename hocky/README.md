@@ -39,6 +39,7 @@ If `pygame-ce` has no wheel for your Python, create the venv with Python 3.12.
 | R (hold ½ s) | reset to the attract screen |
 | F1 | open the control panel |
 | F2 | projector calibration overlay |
+| F4 | open the supervisor web page (player names, start, results, history) |
 | F3 | debug overlay (FPS, effects, inputs). While it is on, keys **1–0** spawn power-ups and **B** adds a ball |
 | F11 | fullscreen on/off |
 | Esc ×2 | quit |
@@ -71,9 +72,9 @@ Green means good for whoever collects it, and red means it helps the opponent. E
 | 🟢 | Expand | on | **your** paddle grows (×1.5, 8 s) |
 | 🟢 | Shrink | on | **opponent's** paddle shrinks (×0.6, 8 s) |
 | 🟢 | Speed up («نوسان بازار») | on | the ball speeds up (×1.4, 6 s) with a flame trail |
-| 🟢 | Random path | on | the ball's direction jumps (or wobbles), always toward the opponent |
-| 🟢 | Double ball («حجم معاملات») | on | splits into 2 balls, each with its own owner and trail |
-| 🟢 | Trajectory reveal («تحلیل بازار») | on | **you** see where the returning ball will land on your paddle (dotted path, ghost ball, bounce arrow); `beneficiary` can flip it to the opponent |
+| 🟢 | Random path («نوسان ناگهانی بازار») | on | the ball pauses, the event is announced, a roulette of paths spins and locks, and the ball fires. After a short flight it does this once more, unless the ball is already near the receiver. The match timer pauses meanwhile. |
+| 🟢 | Double ball («حجم معاملات») | on | a **smaller, slower** second ball appears where the orb was, **half a second later**, so the opponent can handle both |
+| 🟢 | Trajectory reveal («تحلیل بازار», 12 s) | on | **you** see where the returning ball will land on your paddle (dotted path, ghost ball, bounce arrow); `beneficiary` can flip it to the opponent |
 | 🔴 | Slow down («بازار آرام») | off | the ball slows down |
 | 🟢 | Dim ball («اصلاح بازار») | off | the ball dims (never invisible) |
 | 🟢 | Shield («حد نوسان») | off | a barrier over your goal blocks one ball |
@@ -83,10 +84,28 @@ The PDF's match **phases** (no power-ups in the warm-up, more in the peak) and t
 
 ### Look and feel
 
-- A **faint aim assist** is always on: a ghostly dotted hint of where the ball is heading, shown for the receiver. It can be turned off in `Trajectory → Faint aim assist`. The trajectory power-up makes this guide bright and adds the bounce arrow.
+- A **faint aim assist** is always on for the receiver. It is a tiny, faint dotted hint near their paddle, a small ghost ball where the ball will land, and a tiny bounce-off arrow. It can be turned off in `Trajectory → Faint aim assist`. The trajectory power-up makes this guide bright and adds the bounce arrow.
 - The **comet trail** is built from soft additive glow with star sparkles (`Trails`). Choose `ribbon` for the older look.
 - The **walls** are energy barriers with flowing pulses, glowing emitter nodes and a flash when hit (`Arena & Walls`). Choose `classic` for the hatched band.
 - **Quality**: the background is a dithered gradient, so it has no banding. The arcs and paddles are drawn supersampled (`display.supersample`), the window is scaled with linear filtering, and text gets a soft shadow and glow.
+
+## Supervisor web page (player names, start, results)
+
+The page starts with the game. Its addresses are **printed in the terminal** at launch, for example:
+
+```
+Supervisor page (player names / start / results):
+   http://127.0.0.1:8765/   ← this computer
+   http://192.168.43.67:8765/   ← phones / tablets on this network
+```
+
+Nothing about it is shown on the arena. Open it with **F4**, with the control panel's *Supervisor page ↗* button, or by typing the network address on a phone connected to the same Wi-Fi.
+
+1. Type a player's name and press **Enter** or the small **✓** next to it. It appears on the arena right away. Each player has their own ✓ button.
+2. Press **Enter** again, or the big **شروع بازی** (Play) button, and the countdown begins. On a phone, Play, Pause and Reset stay pinned to the bottom of the screen.
+3. The page shows the live timer and scores. At the end it shows the winner, the **list of everyone who played** (with search and a CSV download) and a **leaderboard** (wins, games, goals, best score).
+
+Results are saved in `logs/history.jsonl`. To keep the page on this computer only, set `Live Link & Debug → Supervisor web page → Listen on` to `127.0.0.1`.
 
 ## Live editing and saving
 
@@ -127,7 +146,7 @@ from ..registry import register
 class Wide(PowerUpType):
     id = "wide"; name = "Wide paddle"; order = 11; icon = "expand"
     default_class = "good"; duration = 5.0
-    toast_c = "بالکر پهن شد!"
+    toast_c = "پدل پهن شد!"
 
     def extra_schema(self, sb, p):
         sb.f(f"{p}.multiplier", 2.0, 1.1, 3.0, 0.1, "×", "Size multiplier")
