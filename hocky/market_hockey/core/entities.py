@@ -5,7 +5,7 @@ from __future__ import annotations
 
 class Ball:
     __slots__ = ("id", "x", "y", "vx", "vy", "px", "py", "r", "owner", "rally", "scored", "scored_t", "held",
-                 "since_touch", "last_hit", "hits", "extra_until", "born", "smart_until", "removed")
+                 "since_touch", "last_hit", "hits", "extra_until", "born", "smart_until", "removed", "chaos", "calm")
 
     def __init__(self, bid: int, x: float, y: float, r: float, born: float = 0.0):
         self.id = bid
@@ -25,6 +25,8 @@ class Ball:
         self.born = born
         self.smart_until = -1.0
         self.removed = False
+        self.chaos: dict | None = None  # staged "random path" sequence (see Engine.start_chaos)
+        self.calm = False  # True after a random path: ignores speed-ups until a paddle hits it
 
 
 class Paddle:

@@ -11,6 +11,7 @@ import random
 import subprocess
 import sys
 import time
+import webbrowser
 
 import pygame
 
@@ -21,7 +22,10 @@ from .core.engine import ATTRACT, RESULT, Engine
 from .inputs.manager import InputManager
 from .paths import LOGS_DIR, ROOT, SETTINGS_PATH, launch_command
 from .render.overlays import draw_calibration, draw_debug
+from .render.colors import boost, hex_rgb
 from .render.renderer import Renderer
+from .web import history
+from .web.server import SupervisorServer
 
 log = logging.getLogger("market_hockey")
 
@@ -78,6 +82,30 @@ class GameApp:
         self._esc_t = -9.0
         self._r_down = None
         self.panel_proc = None
+        self.last_result: dict | None = None
+        self._web_t = 0.0
+        self.web = None
+        self.web_urls: list[str] = []
+        if self.cfg["web.enabled"] and not headless:
+            self.web = SupervisorServer(self.cfg["web.bind"], self.cfg["web.port"])
+            if not self.web.start():
+                self.web = None
+            else:
+                self.web_urls = self.web.urls()
+                lan = self.web_urls[1:]
+                self.renderer.supervisor_url = ("پنل سرپرست: " + lan[0].replace("http://", "").rstrip("/")) if lan else \
+                    ("پنل سرپرست: " + self.web_urls[0].replace("http://", "").rstrip("/"))
+                msg = "Supervisor page (player names / start / results):\n" + "\n".join(
+                    f"   {u}" + ("   ← this computer" if "127.0.0.1" in u else "   ← phones / tablets on this network")
+                    for u in self.web_urls)
+                log.info(msg.replace("\n", " "))
+                if sys.stdout is not None:
+                    try:
+                        print(msg, flush=True)
+                    except OSError:
+                        pass
+                if self.cfg["web.open_browser"]:
+                    self.open_supervisor()
         self.engine.reset_to_attract()
 
     # ------------------------------------------------------------------ display
@@ -164,6 +192,7 @@ class GameApp:
                 self._handle_event(ev, now)
             self._check_hold_keys(now)
             self._poll_live()
+            self._poll_web(now)
             self._open_display()
             frame = self.tick(frame_dt, now)
             self._present(frame)
@@ -178,6 +207,8 @@ class GameApp:
         self.shutdown()
 
     def shutdown(self) -> None:
+        if self.web:
+            self.web.stop()
         self.inputs.close()
         if self.live:
             self.live.close()
@@ -217,6 +248,8 @@ class GameApp:
             cfg.set("debug.overlay", not cfg["debug.overlay"])
         elif exhibition:
             return
+        elif k == pygame.K_F4:
+            self.open_supervisor()
         elif k == pygame.K_F1:
             self.open_panel()
         elif k == pygame.K_F2:
@@ -313,8 +346,61 @@ class GameApp:
         })
 
     # ------------------------------------------------------------------ logging
+    # ------------------------------------------------------------------ supervisor web page
+    def open_supervisor(self) -> None:
+        if self.web:
+            try:
+                webbrowser.open(self.web.url)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("could not open the browser: %s", exc)
+
+    def _poll_web(self, now: float) -> None:
+        if not self.web:
+            return
+        eng = self.engine
+        for cmd, body in self.web.drain():
+            if cmd == "names":
+                eng.set_names(body.get("p1", ""), body.get("p2", ""))
+            elif cmd == "name":
+                eng.set_name(body.get("player", 0), body.get("name", ""))
+            elif cmd == "clear_names":
+                eng.set_names("", "")
+            elif cmd == "start":
+                if eng.state in (ATTRACT, RESULT):
+                    if eng.paused:
+                        eng.toggle_pause()
+                    eng.start_match()
+            elif cmd == "pause":
+                eng.toggle_pause()
+            elif cmd == "reset":
+                if eng.paused:
+                    eng.toggle_pause()
+                eng.reset_to_attract()
+        if now - self._web_t < 0.1:
+            return
+        self._web_t = now
+        cfg = self.cfg
+        b = cfg["colors.projection_boost"]
+        cols = [cfg["colors.p1"], cfg["colors.p2"]]
+        glow = ["#%02X%02X%02X" % boost(hex_rgb(c), b) for c in cols]
+        self.web.publish({
+            "state": eng.state, "paused": eng.paused, "time_left": round(eng.time_left, 2),
+            "duration": eng.match_duration if eng.state not in (ATTRACT,) else float(cfg["match.duration_s"]),
+            "timer_enabled": cfg["match.timer_enabled"], "golden": eng.golden, "scores": list(eng.scores),
+            "score_limit": cfg["match.score_limit"] if cfg["match.score_limit_enabled"] else None,
+            "names": list(eng.names), "labels": [cfg["text.player_1"], cfg["text.player_2"]],
+            "colors": cols, "colors_glow": glow, "winner": eng.winner, "match_count": eng.match_count,
+            "last_result": self.last_result, "urls": self.web_urls,
+        })
+
     def _log_events(self, events) -> None:
-        if not self.cfg["debug.log_matches"]:
+        for e in events:
+            if e["type"] == "match_end":
+                self.last_result = history.make_record(e, self.engine.names,
+                                                       [self.cfg["text.player_1"], self.cfg["text.player_2"]])
+                if not self.headless:  # screenshots / tests must not pollute the real history
+                    history.append(self.last_result)
+        if not self.cfg["debug.log_matches"] or self.headless:
             return
         for e in events:
             if e["type"] == "match_end":

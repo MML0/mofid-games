@@ -106,8 +106,50 @@ def _v1_to_v2(flat: dict) -> dict:
     return flat
 
 
+V3_DEFAULT_CHANGES = {
+    "powerups.types.chaos.mode": ("instant", "sequence"),
+    "powerups.types.chaos.toast_collector": ("بازار غیرقابل پیش\u200cبینی شد!", ""),
+    "powerups.types.trajectory_reveal.duration_s": (7.0, 12.0),
+    "powerups.types.double_ball.split_angle_deg": (18.0, 24.0),
+    "prediction.assist_alpha": (0.22, 0.13),
+    "prediction.assist_arrow": (False, True),
+    "powerups.types.expand.toast_collector": ("بالکرت بزرگ شد!", "پدلت بزرگ شد!"),
+    "powerups.types.shrink.toast_collector": ("بالکر حریف کوچک شد!", "پدل حریف کوچک شد!"),
+    "powerups.types.shrink.toast_opponent": ("بالکرت کوچک شد!", "پدلت کوچک شد!"),
+}
+
+
+def _changes(table: dict):
+    def mig(flat: dict) -> dict:
+        for key, (old, new) in table.items():
+            if key not in flat or flat[key] == old:
+                flat[key] = new
+        return flat
+    return mig
+
+
+V4_DEFAULT_CHANGES = {f"paddles.{pid}.{k}": v for pid in ("p1", "p2") for k, v in {
+    "velocity_transfer": (0.35, 0.1),
+    "paddle_speed_to_ball": (0.25, 0.1),
+    "max_outgoing_angle_deg": (72.0, 55.0),
+}.items()}
+
+V5_DEFAULT_CHANGES = {
+    "web.bind": ("127.0.0.1", "0.0.0.0"),
+    "text.toast_size": (40, 34),
+    "text.banner_size": (64, 56),
+}
+
+V6_DEFAULT_CHANGES = {
+    "powerups.types.chaos.intro_s": (1.1, 0.55),
+    "powerups.types.chaos.select_s": (1.0, 0.5),
+    "powerups.types.chaos.reroll_select_s": (0.6, 0.3),
+    "powerups.types.chaos.fire_mult": (1.1, 1.0),
+}
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
-MIGRATIONS: dict[int, Any] = {1: _v1_to_v2}
+MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
+                              4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES)}
 
 
 class Config:

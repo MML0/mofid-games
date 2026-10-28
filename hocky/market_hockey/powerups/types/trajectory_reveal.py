@@ -14,7 +14,7 @@ class TrajectoryReveal(PowerUpType):
     order = 6
     icon = "trajectory"
     default_class = "good"
-    duration = 7.0
+    duration = 12.0
     unlock_phase = 2
     toast_c = "مسیر حرکت را تحلیل کن!"
     toast_o = ""

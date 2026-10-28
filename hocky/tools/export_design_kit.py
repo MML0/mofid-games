@@ -613,7 +613,7 @@ def export_all() -> None:
             text(1040, 300, "IRANSansX Black — عنوان‌ها و اعداد", 22, "#5C7480", 400, "end"),
             text(1040, 380, "0 1 2 3 4 5 6 7 8 9", 64, "#13252E", 900, "end", 'direction="ltr"'),
             text(1040, 460, "اعداد بازی همیشه لاتین هستند (60، 7، 3·2·1).", 22, "#5C7480", 400, "end"),
-            text(1040, 540, "IRANSansX Bold — پیام‌ها: «بالکرت بزرگ شد!»", 30, "#13252E", 700, "end"),
+            text(1040, 540, "IRANSansX Bold — پیام‌ها: «پدلت بزرگ شد!»", 30, "#13252E", 700, "end"),
             text(1040, 610, "IRANSansX Regular — متن توضیحی و راهنما.", 26, "#13252E", 400, "end")]
     typo_svg = svg(1080, 680, "".join(typo), "Typography", bg="#FFFFFF")
     write("text/typography_live.svg", typo_svg)

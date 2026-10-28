@@ -31,6 +31,11 @@ def ease_out_back(t: float) -> float:
     return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2
 
 
+def ease_out_cubic(t: float) -> float:
+    t = max(0.0, min(1.0, t))
+    return 1 - (1 - t) ** 3
+
+
 def ease_out_elastic(t: float) -> float:
     t = max(0.0, min(1.0, t))
     if t in (0.0, 1.0):
@@ -59,6 +64,8 @@ class Renderer:
         self.toasts: list[dict] = []
         self.flights: list[dict] = []
         self.wall_hits: list[tuple] = []
+        self.banners: list[dict] = []
+        self.pending_marks: list[dict] = []
         self.score_pop = [-9.0, -9.0]
         self.goal_flash: tuple | None = None
         self.flash: tuple | None = None
@@ -68,6 +75,8 @@ class Renderer:
         self._amb_bias = (0.0, None, 0)
         self._sparkle_acc: dict[int, float] = {}
         self.debug_draw = None  # set by app: callable(renderer, engine, surface)
+        self.supervisor_url = ""  # set by app: shown small on the waiting screen
+        self._reserved: list[pygame.Rect] = []  # screen space already taken by text this frame
 
     # ====================================================================== setup
     def _colors(self) -> None:
@@ -390,6 +399,30 @@ class Renderer:
                 self.particles.burst(e["x"], e["y"], (200, 200, 200), 18, (60, 200), (0.2, 0.5), cap=cap)
             elif et == "chaos":
                 self.particles.burst(e["x"], e["y"], c["neutral"], 30, (100, 300), (0.3, 0.7), cap=cap)
+            elif et == "chaos_start":
+                col = boost(c["neutral"], 0.35)
+                dur = e["intro_s"] + e["select_s"] + 0.35
+                ty, sy = self._banner_rows(g, e["x"], e["y"])
+                self.banner(e["title"], col, dur, ty, 1.3)
+                self.banner(e["subtitle"], mix(col, (255, 255, 255), 0.6), dur, sy, 0.72)
+                self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.6, r0=10, r1=120, color=col, w=4))
+                self.particles.burst(e["x"], e["y"], col, 40, (80, 300), (0.4, 0.9), cap=cap, twinkle=True)
+                self.flash = (self.time, col, 0.5)
+            elif et == "chaos_select" and e.get("reroll"):
+                col = boost(c["neutral"], 0.35)
+                if e.get("text"):
+                    self.banner(e["text"], col, e["duration"] + 0.45, self._banner_rows(g, e["x"], e["y"])[0], 1.1)
+                self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.4, r0=8, r1=70, color=col, w=3))
+            elif et == "chaos_fire":
+                col = boost(c["neutral"], 0.35)
+                self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.35, r0=6, r1=55, color=(255, 255, 255), w=3))
+                self.particles.burst(e["x"], e["y"], col, 34, (200, 620), (0.2, 0.5), cap=cap,
+                                     direction=e["angle"], spread=0.22)
+                self.particles.burst(e["x"], e["y"], (255, 255, 255), 12, (100, 300), (0.15, 0.35), cap=cap)
+            elif et == "ball_pending":
+                owner = e.get("owner")
+                self.pending_marks.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=max(0.05, e["delay"]), r=e["r"],
+                                               color=c["teamb"][owner] if owner is not None else c["neutral_ball"]))
             elif et == "golden_goal":
                 self.toast(cfg["text.golden_goal"], c["smart"], None, size_mult=1.4)
             elif et == "match_end":
@@ -397,8 +430,13 @@ class Renderer:
             elif et == "match_start":
                 self.trails.clear()
                 self.toasts.clear()
-            elif et == "state" and e["state"] == "ATTRACT":
-                self.toasts.clear()
+                self.banners.clear()
+                self.pending_marks.clear()
+            elif et == "state" and e["state"] in ("ATTRACT", "SERVE", "FINAL"):
+                if e["state"] == "ATTRACT":
+                    self.toasts.clear()
+                self.banners.clear()
+                self.pending_marks.clear()
 
     def _on_collect(self, e, engine) -> None:
         cfg = self.cfg
@@ -413,10 +451,27 @@ class Renderer:
         t = engine.types.get(e["type_id"])
         self.flights.append(dict(t0=self.time, dur=0.5, x=e["x"], y=e["y"], affects=e.get("affects"),
                                  icon=t.icon if t else "", type_id=e["type_id"], color=col_cls))
+        if engine.state == "ATTRACT" and not cfg["match.attract_toasts"]:
+            return
         if e.get("toast_c"):
             self.toast(e["toast_c"], col_team, e["collector"], cls_color=col_cls)
         if e.get("toast_o"):
             self.toast(e["toast_o"], c["teamb"][1 - e["collector"]], 1 - e["collector"], cls_color=col_cls)
+
+    @staticmethod
+    def _banner_rows(g, x, y) -> tuple[float, float]:
+        """Title/subtitle heights on the half of the arena away from the ball, so the text never hides it."""
+        a = math.radians(90 + g.rot)
+        ball_up = x * math.cos(a) + y * math.sin(a)
+        return (0.34, 0.19) if ball_up < 0 else (-0.24, -0.39)
+
+    def banner(self, text, color, dur, y_frac, size_mult=1.0) -> None:
+        """A centered message at a fixed height (fraction of R above the center)."""
+        if not text:
+            return
+        self.banners = [b for b in self.banners if abs(b["y"] - y_frac) > 0.02]  # replace what was on that line
+        self.banners.append(dict(text=text, color=color, t0=self.time, dur=dur, y=y_frac,
+                                 size=int(self.cfg["text.banner_size"] * size_mult)))
 
     def toast(self, text, color, side, size_mult=1.0, cls_color=None) -> None:
         cfg = self.cfg
@@ -429,6 +484,7 @@ class Renderer:
     # ====================================================================== render
     def render(self, engine, alpha: float, dt: float) -> pygame.Surface:
         self.time += dt
+        self._reserved = []
         self._g = engine.geom
         self._ensure(engine)
         g = engine.geom
@@ -455,6 +511,8 @@ class Renderer:
         self._shields(engine)
         self._paddles(engine, alpha)
         self._balls(engine, alpha)
+        self._chaos(engine)
+        self._pending_balls()
         self._rings()
         self.particles.draw(add, self.to_c, self.glow)
         add.composite(C)
@@ -624,18 +682,63 @@ class Renderer:
         ang = self._g.rot + extra
         return pygame.transform.rotate(surf, ang) if abs(ang) > 0.01 else surf
 
-    def _text_at(self, text, size, color, x, y, key="persian", alpha=1.0, scale_k=1.0, extra_rot=0.0, outline=2,
-                 glow=0.0):
+    def _text_surface(self, text, size, color, key="persian", scale_k=1.0, extra_rot=0.0, outline=2, glow=0.0):
         s = self.text.render(text, size, color, key, outline=outline, outline_color=(0, 6, 10), glow=glow)
         if abs(scale_k - 1.0) > 0.01:
             s = pygame.transform.smoothscale(s, (max(1, int(s.get_width() * scale_k)),
                                                  max(1, int(s.get_height() * scale_k))))
-        s = self._rot(s, extra_rot)
+        return self._rot(s, extra_rot)
+
+    def _text_at(self, text, size, color, x, y, key="persian", alpha=1.0, scale_k=1.0, extra_rot=0.0, outline=2,
+                 glow=0.0, reserve=False, avoid=False, axis=None, at=None):
+        """Draw centered text. reserve=True marks its box as taken; avoid=True moves it to the nearest free spot.
+        `at` = explicit screen position (skips the arena->screen conversion)."""
+        s = self._text_surface(text, size, color, key, scale_k, extra_rot, outline, glow)
+        cx, cy = at if at is not None else self.to_c(x, y)
+        if avoid:
+            cx, cy = self._free_spot(s.get_width(), s.get_height(), cx, cy, axis)
         if alpha < 0.999:
             s = s.copy()
             s.set_alpha(int(255 * max(0.0, alpha)))
-        cx, cy = self.to_c(x, y)
-        self.canvas.blit(s, (int(cx - s.get_width() / 2), int(cy - s.get_height() / 2)))
+        rect = s.get_rect(center=(int(cx), int(cy)))
+        self.canvas.blit(s, rect.topleft)
+        if reserve:
+            self._reserve(rect)
+        return rect
+
+    def _reserve(self, rect) -> None:
+        # the soft shadow/glow padding is generous; keep only the visible core of the text box
+        r = pygame.Rect(rect)
+        self._reserved.append(r.inflate(-int(r.w * 0.12), -int(r.h * 0.3)))
+
+    def _fits(self, r: pygame.Rect, ignore=None) -> bool:
+        g = self._g
+        lim = g.R - self.cfg["hud.safe_margin"]
+        core = r.inflate(-int(r.w * 0.12), -int(r.h * 0.3))
+        for px, py in (core.topleft, core.topright, core.bottomleft, core.bottomright):
+            if math.hypot(px - g.cx, py - g.cy) > lim:
+                return False
+        pad = core.inflate(10, 6)
+        return not any(pad.colliderect(o) for o in self._reserved if o is not ignore)
+
+    def _free_spot(self, w, h, cx, cy, axis=None):
+        """Nearest position to (cx, cy) whose box fits inside the circle and overlaps no reserved text."""
+        ax, ay = axis or (0.0, 1.0)
+        px, py = -ay, ax
+        step = max(12.0, h * 0.42)
+        cands = [(0.0, 0.0)]
+        for k in range(1, 10):
+            for sgn in (1, -1):
+                cands.append((ax * step * k * sgn, ay * step * k * sgn))
+        for k in range(1, 6):
+            for sgn in (1, -1):
+                cands.append((px * step * 2 * k * sgn, py * step * 2 * k * sgn))
+        for dx, dy in cands:
+            r = pygame.Rect(0, 0, w, h)
+            r.center = (int(cx + dx), int(cy + dy))
+            if self._fits(r):
+                return r.center
+        return (cx, cy)
 
     def timer_text(self, engine) -> str:
         cfg = self.cfg
@@ -669,16 +772,19 @@ class Renderer:
             if engine.golden:
                 col = c["smart"]
             self._text_at(txt, cfg["hud.timer_size"], col, *g.timer_pos, key="digits", alpha=ha, scale_k=k,
-                          glow=hg * 0.6)
+                          glow=hg * 0.6, reserve=True)
         for i in (0, 1):
             t = self.time - self.score_pop[i]
             k = 1.0 + (0.5 * math.sin(math.pi * t / 0.6) if 0 <= t < 0.6 else 0)
             self._text_at(str(engine.scores[i]), cfg["hud.score_size"], c["teamb"][i], *g.score_pos[i],
-                          key="digits", alpha=ha, scale_k=k, glow=hg)
-            if cfg["hud.show_player_labels"]:
+                          key="digits", alpha=ha, scale_k=k, glow=hg, reserve=True)
+            name = engine.names[i] if cfg["hud.show_names"] else ""
+            if name or cfg["hud.show_player_labels"]:
                 x, y = g.score_pos[i]
-                self._text_at(cfg[f"text.player_{i + 1}"], cfg["hud.label_size"], c["teamb"][i], x,
-                              y + cfg["hud.score_size"] * 0.62, alpha=ha * 0.9)
+                ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
+                off = cfg["hud.score_size"] * 0.56 + cfg["hud.name_size"] * 0.55
+                self._text_at(name or cfg[f"text.player_{i + 1}"], cfg["hud.name_size"] if name else cfg["hud.label_size"],
+                              c["teamb"][i], x + ux * off, y + uy * off, alpha=ha * 0.95, glow=0.3, reserve=True)
 
     # ---------------------------------------------------------------- orbs
     def _orbs(self, engine) -> None:
@@ -752,7 +858,7 @@ class Renderer:
                 continue
             strong = getattr(pr, "strong", True)
             ka = 1.0 if strong else cfg["prediction.assist_alpha"]
-            dr = cfg["prediction.dot_radius"] * (1.0 if strong else 0.8)
+            dr = cfg["prediction.dot_radius"] * (1.0 if strong else cfg["prediction.assist_dot_scale"])
             col = c["teamb"][pr.receiver] if cfg["prediction.color_mode"] == "receiver" else (255, 255, 255)
             dotc = mix(col, (255, 255, 255), 0.35)
             seglens = []
@@ -764,6 +870,8 @@ class Renderer:
             if total < 1:
                 continue
             d, k, acc = phase, 0, 0.0
+            if not strong:
+                d += total * (1.0 - cfg["prediction.assist_path_fraction"])  # only the stretch near the paddle
             while d < total:
                 while k < len(seglens) and acc + seglens[k] < d:
                     acc += seglens[k]
@@ -782,7 +890,7 @@ class Renderer:
             gx, gy = pr.contact
             sx, sy = self.to_c(gx, gy)
             if strong or cfg["prediction.assist_ghost"]:
-                r = int(cfg["ball.radius"])
+                r = max(3, int(cfg["ball.radius"] * (1.0 if strong else cfg["prediction.assist_ghost_scale"])))
                 pulse = 0.75 + 0.25 * math.sin(self.time * 8)
                 ga = cfg["prediction.ghost_alpha"] * pulse * (1.0 if strong else ka * 2.0)
                 ghost = pygame.Surface((4 * r, 4 * r), pygame.SRCALPHA)
@@ -790,10 +898,17 @@ class Renderer:
                 pygame.draw.aacircle(ghost, (*dotc, int(110 * min(1, ga))), (2 * r, 2 * r), max(1, r - 3))
                 self.canvas.blit(ghost, (int(sx - 2 * r), int(sy - 2 * r)))
             if pr.out_dir and not pr.goal and (strong or cfg["prediction.assist_arrow"]):
-                L = cfg["prediction.arrow_length"]
+                L = cfg["prediction.arrow_length"] if strong else cfg["prediction.assist_arrow_length"]
                 ex, ey = gx + pr.out_dir[0] * L, gy + pr.out_dir[1] * L
                 p1, p2 = (sx, sy), self.to_c(ex, ey)
-                ac = scale(dotc, ka)
+                ac = scale(dotc, ka if strong else min(1.0, ka * 2.2))
+                if not strong:  # tiny and faint: a thin stroke with a small chevron
+                    self.add.mark(pygame.draw.aaline(self.add.surf, ac, p1, p2, 1))
+                    ang = math.atan2(p2[1] - p1[1], p2[0] - p1[0])
+                    for sgn in (-0.6, 0.6):
+                        q = (p2[0] - 6 * math.cos(ang + sgn), p2[1] - 6 * math.sin(ang + sgn))
+                        self.add.mark(pygame.draw.aaline(self.add.surf, ac, p2, q, 1))
+                    continue
                 if pr.intercept:
                     self.add.mark(pygame.draw.aaline(self.add.surf, ac, p1, p2, 3))
                 else:
@@ -854,7 +969,7 @@ class Renderer:
         comet = cfg["trails.style"] == "comet"
         for bid, tr, b in items:
             dur = base_dur
-            if b is not None and engine.effects.ball_speed_mult(b.id) > 1.01:
+            if b is not None and engine.speed_mult(b) > 1.01:
                 dur *= cfg["trails.speedup_length_mult"]
             while tr and self.time - tr[0][0] > dur:
                 tr.pop(0)
@@ -1060,8 +1175,7 @@ class Renderer:
                     gsize *= 1 + 0.25 * math.sin(self.time * 9)
             sx, sy = self.to_c(x, y)
             self.add.blit(self.glow.sprite(col, r * gsize, gint * a), (sx, sy))
-            spd = engine.effects.ball_has(b.id, "ball_speed")
-            if spd is not None and spd.value > 1 and not b.held and self.rng.random() < 0.7:
+            if engine.speed_mult(b) > 1.01 and not b.held and self.rng.random() < 0.7:
                 ang = math.atan2(b.vy, b.vx) + math.pi
                 self.particles.burst(x, y, (255, 150, 60), 2, (60, 200), (0.15, 0.35), (1.5, 3.0), cap=cap,
                                      direction=ang, spread=0.5)
@@ -1074,6 +1188,79 @@ class Renderer:
             self.canvas.blit(body, (int(sx - body.get_width() / 2), int(sy - body.get_height() / 2)))
             if b.owner is not None and engine.effects.for_player(b.owner, "bull") is not None:
                 self.add.mark(pygame.draw.aacircle(self.add.surf, scale(c["smart"], 0.8), (int(sx), int(sy)), int(r + 7), 2))
+
+    def _chaos(self, engine) -> None:
+        """Random-path sequence: charging aura, then a roulette of candidate paths that locks on the chosen one."""
+        c = self.c
+        col = c["neutral"]
+        colb = boost(col, 0.35)
+        for b in engine.balls:
+            ch = b.chaos
+            if not ch or b.removed:
+                continue
+            sx, sy = self.to_c(b.x, b.y)
+            p = ch["p"]
+            if ch["stage"] == "intro":
+                self.add.blit(self.glow.sprite(colb, b.r * (4.2 + 1.4 * math.sin(self.time * 10)), 0.9), (sx, sy))
+                for j in range(6):
+                    a = self.time * 4.0 + j * math.tau / 6
+                    rr = b.r * 2.7 + 4 * math.sin(self.time * 6 + j)
+                    self.add.blit(self.glow.sprite(colb, 8, 1.0), (sx + math.cos(a) * rr, sy + math.sin(a) * rr))
+                rr = int(b.r * 3.4)
+                rect = pygame.Rect(0, 0, 2 * rr, 2 * rr)
+                rect.center = (int(sx), int(sy))
+                for j in range(8):
+                    a0 = -self.time * 3.0 + j * math.tau / 8
+                    self.add.mark(pygame.draw.arc(self.add.surf, colb, rect, a0, a0 + 0.38, 2))
+            elif ch["stage"] == "select":
+                cands = ch["candidates"]
+                n = len(cands)
+                if not n:
+                    continue
+                t = ch["t"] / max(0.01, ch.get("select_len", p["select_s"]))
+                cycles = 2 if ch["rolls_done"] == 0 else 1
+                total = cycles * n + ch["chosen"]
+                locked = t >= 0.82
+                hi = ch["chosen"] if locked else int(ease_out_cubic(t / 0.82) * total) % n
+                self.add.blit(self.glow.sprite(colb, b.r * 3.6, 0.75), (sx, sy))
+                for j, a in enumerate(cands):
+                    dx, dy = math.cos(a), -math.sin(a)
+                    bright = j == hi
+                    L = p.get("ray_length", 70) * (1.3 if bright and locked else 1.0)
+                    d = b.r * 1.5
+                    while d < L:
+                        f = 1 - d / L * 0.65
+                        if bright:
+                            inten = (1.25 if locked else 0.95) * f
+                            if locked:
+                                inten *= 0.75 + 0.25 * math.sin(self.time * 40)
+                            self.add.blit(self.glow.sprite(colb if not locked else (255, 255, 255), 6, inten),
+                                          (sx + dx * d, sy + dy * d))
+                        else:
+                            self.add.blit(self.glow.sprite(col, 4, 0.34 * f), (sx + dx * d, sy + dy * d))
+                        d += 7
+                    if bright:
+                        tip = (sx + dx * L, sy + dy * L)
+                        ang = math.atan2(dy, dx)
+                        for sgn in (-0.55, 0.55):
+                            q = (tip[0] - 8 * math.cos(ang + sgn), tip[1] - 8 * math.sin(ang + sgn))
+                            self.add.mark(pygame.draw.aaline(self.add.surf, colb, tip, q, 2))
+
+    def _pending_balls(self) -> None:
+        """Telegraph where (and when) the delayed second ball will appear."""
+        keep = []
+        for pm in self.pending_marks:
+            age = self.time - pm["t0"]
+            if age > pm["dur"]:
+                continue
+            keep.append(pm)
+            k = age / pm["dur"]
+            sx, sy = self.to_c(pm["x"], pm["y"])
+            rr = pm["r"] * (4.0 - 2.8 * ease_out_cubic(k))
+            col = scale(pm["color"], 0.35 + 0.65 * k)
+            self.add.mark(pygame.draw.aacircle(self.add.surf, col, (int(sx), int(sy)), max(2, int(rr)), 2))
+            self.add.blit(self.glow.sprite(pm["color"], pm["r"] * (1.5 + 2.5 * k), 0.25 + 0.6 * k), (sx, sy))
+        self.pending_marks = keep
 
     def _rings(self) -> None:
         keep = []
@@ -1130,15 +1317,46 @@ class Renderer:
     def _attract(self, engine) -> None:
         cfg = self.cfg
         g = self._g
+        c = self.c
         self.dim.set_alpha(int(255 * (1 - cfg["match.attract_opacity"])))
         self.canvas.blit(self.dim, (0, 0))
         R = g.R
+        bs = cfg["text.banner_size"]
+        ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
+        rx, ry = -uy, ux  # "right" along the title row (screen-left for RTL reading comes first)
+        # title row: «هاکی بازار» | MARKET HOCKEY, side by side, high on the arena
+        fa = self._text_surface(cfg["text.title"], int(bs * 1.3), (255, 255, 255), "persian_title", outline=3, glow=0.35)
+        en = self._text_surface(cfg["text.subtitle"], int(bs * 0.5), c["p1b"], "latin", glow=0.45)
+        gap = bs * 1.6  # clear breathing room between the Persian and the English title
+        total = fa.get_width() * 0.78 + gap + en.get_width() * 0.78  # widths include the shadow padding
+        ty = R * 0.34
+        fx = total / 2 - fa.get_width() * 0.39  # Persian on the right
+        ex = -total / 2 + en.get_width() * 0.39  # English on the left
+        self._text_at(cfg["text.title"], int(bs * 1.3), (255, 255, 255), ux * ty - rx * fx, uy * ty - ry * fx,
+                      key="persian_title", outline=3, glow=0.35, reserve=True)
+        self._text_at(cfg["text.subtitle"], int(bs * 0.5), c["p1b"], ux * ty - rx * ex, uy * ty - ry * ex,
+                      key="latin", glow=0.45, reserve=True)
+        mid = total / 2 - fa.get_width() * 0.78 - gap / 2  # the gap between the two titles
+        dx0, dy0 = self.to_c(ux * ty - rx * mid, uy * ty - ry * mid)
+        self.add.begin()
+        self.add.mark(pygame.draw.aaline(self.add.surf, scale(c["lines"], 1.6), (dx0, dy0 - bs * 0.45),
+                                         (dx0, dy0 + bs * 0.45), 2))
+        self.add.composite(self.canvas)
+        # player names entered on the supervisor page
+        for i in (0, 1):
+            if not engine.names[i]:
+                continue
+            gx, gy = g.goal_dir[i]
+            bx, by = gx * R * 0.5, gy * R * 0.5
+            self._text_at(cfg[f"text.player_{i + 1}"], int(cfg["text.toast_size"] * 0.55), c["teamb"][i],
+                          bx + ux * R * 0.1, by + uy * R * 0.1, alpha=0.85, reserve=True)
+            self._text_at(engine.names[i], int(bs * 0.7), c["teamb"][i], bx, by, outline=3, glow=0.6, reserve=True)
         pulse = 0.65 + 0.35 * math.sin(self.time * 2.4)
-        self._text_at(cfg["text.title"], int(cfg["text.banner_size"] * 1.8), (255, 255, 255), 0, R * 0.16,
-                      key="persian_title", outline=3, glow=0.35)
-        self._text_at(cfg["text.subtitle"], int(cfg["text.banner_size"] * 0.6), self.c["p1b"], 0, R * 0.0,
-                      key="latin", glow=0.5)
-        self._text_at(cfg["text.attract_prompt"], cfg["text.toast_size"], (255, 255, 255), 0, -R * 0.3, alpha=pulse)
+        self._text_at(cfg["text.attract_prompt"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255),
+                      -ux * R * 0.27, -uy * R * 0.27, alpha=pulse, reserve=True)
+        if self.supervisor_url and cfg["web.show_url_on_arena"]:
+            self._text_at(self.supervisor_url, 18, scale(c["text"], 0.75), -ux * R * 0.62, -uy * R * 0.62,
+                          key="latin", outline=2, reserve=True)
 
     def _countdown(self, engine) -> None:
         cfg = self.cfg
@@ -1157,7 +1375,7 @@ class Renderer:
             col = mix(self.c["p1b"], (255, 255, 255), 0.45)
         elif label == "2":
             col = mix(self.c["p2b"], (255, 255, 255), 0.45)
-        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3, glow=0.8)
+        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3, glow=0.8, reserve=True)
 
     def _telegraph(self, engine) -> None:
         live = engine.live_balls()
@@ -1203,8 +1421,8 @@ class Renderer:
             gx, gy = g.goal_dir[w]
             ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
             bx, by = gx * R * 0.5, gy * R * 0.5
-            self._text_at(cfg["text.winner"], int(cfg["text.banner_size"] * 1.1), c["teamb"][w], bx + ux * R * 0.27,
-                          by + uy * R * 0.27, key="persian_title", outline=3, glow=0.6)
+            self._text_at(cfg["text.winner"], int(cfg["text.banner_size"] * 1.1), c["teamb"][w], bx + ux * R * 0.31,
+                          by + uy * R * 0.31, key="persian_title", outline=3, glow=0.6)
             k = 1 + 0.08 * math.sin(self.time * 4)
             ic = self.icons.icon("trophy", "_trophy", int(84 * k), c["smart"])
             sx, sy = self.to_c(bx + ux * R * 0.48, by + uy * R * 0.48)
@@ -1220,14 +1438,29 @@ class Renderer:
             gx, gy = g.goal_dir[i]
             dx, dy = math.cos(math.radians(270 + g.rot)), math.sin(math.radians(270 + g.rot))
             self._text_at(str(engine.scores[i]), int(cfg["hud.score_size"] * 1.5), c["teamb"][i],
-                          gx * R * 0.5 + dx * R * 0.04, gy * R * 0.5 + dy * R * 0.04, key="digits", outline=3,
+                          gx * R * 0.5 + dx * R * 0.06, gy * R * 0.5 + dy * R * 0.06, key="digits", outline=3,
                           glow=cfg["hud.glow"])
+            if engine.names[i]:
+                self._text_at(engine.names[i], int(cfg["text.banner_size"] * 0.75), c["teamb"][i],
+                              gx * R * 0.5 - dx * R * 0.16, gy * R * 0.5 - dy * R * 0.16, outline=3, glow=0.4)
         self._text_at(cfg["text.slogan"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255), 0, -R * 0.55,
                       alpha=min(1.0, st_t / 0.8))
 
     def _toasts(self, engine) -> None:
         cfg = self.cfg
         g = self._g
+        bk = []
+        for bn in self.banners:
+            age = self.time - bn["t0"]
+            if age >= bn["dur"]:
+                continue
+            bk.append(bn)
+            a = min(1.0, age / 0.18) * (1.0 if age < bn["dur"] - 0.35 else max(0.0, (bn["dur"] - age) / 0.35))
+            k = 0.8 + 0.2 * ease_out_back(min(1.0, age / 0.3))
+            ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
+            self._text_at(bn["text"], bn["size"], bn["color"], ux * g.R * bn["y"], uy * g.R * bn["y"], alpha=a,
+                          scale_k=k, outline=3, glow=0.6, reserve=True, avoid=True, axis=(-ux, uy))
+        self.banners = bk
         keep = []
         per_side: dict = {}
         for t in self.toasts:
@@ -1251,8 +1484,23 @@ class Renderer:
                 x, y = gx * rr + px * off, gy * rr + py * off
                 if cfg["hud.orientation"] == "toward_players":
                     extra = -90.0 if side == 0 else 90.0
-            self._text_at(t["text"], t["size"], t["color"], x, y, alpha=a, scale_k=k, extra_rot=extra, outline=3,
-                          glow=0.35)
+            # choose a free spot once (re-check every frame in case something new appeared there)
+            full = self._text_surface(t["text"], t["size"], t["color"], extra_rot=extra, outline=3, glow=0.35)
+            pos = t.get("pos")
+            if pos is not None:
+                r = full.get_rect(center=pos)
+                if not self._fits(r):
+                    pos = None
+            if pos is None:
+                axis = (0.0, 1.0)
+                if side is not None:
+                    gx, gy = g.goal_dir[side]
+                    axis = (-gy, -gx)  # slide along the player's side
+                pos = self._free_spot(full.get_width(), full.get_height(), *self.to_c(x, y), axis)
+                t["pos"] = pos
+            self._text_at(t["text"], t["size"], t["color"], 0, 0, alpha=a, scale_k=k, extra_rot=extra, outline=3,
+                          glow=0.35, at=pos)
+            self._reserve(full.get_rect(center=pos))
         self.toasts = keep
 
     def _absent(self, engine) -> None:

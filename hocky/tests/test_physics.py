@@ -113,3 +113,23 @@ def test_speed_stays_bounded_after_many_hits(engine):
         sh = engine.paddle_shape(1)
         b.x, b.y = sh.apex()[0] + sh.fx * 10, sh.apex()[1] + sh.fy * 10
     assert math.hypot(b.vx, b.vy) <= cfg["ball.max_speed"] + 1e-6
+
+
+def test_rounded_tips_follow_the_dome_curvature():
+    import math as m
+    sh = PaddleShape(180.0, 484, 150, 0.25)  # shallow dome, ~28° edge tilt
+    corner_normal = (m.cos(m.radians(-80)), m.sin(m.radians(-80)))  # what a sharp corner would give
+    sharp = paddle_response(-500, 0, *corner_normal, sh, 0, 0, HitParams(blend=0, max_out=m.radians(89), min_forward=-2), True, 500)
+    soft = paddle_response(-500, 0, *corner_normal, sh, 0, 0,
+                           HitParams(blend=0, max_out=m.radians(89), min_forward=-2, tip_limit=m.radians(5)), True, 500)
+    a_sharp = abs(m.degrees(m.atan2(sharp[1], sharp[0])))
+    a_soft = abs(m.degrees(m.atan2(soft[1], soft[0])))
+    assert a_soft < a_sharp and a_soft <= 2 * (m.degrees(sh.alpha) + 5) + 0.5
+
+
+def test_sliding_paddle_impulse_is_capped(engine):
+    playing(engine)
+    cap = engine.cfg["paddles.p1.max_impulse_speed"]
+    engine.paddles[0].omega = 400.0  # very fast keyboard slide
+    vx, vy = engine._paddle_velocity(0, engine.paddles[0].theta)
+    assert math.hypot(vx, vy) <= cap + 1e-6

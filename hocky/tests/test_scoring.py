@@ -98,3 +98,21 @@ def test_full_match_flow_reaches_result(engine):
         assert st in states
     beats = [e["label"] for e in ev if e["type"] == "countdown_beat"]
     assert beats[:5] == ["ready", "3", "2", "1", "go"]
+
+
+def test_names_clear_after_each_game(engine):
+    engine.set_names("سارا", "Reza")
+    playing(engine)
+    engine._finish()
+    assert engine.names == ["سارا", "Reza"]  # still shown on the result screen
+    engine.reset_to_attract()
+    assert engine.names == ["", ""]  # waiting for the next players
+    # names typed during the result screen are kept for the next game
+    playing(engine)
+    engine._finish()
+    engine.set_names("نگار", "Ali")
+    engine.start_match()
+    assert engine.names == ["نگار", "Ali"]
+    # a game reset mid-match keeps the names
+    engine.reset_to_attract()
+    assert engine.names == ["نگار", "Ali"]

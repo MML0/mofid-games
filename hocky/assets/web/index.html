@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#061820">
+<title>هاکی بازار · پنل سرپرست</title>
+<style>
+@font-face { font-family: "IRANSansX"; src: url("/fonts/IRANSansX-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "IRANSansX"; src: url("/fonts/IRANSansX-Medium.ttf") format("truetype"); font-weight: 500; }
+@font-face { font-family: "IRANSansX"; src: url("/fonts/IRANSansX-Bold.ttf") format("truetype"); font-weight: 700; }
+@font-face { font-family: "IRANSansX"; src: url("/fonts/IRANSansX-Black.ttf") format("truetype"); font-weight: 900; }
+:root {
+  --bg: #061820; --card: #10303F; --card2: #163B4C; --line: #1F4A5C;
+  --fg: #E6F2F5; --muted: #8FB3C0; --accent: #00A796; --warn: #F3716D; --good: #39E46F;
+  --p1: #00A796; --p2: #832C73; --p1g: #2EE6CF; --p2g: #D46BC2; --radius: 16px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, #0E3242 0%, var(--bg) 60%) fixed; color: var(--fg);
+  font-family: "IRANSansX", Tahoma, sans-serif; min-height: 100%; }
+body { padding: 16px 20px 32px; }
+button, input { font-family: inherit; }
+
+.top { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+.brand { font-weight: 900; font-size: 24px; letter-spacing: -0.5px; white-space: nowrap; }
+.brand small { font-weight: 500; font-size: 13px; color: var(--muted); margin-inline-start: 6px; }
+.pill { padding: 5px 12px; border-radius: 999px; background: var(--card2); color: var(--muted); font-size: 13px; white-space: nowrap; }
+.pill.on { background: #0E3B33; color: var(--good); }
+.pill.off { background: #3A1A1E; color: var(--warn); }
+.spacer { flex: 1; }
+.addr { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--muted); }
+.addr button { direction: ltr; border: 1px solid var(--line); background: #04141B; color: var(--fg); border-radius: 8px; padding: 4px 9px;
+  font-size: 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.addr button.lan { border-color: #19D3BC66; color: #9ff3e8; }
+
+.stage { display: grid; grid-template-columns: 1fr minmax(250px, 320px) 1fr; gap: 16px; margin-top: 16px; direction: ltr; }
+.player { direction: rtl; position: relative; border-radius: var(--radius); padding: 16px 18px 18px; overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 22%, var(--card)) 0%, var(--card) 55%);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line)); box-shadow: 0 18px 50px -25px var(--cg); transition: transform .25s, box-shadow .25s; }
+.player::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--c); box-shadow: 0 0 22px var(--cg); }
+.player.p1 { --c: var(--p1); --cg: var(--p1g); }
+.player.p2 { --c: var(--p2); --cg: var(--p2g); }
+.player.win { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--cg), 0 0 60px -10px var(--cg); }
+.ptag { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--cg); flex: none; }
+.side { margin-inline-start: auto; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: #0006; }
+.nameRow { display: flex; gap: 8px; margin-top: 10px; }
+.name { flex: 1; min-width: 0; padding: 11px 13px; font-size: 20px; font-weight: 700; color: var(--fg); background: #04141B;
+  border: 2px solid color-mix(in srgb, var(--c) 40%, transparent); border-radius: 12px; outline: none; transition: border-color .2s, box-shadow .2s; }
+.name:focus { border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); }
+.name::placeholder { color: #5f8492; font-weight: 500; }
+.add { flex: none; width: 50px; border: 0; border-radius: 12px; background: var(--c); color: #001412; font-size: 22px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 6px 18px -8px var(--cg); transition: transform .08s, filter .2s; }
+.add:active { transform: scale(.94); }
+.add.saved { background: #0E3B33; color: var(--good); }
+.shown { margin-top: 6px; min-height: 20px; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shown b { color: var(--cg); }
+.score { font-weight: 900; font-size: 104px; line-height: 1; text-align: center; margin-top: 8px; color: var(--cg);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--cg) 60%, transparent); font-variant-numeric: tabular-nums; transition: transform .2s; }
+.score.pop { transform: scale(1.18); }
+.badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--c); color: #001412; font-weight: 900;
+  padding: 3px 12px; border-radius: 999px; display: none; box-shadow: 0 0 20px var(--cg); font-size: 13px; }
+.player.win .badge { display: block; }
+
+.center { direction: rtl; display: flex; flex-direction: column; gap: 10px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px; }
+.clock { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ring { position: relative; width: 150px; height: 150px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .t { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ring .t b { font-size: 46px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.ring .t span { display: block; font-size: 12px; color: var(--muted); margin-top: -4px; }
+.state { text-align: center; font-weight: 700; font-size: 17px; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.btn { border: 0; border-radius: 12px; padding: 11px 12px; font-size: 15px; font-weight: 700; color: var(--fg); background: var(--card2); cursor: pointer;
+  transition: transform .08s, filter .2s, background .2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn:hover { filter: brightness(1.15); }
+.btn:active { transform: scale(.97); }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn .ic { font-size: 1.1em; }
+.btn.play { background: linear-gradient(135deg, var(--accent), #19D3BC); color: #00110F; font-size: 21px; font-weight: 900; padding: 15px; box-shadow: 0 10px 30px -10px #19D3BC; }
+.btn.play:disabled { filter: grayscale(.8) brightness(.6); cursor: not-allowed; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); font-weight: 500; font-size: 13px; padding: 8px; color: var(--muted); }
+.row2 { display: flex; gap: 8px; }
+.row2 .btn { flex: 1; }
+.hint { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.7; }
+.sm { display: none; }
+
+.result { display: none; margin-top: 16px; padding: 14px 18px; border-radius: var(--radius); background: linear-gradient(90deg, #0F2C38, #133847);
+  border: 1px solid var(--line); align-items: center; gap: 14px; position: relative; overflow: hidden; }
+.result.show { display: flex; animation: rise .5s ease-out; }
+.result .trophy { font-size: 38px; filter: drop-shadow(0 0 12px #FFD54A); }
+.result .txt { font-size: 20px; font-weight: 900; }
+.result .sub { color: var(--muted); font-size: 14px; }
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+.confetti { position: absolute; width: 7px; height: 12px; top: -20px; border-radius: 2px; animation: fall 2.2s linear forwards; }
+@keyframes fall { to { transform: translateY(140px) rotate(540deg); opacity: 0; } }
+
+.lists { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-top: 16px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-height: 140px; }
+.panel h2 { margin: 0 0 10px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+.panel h2 .count { font-size: 12px; color: var(--muted); font-weight: 500; }
+.panel h2 a { margin-inline-start: auto; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+.search { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: #04141B; color: var(--fg); margin-bottom: 8px; font-size: 14px; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: start; font-weight: 500; color: var(--muted); font-size: 12px; padding: 6px 7px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 7px; border-bottom: 1px solid #ffffff0d; font-variant-numeric: tabular-nums; }
+tr.new td { animation: flash 1.6s ease-out; }
+@keyframes flash { from { background: #19D3BC33; } to { background: transparent; } }
+.who { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+.who i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.won { color: #FFD54A; }
+.sc { font-weight: 900; font-size: 16px; }
+.time { color: var(--muted); font-size: 12px; direction: ltr; text-align: end; white-space: nowrap; }
+.rank { color: var(--muted); width: 24px; }
+.rank.g1 { color: #FFD54A; font-weight: 900; } .rank.g2 { color: #CFD8DC; font-weight: 900; } .rank.g3 { color: #E0A070; font-weight: 900; }
+.empty { color: var(--muted); text-align: center; padding: 24px 0; font-size: 14px; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--card2); color: var(--fg); padding: 9px 16px;
+  border-radius: 12px; box-shadow: 0 10px 40px #0008; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 30; font-size: 14px; white-space: nowrap; }
+.toast.on { opacity: 1; }
+
+/* tablet */
+@media (max-width: 980px) {
+  .stage { grid-template-columns: 1fr 1fr; }
+  .center { grid-column: 1 / -1; order: 3; }
+  .clock { flex-direction: row; justify-content: center; gap: 18px; }
+  .lists { grid-template-columns: 1fr; }
+  .score { font-size: 80px; }
+}
+/* phone: compact cards side by side, controls pinned to the bottom */
+@media (max-width: 640px) {
+  body { padding: 10px 10px calc(96px + env(safe-area-inset-bottom)); }
+  .brand { font-size: 18px; } .brand small { display: none; }
+  .pill { font-size: 11px; padding: 3px 9px; }
+  .addr { width: 100%; font-size: 11px; } .addr button { font-size: 11px; padding: 3px 7px; }
+  .stage { gap: 8px; margin-top: 10px; }
+  .player { padding: 11px 10px 10px; border-radius: 13px; }
+  .ptag { font-size: 12px; gap: 6px; } .side { display: none; }
+  .nameRow { gap: 6px; margin-top: 8px; }
+  .name { font-size: 16px; padding: 8px 9px; border-radius: 10px; }
+  .add { width: 40px; font-size: 18px; border-radius: 10px; }
+  .shown { font-size: 11px; min-height: 16px; margin-top: 4px; }
+  .score { font-size: 54px; margin-top: 4px; }
+  .badge { font-size: 11px; top: 6px; }
+  .center { padding: 8px 10px; gap: 6px; border-radius: 13px; }
+  .ring { width: 74px; height: 74px; } .ring .t b { font-size: 24px; } .ring .t span { display: none; }
+  .state { font-size: 15px; }
+  .hint, #saveBoth, #clear { display: none; }
+  .actions { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; flex-direction: row; gap: 8px;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); background: #061820e6; backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
+  .actions .btn.play { flex: 2; font-size: 17px; padding: 12px 8px; }
+  .actions .row2 { flex: 2; }
+  .actions .row2 .btn { font-size: 13px; padding: 12px 6px; }
+  .result { margin-top: 10px; padding: 10px 12px; } .result .txt { font-size: 16px; } .result .trophy { font-size: 28px; }
+  .lists { gap: 10px; margin-top: 10px; }
+  .panel { padding: 10px; border-radius: 13px; } .panel h2 { font-size: 15px; }
+  table { font-size: 13px; } td, th { padding: 6px 4px; } .sc { font-size: 14px; }
+  .hideS { display: none; }
+  .lg { display: none; } .sm { display: inline; }
+  .actions .btn { white-space: nowrap; }
+  .toast { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">هاکی بازار <small>پنل سرپرست · کارگزاری مفید</small></div>
+  <div id="conn" class="pill">در حال اتصال…</div>
+  <div class="spacer"></div>
+  <div class="addr" id="addr"></div>
+</div>
+
+<div class="stage">
+  <section class="player p1" id="card0">
+    <div class="badge">برنده</div>
+    <div class="ptag"><span class="dot"></span><span>بازیکن 1</span><span class="side">سمت چپ زمین</span></div>
+    <div class="nameRow">
+      <input class="name" id="name0" maxlength="24" placeholder="نام بازیکن اول" autocomplete="off" dir="auto" enterkeyhint="done">
+      <button class="add" id="add0" title="ثبت نام بازیکن اول" aria-label="ثبت نام بازیکن اول">✓</button>
+    </div>
+    <div class="shown" id="shown0"></div>
+    <div class="score" id="score0">0</div>
+  </section>
+
+  <section class="center">
+    <div class="clock">
+      <div class="ring">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" stroke="#163B4C" stroke-width="8" fill="none"/>
+          <circle id="arc" cx="50" cy="50" r="44" stroke="#19D3BC" stroke-width="8" fill="none" stroke-linecap="round"
+                  stroke-dasharray="276.46" stroke-dashoffset="0"/></svg>
+        <div class="t"><div><b id="timer">60</b><span>ثانیه</span></div></div>
+      </div>
+      <div class="state" id="state">—</div>
+    </div>
+    <div class="actions">
+      <button class="btn play" id="play"><span class="ic">▶</span><span id="playTxt">شروع بازی</span></button>
+      <div class="row2">
+        <button class="btn" id="pause"><span class="ic">⏸</span><span class="lg">توقف / ادامه</span><span class="sm">توقف</span></button>
+        <button class="btn" id="reset"><span class="ic">↺</span><span class="lg">صفحهٔ آغاز</span><span class="sm">آغاز</span></button>
+      </div>
+    </div>
+    <div class="row2">
+      <button class="btn ghost" id="saveBoth">ثبت هر دو نام ⏎</button>
+      <button class="btn ghost" id="clear">پاک کردن نام‌ها</button>
+    </div>
+    <div class="hint">نام را بنویسید و Enter یا ✓ بزنید · Enter دوباره = شروع</div>
+  </section>
+
+  <section class="player p2" id="card1">
+    <div class="badge">برنده</div>
+    <div class="ptag"><span class="dot"></span><span>بازیکن 2</span><span class="side">سمت راست زمین</span></div>
+    <div class="nameRow">
+      <input class="name" id="name1" maxlength="24" placeholder="نام بازیکن دوم" autocomplete="off" dir="auto" enterkeyhint="done">
+      <button class="add" id="add1" title="ثبت نام بازیکن دوم" aria-label="ثبت نام بازیکن دوم">✓</button>
+    </div>
+    <div class="shown" id="shown1"></div>
+    <div class="score" id="score1">0</div>
+  </section>
+</div>
+
+<div class="result" id="result">
+  <div class="trophy">🏆</div>
+  <div><div class="txt" id="resTxt"></div><div class="sub" id="resSub"></div></div>
+</div>
+
+<div class="lists">
+  <section class="panel">
+    <h2>بازی‌های انجام‌شده <span class="count" id="count"></span><a href="/api/history.csv">دانلود CSV</a></h2>
+    <input class="search" id="search" placeholder="جستجوی نام…">
+    <div class="tablewrap" id="history"><div class="empty">هنوز بازی‌ای ثبت نشده است.</div></div>
+  </section>
+  <section class="panel">
+    <h2>جدول قهرمانان</h2>
+    <div class="tablewrap" id="board"><div class="empty">—</div></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATE = { ATTRACT: "در انتظار شروع", INTRO: "آماده‌سازی", COUNTDOWN: "شمارش معکوس", SERVE: "در حال بازی",
+  PLAYING: "در حال بازی", GOAL: "گل!", FINAL: "پایان بازی", RESULT: "نتیجهٔ بازی" };
+let last = null, lastMatch = -1, lastScores = [0, 0], online = false, histCache = null, newestTime = "", editing = [false, false], addrKey = "";
+
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 1800); }
+async function post(path, body) {
+  try {
+    const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+async function saveOne(i, moveOn = true) {
+  const name = $("name" + i).value.trim();
+  if (!(await post("/api/name", { player: i, name }))) { toast("ارتباط با بازی برقرار نیست"); return; }
+  editing[i] = false;
+  const b = $("add" + i); b.classList.add("saved"); setTimeout(() => b.classList.remove("saved"), 900);
+  toast(name ? "«" + name + "» روی زمین نمایش داده شد" : "نام بازیکن " + (i + 1) + " پاک شد");
+  if (!moveOn) return;
+  const other = $("name" + (1 - i));
+  if (!other.value.trim()) other.focus(); else $("play").focus();
+}
+async function saveBoth() {
+  const ok = await post("/api/names", { p1: $("name0").value.trim(), p2: $("name1").value.trim() });
+  if (ok) { toast("نام‌ها روی زمین نمایش داده شد"); editing = [false, false]; $("play").focus(); } else toast("ارتباط با بازی برقرار نیست");
+}
+async function play() {
+  for (const i of [0, 1]) if (editing[i]) await saveOne(i, false);
+  if (await post("/api/start")) toast("شمارش معکوس شروع شد");
+}
+$("add0").onclick = () => saveOne(0);
+$("add1").onclick = () => saveOne(1);
+$("saveBoth").onclick = saveBoth;
+$("play").onclick = play;
+$("pause").onclick = () => post("/api/pause");
+$("reset").onclick = () => post("/api/reset");
+$("clear").onclick = async () => { $("name0").value = ""; $("name1").value = ""; await post("/api/clear_names"); toast("نام‌ها پاک شد"); };
+for (const i of [0, 1]) {
+  const el = $("name" + i);
+  el.addEventListener("input", () => { editing[i] = true; });
+  el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); saveOne(i); } });
+}
+
+function renderAddr(urls) {
+  const key = (urls || []).join("|");
+  if (key === addrKey) return;
+  addrKey = key;
+  const lan = (urls || []).filter(u => !u.includes("127.0.0.1"));
+  const box = $("addr");
+  if (!urls || !urls.length) { box.innerHTML = ""; return; }
+  const show = lan.length ? lan : urls;
+  box.innerHTML = "<span>آدرس پنل برای گوشی:</span>" + show.map(u => "<button class='" + (lan.length ? "lan" : "") + "' data-u='" + esc(u) + "'>" +
+    esc(u.replace("http://", "").replace(/\/$/, "")) + "</button>").join("");
+  for (const b of box.querySelectorAll("button")) b.onclick = () => {
+    navigator.clipboard?.writeText(b.dataset.u).then(() => toast("آدرس کپی شد"), () => toast(b.dataset.u));
+  };
+}
+
+function setColors(s) {
+  const root = document.documentElement.style;
+  if (s.colors) { root.setProperty("--p1", s.colors[0]); root.setProperty("--p2", s.colors[1]); }
+  if (s.colors_glow) { root.setProperty("--p1g", s.colors_glow[0]); root.setProperty("--p2g", s.colors_glow[1]); }
+}
+
+function render(s) {
+  setColors(s);
+  renderAddr(s.urls);
+  const live = ["INTRO", "COUNTDOWN", "SERVE", "PLAYING", "GOAL"].includes(s.state);
+  $("state").textContent = (s.paused ? "⏸ " : "") + (STATE[s.state] || s.state) + (s.golden ? " · گل طلایی" : "");
+  const dur = Math.max(1, s.duration || 60);
+  const tl = s.timer_enabled ? Math.max(0, Math.ceil(s.time_left - 1e-6)) : null;
+  const showT = live || s.state === "FINAL" || s.state === "RESULT";
+  $("timer").textContent = s.golden ? "+" : (tl === null ? "∞" : String(showT ? tl : Math.round(dur)));
+  const frac = s.timer_enabled && showT ? Math.max(0, Math.min(1, s.time_left / dur)) : 1;
+  $("arc").setAttribute("stroke-dashoffset", String(276.46 * (1 - frac)));
+  $("arc").setAttribute("stroke", tl !== null && live && tl <= 10 ? "#F3716D" : "#19D3BC");
+  for (const i of [0, 1]) {
+    const sc = s.scores?.[i] ?? 0;
+    const el = $("score" + i);
+    if (sc !== lastScores[i]) { el.classList.add("pop"); setTimeout(() => el.classList.remove("pop"), 220); }
+    el.textContent = String(sc);
+    const shown = s.names?.[i] || "";
+    $("shown" + i).innerHTML = shown ? "روی زمین: <b>" + esc(shown) + "</b>" : "روی زمین: «" + esc(s.labels?.[i] || "") + "»";
+    if (!editing[i] && document.activeElement !== $("name" + i) && $("name" + i).value !== shown) $("name" + i).value = shown;
+    $("card" + i).classList.toggle("win", s.state === "RESULT" && s.winner === i);
+  }
+  lastScores = (s.scores || [0, 0]).slice();
+  $("play").disabled = !(s.state === "ATTRACT" || s.state === "RESULT");
+  $("playTxt").textContent = s.state === "RESULT" ? "بازی بعدی" : "شروع بازی";
+  const res = $("result");
+  if (s.state === "RESULT" || s.state === "FINAL") {
+    const r = s.last_result;
+    if (r) {
+      const n = r.players.map(p => p.name);
+      $("resTxt").innerHTML = r.winner === null ? "مساوی!" : "برنده: <span style='color:" + (s.colors_glow?.[r.winner] || "#fff") + "'>" + esc(n[r.winner]) + "</span>";
+      $("resSub").textContent = n[0] + "  " + r.players[0].score + " — " + r.players[1].score + "  " + n[1];
+      if (!res.classList.contains("show")) { res.classList.add("show"); confetti(r.winner); }
+    }
+  } else res.classList.remove("show");
+  if (s.match_count !== lastMatch && (s.state === "RESULT" || lastMatch === -1)) { lastMatch = s.match_count; loadHistory(); }
+  if (last && last.state !== "ATTRACT" && s.state === "ATTRACT" && !(s.names || []).join("") && window.matchMedia("(min-width: 641px)").matches) {
+    editing = [false, false]; $("name0").value = ""; $("name1").value = ""; $("name0").focus();
+  }
+}
+
+function confetti(w) {
+  const res = $("result");
+  const cols = ["#FFD54A", "#19D3BC", "#E6F2F5", w === 1 ? "#D46BC2" : "#2EE6CF"];
+  for (let k = 0; k < 36; k++) {
+    const c = document.createElement("i"); c.className = "confetti";
+    c.style.left = (Math.random() * 100) + "%"; c.style.background = cols[k % cols.length];
+    c.style.animationDelay = (Math.random() * 0.6) + "s"; res.appendChild(c); setTimeout(() => c.remove(), 3000);
+  }
+}
+
+function whoCell(p, color, won) {
+  return "<span class='who" + (won ? " won" : "") + "'><i style='background:" + color + "'></i>" + esc(p.name) + (won ? " 🏆" : "") + "</span>";
+}
+function renderHistory() {
+  const data = histCache; if (!data) return;
+  const q = $("search").value.trim().toLowerCase();
+  const cols = last?.colors || ["#00A796", "#832C73"];
+  const rows = data.matches.filter(m => !q || m.players.some(p => String(p.name).toLowerCase().includes(q)));
+  $("count").textContent = data.count ? "(" + data.count + ")" : "";
+  if (!rows.length) { $("history").innerHTML = "<div class='empty'>" + (q ? "نتیجه‌ای پیدا نشد." : "هنوز بازی‌ای ثبت نشده است.") + "</div>"; }
+  else {
+    let h = "<table><tr><th>بازیکن 1</th><th>امتیاز</th><th class='hideS'></th><th>امتیاز</th><th>بازیکن 2</th><th class='hideS'>زمان</th></tr>";
+    for (const m of rows.slice(0, 200)) {
+      const [a, b] = m.players;
+      h += "<tr class='" + (m.time === newestTime ? "new" : "") + "'><td>" + whoCell(a, cols[0], m.winner === 0) + "</td><td class='sc'>" + a.score +
+        "</td><td class='hideS' style='color:var(--muted)'>—</td><td class='sc'>" + b.score + "</td><td>" + whoCell(b, cols[1], m.winner === 1) +
+        "</td><td class='time hideS'>" + esc(m.time) + "</td></tr>";
+    }
+    $("history").innerHTML = h + "</table>";
+  }
+  const lb = data.leaderboard.slice(0, 12);
+  if (!lb.length) { $("board").innerHTML = "<div class='empty'>—</div>"; return; }
+  let b = "<table><tr><th></th><th>نام</th><th>برد</th><th>بازی</th><th>گل</th><th class='hideS'>بهترین</th></tr>";
+  lb.forEach((r, k) => {
+    b += "<tr><td class='rank g" + (k + 1) + "'>" + (k + 1) + "</td><td><b>" + esc(r.name) + "</b></td><td class='sc'>" + r.wins + "</td><td>" + r.games +
+      "</td><td>" + r.goals + "</td><td class='hideS'>" + r.best + "</td></tr>";
+  });
+  $("board").innerHTML = b + "</table>";
+}
+$("search").addEventListener("input", renderHistory);
+async function loadHistory() {
+  try {
+    const r = await fetch("/api/history", { cache: "no-store" });
+    histCache = await r.json();
+    newestTime = histCache.matches[0]?.time || "";
+    renderHistory();
+  } catch (e) { /* offline */ }
+}
+
+async function poll() {
+  try {
+    const r = await fetch("/api/state", { cache: "no-store" });
+    const s = await r.json();
+    if (!online) { online = true; $("conn").className = "pill on"; $("conn").textContent = "● متصل به بازی"; }
+    if (s.state) { render(s); last = s; }
+  } catch (e) {
+    online = false; $("conn").className = "pill off"; $("conn").textContent = "○ ارتباط قطع است";
+  }
+  setTimeout(poll, 250);
+}
+poll();
+loadHistory();
+setInterval(loadHistory, 15000);
+if (window.matchMedia("(min-width: 641px)").matches) $("name0").focus();
+else { $("name0").placeholder = "نام"; $("name1").placeholder = "نام"; }
+</script>
+</body>
+</html>

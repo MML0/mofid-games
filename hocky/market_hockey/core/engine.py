@@ -69,6 +69,9 @@ class Engine:
         self.both_present_t = 0.0
         self.stats = _new_stats()
         self._cd_index = -1
+        self.names = ["", ""]  # player names (set from the supervisor web page)
+        self.names_used = False  # True once a match finished with these names (they are cleared for the next pair)
+        self.pending_spawns: list[dict] = []  # delayed extra balls (double-ball power-up)
         self._place_paddles_center()
 
     # ======================================================================== helpers
@@ -126,13 +129,19 @@ class Engine:
                 max_out=math.radians(pp(cfg, idx, "max_outgoing_angle_deg")),
                 allow_backward=pp(cfg, idx, "allow_backward"), hit_gain=pp(cfg, idx, "hit_speed_gain"),
                 to_ball=pp(cfg, idx, "paddle_speed_to_ball"), min_forward=pp(cfg, idx, "min_forward"),
-                fwd_x=fx, fwd_y=fy, vmin=cfg["ball.min_speed"], vmax=cfg["ball.max_speed"])
+                fwd_x=fx, fwd_y=fy, vmin=cfg["ball.min_speed"], vmax=cfg["ball.max_speed"],
+                tip_limit=math.radians(pp(cfg, idx, "tip_extra_deg")) if pp(cfg, idx, "rounded_tips") else None)
             self._hp_cache[idx] = hp
         return hp
 
+    def speed_mult(self, b: Ball) -> float:
+        """Effect speed multiplier for this ball (a 'calm' ball after a random path ignores speed-ups)."""
+        m = self.effects.ball_speed_mult(b.id)
+        return min(m, 1.0) if b.calm else m
+
     def ball_target_speed(self, b: Ball) -> float:
         cfg = self.cfg
-        return clamp(b.rally * self.effects.ball_speed_mult(b.id), cfg["ball.min_speed"], cfg["ball.max_speed"])
+        return clamp(b.rally * self.speed_mult(b), cfg["ball.min_speed"], cfg["ball.max_speed"])
 
     def heading_to(self, b: Ball) -> int | None:
         ax, ay = self.geom.axis
@@ -180,8 +189,15 @@ class Engine:
         self._pred_dirty = True
 
     # ======================================================================== commands
+    def _clear_used_names(self) -> None:
+        if self.names_used and self.cfg["match.clear_names_after_game"]:
+            self.names = ["", ""]
+            self.emit("names_set", names=list(self.names))
+        self.names_used = False
+
     def start_match(self) -> None:
         cfg = self.cfg
+        self._clear_used_names()  # names from the previous game do not carry over unless re-entered
         self.balls.clear()
         self.orbs.clear()
         self.effects.clear()
@@ -199,6 +215,7 @@ class Engine:
         self.stats = _new_stats()
         self.match_count += 1
         self.pending_demo_serve = None
+        self.pending_spawns.clear()
         self._place_paddles_center()
         self._set_state(INTRO)
         self.emit("match_start")
@@ -211,8 +228,27 @@ class Engine:
         self.scores = [0, 0]
         self.golden = False
         self.winner = None
+        self.pending_spawns.clear()
+        self._clear_used_names()  # back to the waiting screen: wait for the next players' names
         self.pending_demo_serve = (self.rng.choice((0, 1)), self.time + 1.0)
         self._set_state(ATTRACT)
+
+    def set_names(self, p1: str, p2: str) -> None:
+        def clean(n):
+            n = "".join(ch for ch in str(n or "") if ch.isprintable() or ch == "\u200c").strip()
+            return n[:24]
+
+        self.names = [clean(p1), clean(p2)]
+        self.names_used = False
+        self.emit("names_set", names=list(self.names))
+
+    def set_name(self, idx: int, name: str) -> None:
+        names = list(self.names)
+        names[1 if idx else 0] = name
+        self.set_names(*names)
+
+    def display_name(self, idx: int) -> str:
+        return self.names[idx] or self.cfg[f"text.player_{idx + 1}"]
 
     def toggle_pause(self) -> None:
         self.paused = not self.paused
@@ -338,6 +374,8 @@ class Engine:
     # ---------------------------------------------------------------- timer / end
     def _run_timer(self, dt, allow_finish=True) -> None:
         cfg = self.cfg
+        if cfg["powerups.types.chaos.pause_timer"] and any(self.chaos_paused(b) for b in self.balls):
+            return
         self.play_elapsed += dt
         if not cfg["match.timer_enabled"] or self.golden:
             return
@@ -370,8 +408,10 @@ class Engine:
         s0, s1 = self.scores
         self.winner = 0 if s0 > s1 else 1 if s1 > s0 else None
         self.balls = [b for b in self.balls if not b.held]
+        self.pending_spawns.clear()
         for b in self.balls:
             b.vx = b.vy = 0.0
+            b.chaos = None
         for o in self.orbs:
             if o.state in ("spawning", "idle"):
                 o.state, o.state_t = "despawning", 0.0
@@ -379,7 +419,8 @@ class Engine:
         self.predictions.clear()
         self._set_state(FINAL)
         self.emit("match_end", scores=list(self.scores), winner=self.winner, stats=self.stats,
-                  duration=self.play_elapsed, golden=self.golden)
+                  duration=self.play_elapsed, golden=self.golden, names=list(self.names))
+        self.names_used = True
 
     # ---------------------------------------------------------------- serve
     def _new_held_ball(self) -> Ball:
@@ -418,6 +459,7 @@ class Engine:
         for b in self.balls:
             self.effects.remove_for_ball(b.id)
         self.balls.clear()
+        self.pending_spawns.clear()
         self.predictions.clear()
         self.serve_receiver = receiver
         self._new_held_ball()
@@ -493,8 +535,11 @@ class Engine:
             p.prev_speed = speed
 
     def _paddle_velocity(self, i: int, theta: float) -> tuple[float, float]:
+        """Tangential paddle velocity used by the bounce, capped to a human-like speed (keyboard paddles are fast)."""
         p = self.paddles[i]
         w = math.radians(p.omega) * self.geom.paddle_back_radius(i)
+        cap = pp(self.cfg, i, "max_impulse_speed")
+        w = max(-cap, min(cap, w))
         t = math.radians(theta)
         return (-math.sin(t) * w, math.cos(t) * w)
 
@@ -504,7 +549,7 @@ class Engine:
         balls = [b for b in self.balls if not b.removed]
         for b in balls:
             b.px, b.py = b.x, b.y
-        moving = [b for b in balls if not b.held and not b.scored]
+        moving = [b for b in balls if not b.held and not b.scored and not self.chaos_paused(b)]
         for b in balls:
             if b.scored:  # drift out and fade (renderer); no collisions
                 b.x += b.vx * dt
@@ -609,6 +654,10 @@ class Engine:
             if cfg["scoring.smart_hit_points"] and self.state in LIVE_STATES:
                 self.scores[i] += cfg["scoring.smart_hit_points"]
         b.vx, b.vy = vx, vy
+        if b.chaos is not None:
+            b.chaos = None
+            self.emit("chaos_end", ball_id=b.id)
+        b.calm = False
         prev_owner = b.owner
         b.owner = i
         b.last_hit[i] = self.time
@@ -764,6 +813,8 @@ class Engine:
     # ---------------------------------------------------------------- power-ups
     def _update_world(self, dt: float, demo: bool = False) -> None:
         """Orbs, spawning, effects, extra-ball expiry and predictions."""
+        self._update_chaos(dt)
+        self._update_pending_spawns()
         self._update_spawner(dt, demo)
         self._update_orbs(dt)
         for e in self.effects.update(dt):
@@ -942,6 +993,10 @@ class Engine:
                 continue
             if seg_point_dist(ox, oy, b.x, b.y, o.x, o.y) > reach:
                 continue
+            if b.calm and o.type_id == "speed_up":  # never speed up a random-path shot
+                if o.wobble <= 0:
+                    o.wobble = 0.45
+                continue
             if b.owner is None and not cfg["powerups.unowned_ball_collects"]:
                 if o.wobble <= 0:
                     o.wobble = 0.45
@@ -999,6 +1054,148 @@ class Engine:
         b.vx, b.vy = math.cos(new) * sp, math.sin(new) * sp
         self._pred_dirty = True
         self.emit("chaos", ball_id=b.id, x=b.x, y=b.y)
+
+    # ---------------------------------------------------------------- random path (staged)
+    def chaos_paused(self, b: Ball) -> bool:
+        return b.chaos is not None and b.chaos["stage"] in ("intro", "select")
+
+    def start_chaos(self, b: Ball, collector: int, params: dict) -> None:
+        """Pause the ball, announce the event, spin through candidate paths, lock one and fire.
+        After a short flight it may happen once more, unless the ball is already close to the receiver."""
+        sp = max(math.hypot(b.vx, b.vy), self.cfg["ball.min_speed"])
+        b.chaos = {"stage": "intro", "t": 0.0, "collector": collector, "speed": sp, "rolls_done": 0,
+                   "rolls_total": 1 + int(params["rerolls"]), "candidates": [], "chosen": 0, "p": params}
+        b.vx = b.vy = 0.0
+        b.px, b.py = b.x, b.y
+        self.predictions.pop(b.id, None)
+        self.emit("chaos_start", ball_id=b.id, x=b.x, y=b.y, collector=collector, title=params["title"],
+                  subtitle=params["subtitle"], intro_s=params["intro_s"], select_s=params["select_s"])
+
+    def _chaos_candidates(self, b: Ball, receiver: int, n: int, avoid: float | None = None) -> list[float]:
+        """Directions (radians) from the ball toward points spread along the receiver's paddle range."""
+        g = self.geom
+        w = self.paddle_width(receiver)
+        lo, hi = g.paddle_range(receiver, w)
+        rt = g.paddle_back_radius(receiver) - (w / 2) * pp(self.cfg, receiver, "shape_ratio")
+        gx, gy = g.goal_dir[receiver]
+        ratio = max(0.2, self.cfg["physics.min_axis_ratio"])
+        out = []
+        for k in range(n):
+            th = math.radians(lo + (hi - lo) * (k + 0.5) / n + self.rng.uniform(-2.0, 2.0))
+            dx, dy = rt * math.cos(th) - b.x, rt * math.sin(th) - b.y
+            d = math.hypot(dx, dy) or 1.0
+            if (dx * gx + dy * gy) / d >= ratio:
+                out.append(math.atan2(dy, dx))
+        if len(out) < 3:
+            base = math.atan2(gy, gx)
+            out = [base + math.radians(a) for a in (-40, -20, 0, 20, 40)]
+        if avoid is not None and len(out) > 2:  # a re-roll must visibly change direction
+            out = [a for a in out if abs((a - avoid + math.pi) % math.tau - math.pi) > math.radians(10)] or out
+        return out
+
+    def _chaos_begin_select(self, b: Ball, reroll: bool) -> None:
+        c = b.chaos
+        p = c["p"]
+        receiver = 1 - c["collector"]
+        avoid = math.atan2(b.vy, b.vx) if reroll else None
+        c["candidates"] = self._chaos_candidates(b, receiver, int(p["candidates"]), avoid)
+        c["chosen"] = self.rng.randrange(len(c["candidates"]))
+        c["stage"], c["t"] = "select", 0.0
+        c["select_len"] = p["reroll_select_s"] if reroll else p["select_s"]
+        b.vx = b.vy = 0.0
+        b.px, b.py = b.x, b.y
+        self.emit("chaos_select", ball_id=b.id, x=b.x, y=b.y, reroll=reroll, duration=c["select_len"],
+                  text=p["reroll_text"] if reroll else "")
+
+    def _update_chaos(self, dt: float) -> None:
+        for b in self.live_balls():
+            c = b.chaos
+            if c is None:
+                continue
+            p = c["p"]
+            c["t"] += dt
+            if c["stage"] == "intro":
+                if c["t"] >= p["intro_s"]:
+                    self._chaos_begin_select(b, reroll=False)
+            elif c["stage"] == "select":
+                if c["t"] >= c["select_len"]:
+                    a = c["candidates"][c["chosen"]]
+                    if p.get("block_speedup", True):
+                        b.calm = True
+                        for e in [e for e in self.effects.effects
+                                  if e.kind == "ball_speed" and e.value > 1 and e.target == ("ball", b.id)]:
+                            self.effects.remove(e)
+                            self.emit("effect_ended", effect=e, replaced=True)
+                        c["speed"] = min(c["speed"], b.rally)  # drop any speed-up already baked into the speed
+                    sp = min(c["speed"] * p["fire_mult"], self.cfg["ball.max_speed"])
+                    b.vx, b.vy = math.cos(a) * sp, math.sin(a) * sp
+                    c["rolls_done"] += 1
+                    c["stage"], c["t"] = "flight", 0.0
+                    b.since_touch = 0.0
+                    self._pred_dirty = True
+                    self.emit("chaos_fire", ball_id=b.id, x=b.x, y=b.y, angle=a, roll=c["rolls_done"])
+            elif c["stage"] == "flight":
+                if c["rolls_done"] >= c["rolls_total"]:
+                    b.chaos = None
+                    self.emit("chaos_end", ball_id=b.id)
+                elif c["t"] >= p["reroll_delay_s"]:
+                    receiver = 1 - c["collector"]
+                    ax, ay = self.paddle_shape(receiver).apex()
+                    far = math.hypot(b.x - ax, b.y - ay) >= p["min_reroll_distance"]
+                    if far and self.heading_to(b) == receiver:
+                        c["speed"] = math.hypot(b.vx, b.vy)
+                        self._chaos_begin_select(b, reroll=True)
+                    else:  # too close to the player: no second change
+                        b.chaos = None
+                        self.emit("chaos_end", ball_id=b.id)
+
+    # ---------------------------------------------------------------- double ball (delayed, smaller, slower)
+    def schedule_extra_ball(self, b: Ball, collector: int, params: dict) -> int:
+        cfg = self.cfg
+        room = cfg["physics.max_balls"] - len(self.live_balls()) - len(self.pending_spawns)
+        n = int(min(params["extra_balls"], room))
+        sp = math.hypot(b.vx, b.vy) or cfg["ball.base_speed"]
+        cur = math.atan2(b.vy, b.vx)
+        sign = self.rng.choice((-1, 1))
+        for k in range(n):
+            ang = cur + sign * math.radians(params["split_angle_deg"]) * (1 + 0.5 * (k // 2))
+            sign = -sign
+            delay = params["spawn_delay_s"] * (1 + 0.6 * k)
+            ps = dict(at=self.time + delay, x=b.x, y=b.y, ang=ang, speed=sp, owner=collector, rally=b.rally,
+                      hits=b.hits, r=b.r * params["radius_scale"], slow=params["slow_mult"], slow_s=params["slow_s"],
+                      life=params["extra_lifetime_s"])
+            self.pending_spawns.append(ps)
+            self.emit("ball_pending", x=b.x, y=b.y, delay=delay, owner=collector, r=ps["r"])
+        return n
+
+    def _update_pending_spawns(self) -> None:
+        if not self.pending_spawns:
+            return
+        keep = []
+        lim = self.geom.wall_face
+        for ps in self.pending_spawns:
+            if self.time < ps["at"]:
+                keep.append(ps)
+                continue
+            x, y = ps["x"], ps["y"]
+            d = math.hypot(x, y)
+            if d > lim - ps["r"] - 1:
+                x, y = x * (lim - ps["r"] - 1) / d, y * (lim - ps["r"] - 1) / d
+            nb = Ball(self._next_ball_id, x, y, ps["r"], self.time)
+            self._next_ball_id += 1
+            nb.held = False
+            sp = ps["speed"] * ps["slow"]
+            nb.vx, nb.vy = math.cos(ps["ang"]) * sp, math.sin(ps["ang"]) * sp
+            nb.owner = ps["owner"]
+            nb.rally = ps["rally"]
+            nb.hits = ps["hits"]
+            nb.extra_until = self.time + ps["life"]
+            self.balls.append(nb)
+            if ps["slow_s"] > 0 and ps["slow"] < 1:
+                self.effects.add(Effect(type_id="double_ball", kind="ball_speed", target=("ball", nb.id),
+                                        duration=ps["slow_s"], value=ps["slow"]), "refresh", 1, "replace")
+            self.emit("ball_split", ball_id=nb.id, parent=None, x=x, y=y, owner=nb.owner)
+        self.pending_spawns = keep
 
     def split_ball(self, b: Ball, n: int, split_deg: float, lifetime: float) -> list[Ball]:
         cfg = self.cfg

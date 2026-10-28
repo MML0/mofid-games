@@ -75,6 +75,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `hud.score_size` | 110 | 20 … 300 px | live | Score size |
 | `hud.score_spread` | 110 | 0 … 400 px | live | Score distance from center line |
 | `hud.show_player_labels` | False | bool | live | Show player labels |
+| `hud.show_names` | True | bool | live | Show player names — Names entered on the supervisor page appear near the scores. |
+| `hud.name_size` | 30 | 10 … 90 px | live | Name size |
 | `hud.label_size` | 26 | 10 … 80 px | live | Label size |
 | `hud.orientation` | upright | upright, toward_players | live | Message orientation — toward_players rotates each player's messages to face them. |
 | `hud.safe_margin` | 20 | 0 … 120 px | live | Safe margin from rim |
@@ -86,8 +88,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `fonts.persian_title` | IRANSansX-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Title font |
 | `fonts.digits` | IRANSansX-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Digits font — Timer, scores and countdown (always Latin digits). |
 | `fonts.latin` | IRANSansX-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Latin text font |
-| `text.toast_size` | 40 | 14 … 120 px | live | Message size |
-| `text.banner_size` | 64 | 20 … 200 px | live | Banner size |
+| `text.toast_size` | 34 | 14 … 120 px | live | Message size |
+| `text.banner_size` | 56 | 20 … 200 px | live | Banner size |
 | `text.toast_duration` | 1.8 | 0.3 … 6 s | live | Message duration |
 | `text.toast_radius` | 0.52 | 0.1 … 0.9 ×R | live | Message distance from center |
 | `text.title` | هاکی بازار | str | live | Title |
@@ -120,6 +122,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `match.auto_loop_delay_s` | 8.0 | 1 … 60 s | live | Auto-loop idle time |
 | `match.attract_demo` | True | bool | live | Attract demo (AI vs AI) |
 | `match.attract_opacity` | 0.55 | 0.1 … 1 | live | Demo opacity |
+| `match.attract_toasts` | False | bool | live | Power-up messages in the demo — Off keeps the waiting screen clean. |
+| `match.clear_names_after_game` | True | bool | live | Clear player names after each game — Names stay on the result screen, then clear for the next pair of players. |
 | `match.intro_s` | 0.9 | 0.0 … 4 s | live | Intro length |
 | `match.goal_pause_s` | 1.4 | 0.2 … 5 s | live | Pause after goal |
 | `match.timer_runs_during_goal_pause` | False | bool | live | Timer runs during goal pause |
@@ -181,8 +185,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `paddles.link_players` | True | bool | live | Same settings for both players — When on, Player 2 uses Player 1's paddle values. |
 | `paddles.size_stacking` | multiply | multiply, replace | live | Size effect stacking |
 | `paddles.p1.width` | 130 | 40 … 400 px | live | Width |
-| `paddles.p1.shape_ratio` | 1.0 | 0.25 … 1.0 | live | Dome depth — 1.0 = true semicircle; lower = flatter dome, gentler angles. |
-| `paddles.p1.rim_padding` | 36 | 0 … 220 px | live | Rim padding — Distance from the rim to the paddle's flat back edge. |
+| `paddles.p1.shape_ratio` | 1.0 | 0.1 … 1.0 | live | Dome depth (curvature) — How curved the paddle is. The physical bounce turns by about 2× the surface tilt where the ball touches: 1.0 = semicircle (tip hits go very sideways), 0.25 = shallow (tip ≈ 40°), 0.1 = almost flat. |
+| `paddles.p1.rim_padding` | 36 | 0 … 220 px | live | Rim padding — Gap between the red goal line (rim) and the paddle's flat back edge. 52 px ≈ 10% of the rim radius. |
 | `paddles.p1.end_margin_deg` | 4.0 | 0 … 30 ° | live | End margin — Keeps the paddle away from the bumper walls. |
 | `paddles.p1.min_width` | 60 | 20 … 300 px | live | Minimum width (effects) |
 | `paddles.p1.max_width` | 260 | 60 … 600 px | live | Maximum width (effects) |
@@ -190,19 +194,22 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `paddles.p1.follow_mode` | direct | direct, spring | live | Follow mode |
 | `paddles.p1.max_speed_deg_s` | 320.0 | 30 … 1500 °/s | live | Max slide speed |
 | `paddles.p1.follow_stiffness` | 30.0 | 1 … 120 | live | Spring stiffness |
-| `paddles.p1.restitution` | 1.0 | 0.5 … 1.3 | live | Bounciness |
-| `paddles.p1.velocity_transfer` | 0.35 | 0 … 1 | live | Paddle motion transfer — How much the paddle's sideways motion drags the ball. |
-| `paddles.p1.aim_blend` | 0.4 | 0 … 1 | live | Arcade aim blend — 0 = pure physical reflection, 1 = pure hit-position steering. |
-| `paddles.p1.max_aim_angle_deg` | 60.0 | 0 … 85 ° | live | Max aim angle |
-| `paddles.p1.max_outgoing_angle_deg` | 72.0 | 10 … 89 ° | live | Max outgoing angle — Never sends the ball backward from a dome hit. |
+| `paddles.p1.restitution` | 1.0 | 0.5 … 1.3 | live | Bounciness — 1.0 = the ball keeps its speed off the paddle. |
+| `paddles.p1.velocity_transfer` | 0.1 | 0 … 1 | live | Sliding drag (paddle motion → ball) — How much a SLIDING paddle drags the ball sideways with it. 0 = none (pure reflection). Keyboard paddles slide very fast, so values above ~0.15 throw the ball sideways even on a center hit. |
+| `paddles.p1.aim_blend` | 0.4 | 0 … 1 | live | Arcade steering blend — 0 = purely physical: the angle comes from the dome's curvature at the contact point. 1 = purely 'distance from center': angle = (hit offset ÷ half-width) × Arcade max angle. |
+| `paddles.p1.max_aim_angle_deg` | 60.0 | 0 … 85 ° | live | Arcade max angle (at the tip) — Only matters when Arcade steering blend > 0. |
+| `paddles.p1.max_outgoing_angle_deg` | 55.0 | 10 … 89 ° | live | Max outgoing angle (safety cap) — No bounce leaves more than this from straight back toward the opponent. |
+| `paddles.p1.max_impulse_speed` | 450.0 | 0 … 3000 px/s | live | Paddle speed used for bounces — Caps how fast the paddle 'swings' in the bounce physics. Keyboard paddles slide ~1500 px/s, a walking player ~200–400 px/s; lower = calmer, more realistic hits while moving. |
+| `paddles.p1.rounded_tips` | True | bool | live | Rounded tips — A hit on the very tip uses the dome's own edge angle instead of a sharp corner, so tip bounces follow the curvature. |
+| `paddles.p1.tip_extra_deg` | 5.0 | 0 … 45 ° | live | Tip extra angle — How much steeper than the dome's edge a tip hit may be. |
 | `paddles.p1.min_forward` | 0.15 | -1 … 0.8 | live | Min forward component — Outgoing ball always moves this much toward the opponent (-1 = off). |
 | `paddles.p1.allow_backward` | False | bool | live | Allow backward deflection |
 | `paddles.p1.hit_speed_gain` | 1.0 | 0.8 … 1.6 × | live | Hit speed gain |
-| `paddles.p1.paddle_speed_to_ball` | 0.25 | 0 … 1.5 | live | Flick power — Extra ball speed from fast paddle motion. |
+| `paddles.p1.paddle_speed_to_ball` | 0.1 | 0 … 1.5 | live | Flick power — Extra ball SPEED (not direction) from a fast-moving paddle. |
 | `paddles.p1.hit_cooldown_ms` | 60 | 0 … 300 ms | live | Hit cooldown |
 | `paddles.p2.width` | 130 | 40 … 400 px | live | Width |
-| `paddles.p2.shape_ratio` | 1.0 | 0.25 … 1.0 | live | Dome depth — 1.0 = true semicircle; lower = flatter dome, gentler angles. |
-| `paddles.p2.rim_padding` | 36 | 0 … 220 px | live | Rim padding — Distance from the rim to the paddle's flat back edge. |
+| `paddles.p2.shape_ratio` | 1.0 | 0.1 … 1.0 | live | Dome depth (curvature) — How curved the paddle is. The physical bounce turns by about 2× the surface tilt where the ball touches: 1.0 = semicircle (tip hits go very sideways), 0.25 = shallow (tip ≈ 40°), 0.1 = almost flat. |
+| `paddles.p2.rim_padding` | 36 | 0 … 220 px | live | Rim padding — Gap between the red goal line (rim) and the paddle's flat back edge. 52 px ≈ 10% of the rim radius. |
 | `paddles.p2.end_margin_deg` | 4.0 | 0 … 30 ° | live | End margin — Keeps the paddle away from the bumper walls. |
 | `paddles.p2.min_width` | 60 | 20 … 300 px | live | Minimum width (effects) |
 | `paddles.p2.max_width` | 260 | 60 … 600 px | live | Maximum width (effects) |
@@ -210,15 +217,18 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `paddles.p2.follow_mode` | direct | direct, spring | live | Follow mode |
 | `paddles.p2.max_speed_deg_s` | 320.0 | 30 … 1500 °/s | live | Max slide speed |
 | `paddles.p2.follow_stiffness` | 30.0 | 1 … 120 | live | Spring stiffness |
-| `paddles.p2.restitution` | 1.0 | 0.5 … 1.3 | live | Bounciness |
-| `paddles.p2.velocity_transfer` | 0.35 | 0 … 1 | live | Paddle motion transfer — How much the paddle's sideways motion drags the ball. |
-| `paddles.p2.aim_blend` | 0.4 | 0 … 1 | live | Arcade aim blend — 0 = pure physical reflection, 1 = pure hit-position steering. |
-| `paddles.p2.max_aim_angle_deg` | 60.0 | 0 … 85 ° | live | Max aim angle |
-| `paddles.p2.max_outgoing_angle_deg` | 72.0 | 10 … 89 ° | live | Max outgoing angle — Never sends the ball backward from a dome hit. |
+| `paddles.p2.restitution` | 1.0 | 0.5 … 1.3 | live | Bounciness — 1.0 = the ball keeps its speed off the paddle. |
+| `paddles.p2.velocity_transfer` | 0.1 | 0 … 1 | live | Sliding drag (paddle motion → ball) — How much a SLIDING paddle drags the ball sideways with it. 0 = none (pure reflection). Keyboard paddles slide very fast, so values above ~0.15 throw the ball sideways even on a center hit. |
+| `paddles.p2.aim_blend` | 0.4 | 0 … 1 | live | Arcade steering blend — 0 = purely physical: the angle comes from the dome's curvature at the contact point. 1 = purely 'distance from center': angle = (hit offset ÷ half-width) × Arcade max angle. |
+| `paddles.p2.max_aim_angle_deg` | 60.0 | 0 … 85 ° | live | Arcade max angle (at the tip) — Only matters when Arcade steering blend > 0. |
+| `paddles.p2.max_outgoing_angle_deg` | 55.0 | 10 … 89 ° | live | Max outgoing angle (safety cap) — No bounce leaves more than this from straight back toward the opponent. |
+| `paddles.p2.max_impulse_speed` | 450.0 | 0 … 3000 px/s | live | Paddle speed used for bounces — Caps how fast the paddle 'swings' in the bounce physics. Keyboard paddles slide ~1500 px/s, a walking player ~200–400 px/s; lower = calmer, more realistic hits while moving. |
+| `paddles.p2.rounded_tips` | True | bool | live | Rounded tips — A hit on the very tip uses the dome's own edge angle instead of a sharp corner, so tip bounces follow the curvature. |
+| `paddles.p2.tip_extra_deg` | 5.0 | 0 … 45 ° | live | Tip extra angle — How much steeper than the dome's edge a tip hit may be. |
 | `paddles.p2.min_forward` | 0.15 | -1 … 0.8 | live | Min forward component — Outgoing ball always moves this much toward the opponent (-1 = off). |
 | `paddles.p2.allow_backward` | False | bool | live | Allow backward deflection |
 | `paddles.p2.hit_speed_gain` | 1.0 | 0.8 … 1.6 × | live | Hit speed gain |
-| `paddles.p2.paddle_speed_to_ball` | 0.25 | 0 … 1.5 | live | Flick power — Extra ball speed from fast paddle motion. |
+| `paddles.p2.paddle_speed_to_ball` | 0.1 | 0 … 1.5 | live | Flick power — Extra ball SPEED (not direction) from a fast-moving paddle. |
 | `paddles.p2.hit_cooldown_ms` | 60 | 0 … 300 ms | live | Hit cooldown |
 
 ## Trails
@@ -275,7 +285,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.expand.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.expand.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.expand.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
-| `powerups.types.expand.toast_collector` | بالکرت بزرگ شد! | str | live | Message (collector side) |
+| `powerups.types.expand.toast_collector` | پدلت بزرگ شد! | str | live | Message (collector side) |
 | `powerups.types.expand.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.expand.multiplier` | 1.5 | 1.05 … 3.0 × | live | Size multiplier |
 | `powerups.types.shrink.enabled` | True | bool | live | Enabled |
@@ -286,8 +296,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.shrink.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.shrink.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.shrink.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
-| `powerups.types.shrink.toast_collector` | بالکر حریف کوچک شد! | str | live | Message (collector side) |
-| `powerups.types.shrink.toast_opponent` | بالکرت کوچک شد! | str | live | Message (opponent side) |
+| `powerups.types.shrink.toast_collector` | پدل حریف کوچک شد! | str | live | Message (collector side) |
+| `powerups.types.shrink.toast_opponent` | پدلت کوچک شد! | str | live | Message (opponent side) |
 | `powerups.types.shrink.multiplier` | 0.6 | 0.2 … 0.95 × | live | Size multiplier |
 | `powerups.types.speed_up.enabled` | True | bool | live | Enabled |
 | `powerups.types.speed_up.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
@@ -309,11 +319,25 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.chaos.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.chaos.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.chaos.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
-| `powerups.types.chaos.toast_collector` | بازار غیرقابل پیش‌بینی شد! | str | live | Message (collector side) |
+| `powerups.types.chaos.toast_collector` |  | str | live | Message (collector side) |
 | `powerups.types.chaos.toast_opponent` |  | str | live | Message (opponent side) |
-| `powerups.types.chaos.mode` | instant | instant, wobble | live | Mode — wobble uses Duration as its length. |
-| `powerups.types.chaos.min_angle_deg` | 20.0 | 0 … 90 ° | live | Min turn |
-| `powerups.types.chaos.max_angle_deg` | 55.0 | 0 … 90 ° | live | Max turn |
+| `powerups.types.chaos.mode` | sequence | sequence, instant, wobble | live | Mode — sequence = pause, announce, spin and fire (twice); wobble uses Duration as its length. |
+| `powerups.types.chaos.title` | نوسان ناگهانی بازار! | str | live | Announcement title |
+| `powerups.types.chaos.subtitle` | مسیر توپ به‌صورت تصادفی تغییر می‌کند | str | live | Announcement subtitle |
+| `powerups.types.chaos.reroll_text` | یک نوسان دیگر! | str | live | Second change text |
+| `powerups.types.chaos.intro_s` | 0.55 | 0.0 … 4 s | live | Announcement time |
+| `powerups.types.chaos.select_s` | 0.5 | 0.1 … 4 s | live | Path selection spin |
+| `powerups.types.chaos.rerolls` | 1 | 0 … 3 | live | Extra path changes |
+| `powerups.types.chaos.reroll_delay_s` | 0.3 | 0.05 … 2 s | live | Flight before the next change |
+| `powerups.types.chaos.reroll_select_s` | 0.3 | 0.1 … 3 s | live | Next change spin |
+| `powerups.types.chaos.min_reroll_distance` | 300 | 0 … 900 px | live | No change if this close to the player |
+| `powerups.types.chaos.candidates` | 7 | 3 … 15 | live | Candidate paths shown |
+| `powerups.types.chaos.fire_mult` | 1.0 | 0.5 … 2.0 × | live | Speed when fired |
+| `powerups.types.chaos.ray_length` | 70 | 20 … 300 px | live | Candidate path length |
+| `powerups.types.chaos.block_speedup` | True | bool | live | No speed-up after the random path — Until a player hits it, the ball ignores speed-ups (they would make the random shot unplayable). |
+| `powerups.types.chaos.pause_timer` | True | bool | live | Pause the match timer meanwhile |
+| `powerups.types.chaos.min_angle_deg` | 20.0 | 0 … 90 ° | live | Min turn (instant mode) |
+| `powerups.types.chaos.max_angle_deg` | 55.0 | 0 … 90 ° | live | Max turn (instant mode) |
 | `powerups.types.chaos.wobble_deg_s` | 140.0 | 10 … 600 °/s | live | Wobble strength |
 | `powerups.types.chaos.wobble_hz` | 1.6 | 0.2 … 6 Hz | live | Wobble frequency |
 | `powerups.types.double_ball.enabled` | True | bool | live | Enabled |
@@ -325,13 +349,18 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.double_ball.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.double_ball.toast_collector` | حجم معاملات افزایش یافت! | str | live | Message (collector side) |
 | `powerups.types.double_ball.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.double_ball.mode` | delayed | delayed, instant | live | Mode — instant = the old immediate split. |
 | `powerups.types.double_ball.extra_balls` | 1 | 1 … 3 | live | Extra balls |
-| `powerups.types.double_ball.split_angle_deg` | 18.0 | 2 … 60 ° | live | Split angle |
+| `powerups.types.double_ball.spawn_delay_s` | 0.5 | 0 … 3 s | live | Spawn delay |
+| `powerups.types.double_ball.radius_scale` | 0.72 | 0.3 … 1.2 × | live | Second ball size |
+| `powerups.types.double_ball.slow_mult` | 0.45 | 0.1 … 1.0 × | live | Second ball starting speed |
+| `powerups.types.double_ball.slow_s` | 0.6 | 0 … 3 s | live | Slow start duration |
+| `powerups.types.double_ball.split_angle_deg` | 24.0 | 2 … 60 ° | live | Split angle |
 | `powerups.types.double_ball.extra_lifetime_s` | 10.0 | 1 … 60 s | live | Extra ball lifetime |
 | `powerups.types.trajectory_reveal.enabled` | True | bool | live | Enabled |
 | `powerups.types.trajectory_reveal.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
 | `powerups.types.trajectory_reveal.weight` | 1.0 | 0 … 10 | live | Spawn weight |
-| `powerups.types.trajectory_reveal.duration_s` | 7.0 | 0.5 … 30 s | live | Duration |
+| `powerups.types.trajectory_reveal.duration_s` | 12.0 | 0.5 … 30 s | live | Duration |
 | `powerups.types.trajectory_reveal.unlock_phase` | 2 | 1 … 3 | live | Unlocks in phase — 1 = early, 2 = mid, 3 = peak. |
 | `powerups.types.trajectory_reveal.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.trajectory_reveal.max_stack` | 3 | 1 … 5 | live | Max stack |
@@ -396,10 +425,14 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `prediction.max_bounces` | 4 | 0 … 10 | live | Max wall bounces |
 | `prediction.debug_always_on` | False | bool | live | Always show (debug) |
 | `prediction.assist_always` | True | bool | live | Faint aim assist — A ghostly hint of where the ball is heading, for the receiver. |
-| `prediction.assist_alpha` | 0.22 | 0.02 … 1 | live | Assist opacity |
+| `prediction.assist_alpha` | 0.13 | 0.02 … 1 | live | Assist opacity |
+| `prediction.assist_dot_scale` | 0.55 | 0.1 … 2 × | live | Assist dot size |
+| `prediction.assist_path_fraction` | 0.45 | 0.05 … 1 | live | Assist path shown — Only the last part of the path, near the paddle, is drawn. |
+| `prediction.assist_ghost_scale` | 0.6 | 0.2 … 1.5 × ball | live | Assist ghost size |
+| `prediction.assist_arrow_length` | 30 | 5 … 150 px | live | Assist bounce arrow length |
 | `prediction.assist_time_s` | 1.1 | 0.2 … 4 s | live | Assist look-ahead |
 | `prediction.assist_ghost` | True | bool | live | Assist ghost ball |
-| `prediction.assist_arrow` | False | bool | live | Assist bounce arrow |
+| `prediction.assist_arrow` | True | bool | live | Assist bounce arrow — A tiny faint arrow: how it will bounce off. |
 | `prediction.dot_spacing` | 14 | 4 … 60 px | live | Dot spacing |
 | `prediction.dot_radius` | 3.0 | 1 … 10 px | live | Dot radius |
 | `prediction.march_speed` | 60.0 | 0 … 300 px/s | live | Dot march speed |
@@ -526,6 +559,11 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `live_link.enabled` | True | bool | restart | Live link enabled |
 | `live_link.game_port` | 9201 | 1024 … 65535 | restart | Game UDP port |
 | `live_link.state_hz` | 4.0 | 0.5 … 30 Hz | live | Telemetry rate |
+| `web.enabled` | True | bool | restart | Supervisor page enabled — A local web page to enter player names, start matches and see results. |
+| `web.port` | 8765 | 1024 … 65535 | restart | Web port |
+| `web.bind` | 0.0.0.0 | 0.0.0.0, 127.0.0.1 | restart | Listen on — 0.0.0.0 = phones/tablets on the same network can open the page; 127.0.0.1 = this computer only. |
+| `web.show_url_on_arena` | False | bool | live | Show the page address on the waiting screen — Off by default: the addresses are printed in the terminal when the game starts. |
+| `web.open_browser` | False | bool | restart | Open the page when the game starts |
 | `debug.overlay` | False | bool | live | Debug overlay (F3) |
 | `debug.colliders` | False | bool | live | Show colliders |
 | `debug.calibration` | False | bool | live | Calibration overlay (F2) |

@@ -80,17 +80,33 @@ def test_speed_effects_respect_limits_and_exclusivity(engine):
     assert engine.ball_target_speed(b) <= engine.cfg["ball.max_speed"]
 
 
-def test_double_ball_independent(engine):
+def test_double_ball_is_delayed_smaller_and_slower(engine):
     playing(engine)
+    cfg = engine.cfg
     b = _collect(engine, "double_ball", owner=1)
+    x0, y0 = b.x, b.y
+    assert len(engine.live_balls()) == 1 and engine.pending_spawns  # not yet
+    run(engine, cfg["powerups.types.double_ball.spawn_delay_s"] + 0.02)
     live = engine.live_balls()
     assert len(live) == 2
-    assert all(x.owner == 1 for x in live)
-    live[1].owner = 0
-    assert live[0].owner == 1
-    assert len({x.id for x in live}) == 2
-    for x in live:
-        assert math.hypot(x.x, x.y) < engine.geom.wall_face
+    first, second = live
+    assert second.owner == 1 and second.id != first.id
+    assert math.isclose(second.r, first.r * cfg["powerups.types.double_ball.radius_scale"], rel_tol=1e-6)
+    assert math.hypot(second.vx, second.vy) < 0.7 * math.hypot(first.vx, first.vy)  # slow start
+    assert math.hypot(second.x - x0, second.y - y0) < 30  # appears where the orb was collected
+    assert math.hypot(first.x - second.x, first.y - second.y) > 150  # big gap between the two balls
+    second.owner = 0
+    assert first.owner == 1
+    run(engine, cfg["powerups.types.double_ball.slow_s"] + 1.0)
+    if not second.scored:
+        assert engine.effects.ball_speed_mult(second.id) == 1.0  # slow start wore off
+
+
+def test_double_ball_instant_mode(engine):
+    playing(engine)
+    engine.cfg.set("powerups.types.double_ball.mode", "instant")
+    _collect(engine, "double_ball", owner=1)
+    assert len(engine.live_balls()) == 2
 
 
 def test_max_balls_respected(engine):
@@ -101,13 +117,47 @@ def test_max_balls_respected(engine):
     assert len(engine.live_balls()) <= engine.cfg["physics.max_balls"]
 
 
-def test_chaos_keeps_heading_to_opponent(engine):
+def test_chaos_instant_keeps_heading_to_opponent(engine):
     playing(engine)
     for _ in range(30):
         b = add_ball(engine, 0, 0, 600, 0, owner=0)
         engine.chaos_deflect(b, 0, 20, 55)
         assert b.vx > 0  # still toward P2's side
         engine.balls.clear()
+
+
+def test_chaos_sequence_pauses_announces_and_fires_twice(engine):
+    playing(engine)
+    cfg = engine.cfg
+    p = "powerups.types.chaos"
+    b = add_ball(engine, -200, 0, 500, 30, owner=0)
+    engine.types["chaos"].collect(engine, b, 0)
+    assert engine.chaos_paused(b) and b.vx == 0 and b.vy == 0
+    t_before = engine.time_left
+    ev = run(engine, cfg[f"{p}.intro_s"] * 0.5)
+    assert (b.x, b.y) == (-200, 0) and engine.time_left == t_before  # hovering; match timer paused
+    ev += run(engine, cfg[f"{p}.intro_s"] * 0.5 + cfg[f"{p}.select_s"] + 0.02)
+    kinds = [e["type"] for e in ev]
+    assert kinds.index("chaos_select") < kinds.index("chaos_fire")
+    assert b.vx > 0  # fired toward the opponent (P2)
+    ev = run(engine, cfg[f"{p}.reroll_delay_s"] + cfg[f"{p}.reroll_select_s"] + 0.1)
+    rerolls = [e for e in ev if e["type"] == "chaos_select" and e["reroll"]]
+    fires = [e for e in ev if e["type"] == "chaos_fire"]
+    assert rerolls and fires and fires[-1]["roll"] == 2
+    run(engine, 0.3)
+    assert b.chaos is None and b.vx > 0
+
+
+def test_chaos_no_second_change_near_the_player(engine):
+    playing(engine)
+    cfg = engine.cfg
+    p = "powerups.types.chaos"
+    ax, ay = engine.paddle_shape(1).apex()
+    b = add_ball(engine, ax - 220, ay, 500, 0, owner=0)  # already close to P2
+    engine.types["chaos"].collect(engine, b, 0)
+    ev = run(engine, cfg[f"{p}.intro_s"] + cfg[f"{p}.select_s"] + cfg[f"{p}.reroll_delay_s"] + 0.2)
+    assert not [e for e in ev if e["type"] == "chaos_select" and e["reroll"]]
+    assert b.chaos is None
 
 
 def test_unowned_ball_does_not_collect(engine):
@@ -228,3 +278,23 @@ def test_bull_market_doubles_next_goal(engine):
     add_ball(engine, (g.R - 12) * math.cos(a), (g.R - 12) * math.sin(a), 600 * math.cos(a), 600 * math.sin(a), owner=1)
     run(engine, 0.2)
     assert engine.scores == [0, 2]
+
+
+def test_random_path_shot_cannot_be_sped_up(engine):
+    playing(engine)
+    cfg = engine.cfg
+    p = "powerups.types.chaos"
+    b = add_ball(engine, -200, 0, 500, 30, owner=0)
+    engine.types["speed_up"].collect(engine, b, 0)  # already sped up before the random path
+    assert engine.speed_mult(b) > 1.0
+    engine.types["chaos"].collect(engine, b, 0)
+    run(engine, cfg[f"{p}.intro_s"] + cfg[f"{p}.select_s"] + 0.02)
+    assert b.calm and engine.speed_mult(b) == 1.0  # speed-up cancelled once the path is chosen
+    engine.types["speed_up"].collect(engine, b, 0)
+    assert engine.speed_mult(b) == 1.0  # and ignored until a player hits it
+    sh = engine.paddle_shape(1)
+    b.x, b.y = sh.apex()[0] + sh.fx * 40, sh.apex()[1] + sh.fy * 40
+    b.vx, b.vy = -sh.fx * 500, -sh.fy * 500
+    b.chaos = None
+    run(engine, 0.3)
+    assert not b.calm  # the paddle hit clears it
