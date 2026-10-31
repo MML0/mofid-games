@@ -285,6 +285,13 @@ def test_readme_numbers_are_true():
     assert tests >= 300  # 650+ once parametrized
 
 
+@pytest.mark.parametrize("readme", READMES, ids=["repo", "game"])
+def test_readme_download_badge_shows_this_version(readme):
+    """A private repo can't use a live release badge: the public badge service answers "repo not found"."""
+    text = readme.read_text(encoding="utf-8")
+    assert f"badge/download-v{market_hockey.__version__}-" in text and "shields.io/github/" not in text
+
+
 def test_readme_test_table_names_real_files():
     text = (ROOT / "README.md").read_text(encoding="utf-8")
     named = set(re.findall(r"`(test_\w+\.py)`", text))

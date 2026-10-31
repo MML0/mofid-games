@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/github/v/release/MML0/mofid-games?label=download" alt="Latest release"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.3-00B8A0" alt="Download v1.0.3"></a>
   <img src="https://img.shields.io/badge/tests-650%2B-00B8A0" alt="650+ tests">
   <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
   <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
@@ -154,10 +154,11 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 
 ## Projector calibration
 
-1. Run fullscreen on the projector (`Display & Projection → Display index`), then press **F2**.
-2. Align the thin white circle with the physical circle. Use `arena.mask_radius` and `arena.center_offset_x/y`, or the `display.output_*` scale and offsets.
-3. Use `display.rotation` / `flip_h` / `flip_v` for ceiling or rear projection, and `arena.layout_rotation_deg` if the players stand on a different axis.
-4. Check the color swatches on the projector and adjust `colors.projection_boost`.
+1. Choose the output first. With an LED wall or projector as a second or third screen, set Windows to **Extend** (in Duplicate mode every screen shows the same picture), set `Display & Projection → Display index` to that screen's number (0 is the first) and press **Save**. The game opens fullscreen there. Dragging the window isn't enough: F11 always goes to the `Display index` screen.
+2. Run fullscreen on that screen, then press **F2**.
+3. Align the thin white circle with the physical circle. Use `arena.mask_radius` and `arena.center_offset_x/y`, or the `display.output_*` scale and offsets.
+4. Use `display.rotation` / `flip_h` / `flip_v` for ceiling or rear projection, and `arena.layout_rotation_deg` if the players stand on a different axis.
+5. Check the color swatches on the projector and adjust `colors.projection_boost`.
 
 ## Persian text
 
@@ -330,6 +331,6 @@ tests/         650+ tests, see "Tests" above
 
 - **Persian letters are disconnected**: set `HUD & Text → Persian shaping` to `reshaper`, then run `--selftest-text`.
 - **The panel says "Game offline"**: start the game. The panel connects on port 9201 and pushes all its current values.
-- **Wrong monitor**: change `display.display_index`, then restart.
+- **Wrong monitor**: change `display.display_index`, press **Save** and restart. If the number is higher than the screens available, the game opens on the last one.
 - **Low FPS**: lower `fx.max_particles`, `trails.glow` or `display.fps_cap`. Use F3 to see the FPS.
 - **No sound**: check `Audio → Sound enabled`. The game runs silently if the mixer can't start.
