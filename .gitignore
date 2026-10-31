@@ -20,3 +20,6 @@ dist/
 */logs/
 */config/settings.prev.json
 */config/*.tmp
+
+# Test coverage data
+.coverage

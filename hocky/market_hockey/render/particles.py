@@ -15,6 +15,8 @@ class Particles:
     def burst(self, x, y, color, n=20, speed=(80, 320), life=(0.3, 0.8), size=(1.5, 3.5), cap=600, drag=2.5,
               direction=None, spread=math.pi, twinkle=False):
         rnd = self.rng
+        if cap <= 0:
+            return
         for _ in range(int(n)):
             if len(self.items) >= cap:
                 self.items.pop(0)
@@ -26,6 +28,8 @@ class Particles:
 
     def converge(self, R, color, n=30, cap=600, life=0.7):
         rnd = self.rng
+        if cap <= 0:
+            return
         for _ in range(int(n)):
             if len(self.items) >= cap:
                 self.items.pop(0)

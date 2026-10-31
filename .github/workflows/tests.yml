@@ -1,0 +1,54 @@
+# Runs every game's test suite on Windows and Linux for each pull request and each push. macOS is left out because its
+# runners use 10× the Actions minutes: run the tests locally on a Mac.
+# It only tests: the .exe builds and the Releases come from build-windows.yml.
+#
+# Add a game: add its folder to matrix.game below.
+name: Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: ${{ matrix.game }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        game: [hocky]
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.game }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ matrix.game }}/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests (Linux, with a virtual display for the control panel)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y xvfb
+          xvfb-run -a python -m pytest -q -rs --cov=market_hockey --cov-report=term --cov-fail-under=90
+
+      - name: Run tests
+        if: runner.os != 'Linux'
+        run: python -m pytest -q -rs --cov=market_hockey --cov-report=term --cov-fail-under=90

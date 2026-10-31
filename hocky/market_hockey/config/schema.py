@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
 SCHEMA_VERSION = 6
@@ -479,7 +480,7 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("audio.match", 0.9, 0, 1, 0.01, "", "Countdown, goals, match")
 
     # ------------------------------------------------------------------ inputs
-    src = ("keyboard", "ai", "mouse", "network", "replay")
+    src = tuple(ADAPTERS)
     sb.section("Inputs", "Sources")
     sb.e("input.p1.source", "keyboard", src, "Player 1 input", "network = LiDAR / CCTV pose tracker over UDP.")
     sb.e("input.p2.source", "keyboard", src, "Player 2 input")

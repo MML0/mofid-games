@@ -22,7 +22,7 @@ class AIAdapter(InputAdapter):
         self.u = [0.5, 0.5]
         self.v = [0.0, 0.0]
         self.target = [0.5, 0.5]
-        self.smooth = [0.5, 0.5]
+        self.eased = [0.5, 0.5]
         self.next_think = [0.0, 0.0]
         self.aim_key = [None, None]
         self.aim_off = [0.0, 0.0]
@@ -40,10 +40,10 @@ class AIAdapter(InputAdapter):
             return PlayerSample(True, self.u[idx], 1.0, now, None, self.name)
         k = c["input.ai.smoothing"]
         # low-pass the target, then follow it with a critically damped spring
-        self.smooth[idx] += (self.target[idx] - self.smooth[idx]) * (1 - math.exp(-dt * k * 0.8))
+        self.eased[idx] += (self.target[idx] - self.eased[idx]) * (1 - math.exp(-dt * k * 0.8))
         diff = c["input.ai.difficulty"]
         vmax = c["input.ai.max_speed"] * (0.55 + 0.6 * diff)
-        a = k * k * (self.smooth[idx] - self.u[idx]) - 2 * k * self.v[idx]
+        a = k * k * (self.eased[idx] - self.u[idx]) - 2 * k * self.v[idx]
         self.v[idx] = max(-vmax, min(vmax, self.v[idx] + a * dt))
         self.u[idx] = max(0.0, min(1.0, self.u[idx] + self.v[idx] * dt))
         if self.u[idx] in (0.0, 1.0):

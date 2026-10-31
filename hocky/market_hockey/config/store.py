@@ -22,6 +22,8 @@ META_KEY = "_meta"
 
 def coerce(p: Param, value: Any) -> tuple[Any, str | None]:
     """Return (valid value, warning or None). Never raises."""
+    if value is None:
+        return p.default, f"{p.path}: missing value"
     try:
         if p.kind == "float":
             v = float(value)
@@ -49,7 +51,7 @@ def coerce(p: Param, value: Any) -> tuple[Any, str | None]:
             return s, None
         if p.kind in ("str", "key"):
             return str(value), None
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
         return p.default, f"{p.path}: invalid value {value!r} ({exc})"
     return p.default, f"{p.path}: unknown kind {p.kind}"
 
@@ -256,7 +258,10 @@ class Config:
             cfg.warnings.append(f"could not read {path} ({exc}); using defaults")
             log.error(cfg.warnings[-1])
             return cfg
-        version = int(raw.get(META_KEY, {}).get("schema_version", SCHEMA_VERSION))
+        try:
+            version = int(raw.get(META_KEY, {}).get("schema_version", SCHEMA_VERSION))
+        except (AttributeError, TypeError, ValueError, OverflowError):  # damaged _meta: treat the values as current
+            version = SCHEMA_VERSION
         flat = flatten(raw)
         while version < SCHEMA_VERSION:
             mig = MIGRATIONS.get(version)

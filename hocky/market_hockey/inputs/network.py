@@ -20,6 +20,18 @@ from .base import InputAdapter, PlayerSample
 log = logging.getLogger(__name__)
 
 
+def _number(value) -> float | None:
+    try:
+        v = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def _records(value) -> list[dict]:
+    return [r for r in value if isinstance(r, dict)] if isinstance(value, list) else []
+
+
 class NetworkAdapter(InputAdapter):
     name = "network"
     smooth = True
@@ -60,23 +72,37 @@ class NetworkAdapter(InputAdapter):
         x, y = x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
         return x + c["input.network.offset_x"], y + c["input.network.offset_y"]
 
+    def _point(self, rec) -> tuple[float, float, float] | None:
+        """(x, y, conf) of one tracked person after calibration, or None if a value is unusable."""
+        x, y, conf = _number(rec.get("x", 0)), _number(rec.get("y", 0)), _number(rec.get("conf", 1.0))
+        if x is None or y is None or conf is None:
+            return None
+        x, y = self.calibrate(x, y)
+        if not (math.isfinite(x) and math.isfinite(y)):
+            return None
+        return x, y, min(1.0, max(0.0, conf))
+
     def feed(self, msg: dict, now: float | None = None) -> None:
-        """Process one decoded message (also used by tests)."""
+        """Process one decoded message (also used by tests). Anything malformed is dropped: a tracker bug must never
+        reach the game."""
         now = time.perf_counter() if now is None else now
         self.messages += 1
         if msg.get("type") == "tracking":
-            for pl in msg.get("players", []):
+            for pl in _records(msg.get("players")):
                 pid = str(pl.get("id", "")).lower()
                 idx = 0 if pid in ("p1", "1", "0", "player1") else 1 if pid in ("p2", "2", "player2") else None
-                if idx is None:
+                pt = self._point(pl)
+                if idx is None or pt is None:
                     continue
-                x, y = self.calibrate(float(pl.get("x", 0)), float(pl.get("y", 0)))
-                self.latest[idx] = (now, x, y, float(pl.get("conf", 1.0)), pl.get("u"))
+                u = pl.get("u")
+                if u is not None:
+                    u = _number(u)
+                    if u is None:
+                        continue
+                    u = min(1.0, max(0.0, u))
+                self.latest[idx] = (now, *pt, u)
         elif msg.get("type") == "blobs":
-            pts = []
-            for bl in msg.get("blobs", []):
-                x, y = self.calibrate(float(bl.get("x", 0)), float(bl.get("y", 0)))
-                pts.append((x, y, float(bl.get("conf", 1.0))))
+            pts = [pt for pt in map(self._point, _records(msg.get("blobs"))) if pt is not None]
             self.blobs = (now, pts)
 
     def update(self, now, dt, engine):

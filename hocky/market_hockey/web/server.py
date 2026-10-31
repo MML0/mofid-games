@@ -11,6 +11,7 @@ import json
 import logging
 import queue
 import socket
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -58,6 +59,10 @@ def local_addresses() -> list[str]:
     return lan + other
 
 
+class _Server(ThreadingHTTPServer):
+    allow_reuse_address = sys.platform != "win32"  # on Windows it lets two servers share a port without any error
+
+
 class SupervisorServer:
     def __init__(self, bind: str = "127.0.0.1", port: int = 8765, history_path=None):
         self.bind, self.port = bind, int(port)
@@ -65,7 +70,7 @@ class SupervisorServer:
         self.commands: queue.Queue = queue.Queue()
         self._snap: dict = {}
         self._lock = threading.Lock()
-        self.httpd: ThreadingHTTPServer | None = None
+        self.httpd: _Server | None = None
         self.thread: threading.Thread | None = None
 
     @property
@@ -87,7 +92,7 @@ class SupervisorServer:
             owner = server
 
         try:
-            self.httpd = ThreadingHTTPServer((self.bind, self.port), Handler)
+            self.httpd = _Server((self.bind, self.port), Handler)
         except OSError as exc:
             log.warning("supervisor page disabled (port %s): %s", self.port, exc)
             return False
