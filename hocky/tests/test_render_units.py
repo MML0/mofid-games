@@ -255,6 +255,19 @@ def test_events_before_the_first_frame_are_handled():
     rend.render(eng, 0.0, 1 / 60)
 
 
+def test_slider_drags_stay_throttled():
+    """The static art is slow to rebuild: a config change must not rebuild it within the same frame."""
+    cfg, eng, rend = world()
+    rend.render(eng, 0.0, 1 / 60)
+    built = []
+    rend._build_static = lambda e: built.append(1)
+    cfg.set("walls.top_percent", cfg["walls.top_percent"] + 1)
+    eng.step(1 / 240, {}, [True, True])
+    rend.handle_events([], eng)
+    rend.render(eng, 0.0, 1 / 60)
+    assert built == []
+
+
 def every_state_frames(values=None):
     cfg, eng, rend = world(values)
     frames = [rend.render(eng, 0.0, 1 / 60).copy()]

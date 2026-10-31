@@ -24,7 +24,7 @@ def _parse_frame(line: str) -> dict | None:
                 u = min(1.0, max(0.0, u)) if math.isfinite(u) else None
             frame["p"].append([bool(present), u])
         return frame if math.isfinite(frame["t"]) else None
-    except (ValueError, TypeError, KeyError, IndexError):
+    except (ValueError, TypeError, KeyError, IndexError, OverflowError):
         return None
 
 

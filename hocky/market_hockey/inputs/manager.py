@@ -54,9 +54,7 @@ class InputManager:
     def _record(self, now: float, samples: dict) -> None:
         if not self.cfg["input.record"]:
             self.record_failed = False
-            if self.recorder is not None:
-                self.recorder.close()
-                self.recorder = None
+            self._close_recorder()
             return
         if self.record_failed:
             return
@@ -68,6 +66,15 @@ class InputManager:
         except OSError as exc:
             log.error("input recording stopped: %s", exc)
             self.record_failed = True
+            self._close_recorder()
+
+    def _close_recorder(self) -> None:
+        if self.recorder is not None:
+            try:
+                self.recorder.close()
+            except OSError as exc:
+                log.error("could not finish the input recording: %s", exc)
+            self.recorder = None
 
     def poll(self, now: float, dt: float, engine, demo: bool = False):
         """Returns (samples for the engine, [real presence p1, p2])."""
@@ -82,7 +89,8 @@ class InputManager:
         for i in (0, 1):
             a = self.adapter(sources[i])
             raw = self._sample(a, i, now, dt, engine)
-            real[i] = self.filters[i].apply(raw, now, dt, cfg, a.smooth)
+            absent = PlayerSample(False, None, 0.0, now, None, a.name)
+            real[i] = self._guarded(a, self.filters[i].apply, raw, now, dt, cfg, a.smooth, default=absent)
         samples = real
         if demo:
             ai = self.adapter("ai")
@@ -94,5 +102,4 @@ class InputManager:
     def close(self) -> None:
         for a in self.adapters.values():
             a.stop()
-        if self.recorder:
-            self.recorder.close()
+        self._close_recorder()

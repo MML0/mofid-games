@@ -44,6 +44,7 @@ jobs:
       - name: Run tests (Linux, with a virtual display for the control panel)
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update -q
           sudo apt-get install -y xvfb
           xvfb-run -a python -m pytest -q --cov=market_hockey --cov-report=term --cov-fail-under=90
 

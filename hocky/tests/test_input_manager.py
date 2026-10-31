@@ -121,6 +121,36 @@ def test_a_crashing_sensor_reads_as_absent_instead_of_stopping_the_game(cfg, eng
     m.close()
 
 
+class Malformed(InputAdapter):
+    name = "malformed"
+
+    def sample(self, idx, now, dt, engine):
+        return None if idx == 0 else PlayerSample(True, "left")
+
+
+def test_a_sensor_returning_nonsense_reads_as_absent(cfg, engine, monkeypatch):
+    m = use(cfg, monkeypatch, "malformed", Malformed)
+    _samples, presence = m.poll(100.0, 1 / 60, engine)
+    assert presence == [False, False]
+    m.close()
+
+
+def test_a_full_disk_while_recording_does_not_stop_the_game(cfg, engine, tmp_path):
+    class FullDisk:
+        def write(self, now, samples):
+            raise OSError("disk full")
+
+        def close(self):
+            raise OSError("disk full")
+
+    cfg.set("input.record", True)
+    m = InputManager(cfg)
+    m.recorder = FullDisk()
+    m.poll(0.0, 1 / 60, engine)
+    assert m.record_failed and m.recorder is None
+    m.close()
+
+
 def test_a_sensor_that_cannot_even_start_reads_as_absent(cfg, engine, monkeypatch):
     def boom(_name):
         raise ImportError("no module named rplidar")

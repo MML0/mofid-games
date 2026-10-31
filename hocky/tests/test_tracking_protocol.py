@@ -259,6 +259,7 @@ BAD_PACKETS = [
     b'{"type": "tracking", "players": [{"id": "p1", "u": NaN}]}',
     b'{"type": "tracking", "players": [{"id": "p1", "u": 99}]}',
     b'{"type": "tracking", "players": [{"id": ["p1"], "x": 0, "y": 0}]}',
+    b'{"type": "tracking", "players": [{"id": "p1", "x": 1' + b"0" * 400 + b', "y": 0}]}',
     b'{"type": "blobs"}',
     b'{"type": "blobs", "blobs": "many"}',
     b'{"type": "blobs", "blobs": [1, null, {"x": "a"}, {"x": NaN, "y": 1}]}',

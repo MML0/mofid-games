@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 def _number(value) -> float | None:
     try:
         v = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return v if math.isfinite(v) else None
 
