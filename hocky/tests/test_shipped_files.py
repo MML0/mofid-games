@@ -331,10 +331,11 @@ def test_crash_log_is_written(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------- command line
-def run_main(*args, tmp=None, seconds=120):
-    env = {**__import__("os").environ, "SDL_VIDEODRIVER": "dummy", "SDL_AUDIODRIVER": "dummy"}
+def run_main(*args, seconds=120, encoding="utf-8"):
+    env = {**__import__("os").environ, "SDL_VIDEODRIVER": "dummy", "SDL_AUDIODRIVER": "dummy",
+           "PYTHONIOENCODING": encoding}
     return subprocess.run([sys.executable, str(ROOT / "main.py"), *map(str, args)], capture_output=True, text=True,
-                          env=env, timeout=seconds, cwd=str(ROOT))
+                          encoding=encoding, errors="replace", env=env, timeout=seconds, cwd=str(ROOT))
 
 
 def test_cli_exports_icons(tmp_path):
@@ -356,6 +357,18 @@ def test_cli_game_runs_and_quits(tmp_path):
     Config({"web.bind": "127.0.0.1", "web.port": free_udp_port(), "live_link.game_port": free_udp_port(),
             "web.open_browser": False, "debug.log_matches": False}).save(path)
     r = run_main("--windowed", "--seconds", "1", "--seed", "3", "--config", path)
+    assert r.returncode == 0, r.stderr
+
+
+def test_a_console_that_cannot_show_persian_does_not_stop_the_game(tmp_path):
+    """Windows uses cp1252 when output is redirected. It has no Persian letters and no arrows."""
+    from conftest import free_udp_port
+
+    assert run_main("--help", encoding="cp1252").returncode == 0
+    path = tmp_path / "s.json"
+    Config({"web.bind": "127.0.0.1", "web.port": free_udp_port(), "live_link.game_port": free_udp_port(),
+            "web.open_browser": False, "debug.log_matches": False}).save(path)
+    r = run_main("--windowed", "--seconds", "1", "--seed", "3", "--config", path, encoding="cp1252")
     assert r.returncode == 0, r.stderr
 
 

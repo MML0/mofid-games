@@ -14,6 +14,9 @@ from pathlib import Path
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):  # a console without Persian letters must never stop the game
+        if stream is not None:
+            stream.reconfigure(errors="replace")
     ap = argparse.ArgumentParser(description="Market Hockey (هاکی بازار)")
     ap.add_argument("--windowed", action="store_true", help="run in a window instead of fullscreen")
     ap.add_argument("--config", type=Path, default=None, help="settings JSON (default config/settings.json)")
