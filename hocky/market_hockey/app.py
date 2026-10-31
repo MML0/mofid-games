@@ -122,6 +122,9 @@ class GameApp:
         vsync = 1 if cfg["display.vsync"] else 0
         for attempt in ((flags, vsync), (flags, 0), (pygame.SCALED, 0), (0, 0)):
             try:
+                # pygame can crash when it changes a SCALED window directly: go through a plain window first
+                if pygame.display.get_surface() is not None:
+                    pygame.display.set_mode((W, H), 0, display=idx)
                 self.screen = pygame.display.set_mode((W, H), attempt[0], display=idx, vsync=attempt[1])
                 break
             except pygame.error as exc:
@@ -212,6 +215,8 @@ class GameApp:
         self.inputs.close()
         if self.live:
             self.live.close()
+        if pygame.display.get_surface() is not None:  # same pygame crash as in _open_display, on the next window opened
+            pygame.display.set_mode(pygame.display.get_surface().get_size(), 0)
         pygame.quit()
 
     # ------------------------------------------------------------------ input / hotkeys

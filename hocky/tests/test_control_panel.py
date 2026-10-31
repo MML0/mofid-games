@@ -293,6 +293,12 @@ def test_connecting_pushes_everything_and_shows_telemetry(panel):
         srv.close()
 
 
+def test_a_value_too_large_to_send_live_warns_the_operator(panel):
+    row(panel, "text.goal").apply("x" * 9000)
+    panel.flush()
+    assert "too large" in panel.status_lbl.cget("text")
+
+
 def test_offline_game_is_shown(panel):
     panel.poll()
     assert "offline" in panel.pill.cget("text")

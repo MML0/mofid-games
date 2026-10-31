@@ -264,7 +264,7 @@ That's it. The source appears in the control panel's dropdown, and **`tests/test
 .venv/bin/python -m pytest -q tests/test_tracking_protocol.py     # one area
 ```
 
-Each pull request runs them on Windows, macOS and Linux, and the `.exe` is only built if they pass. Coverage below 90% fails the run. Add tests alongside each new module; the sensor and power-up tests below pick new modules up by themselves.
+Each pull request runs them on Windows and Linux, and the `.exe` is only built if they pass. Coverage below 90% fails the run. Add tests alongside each new module; the sensor and power-up tests below pick new modules up by themselves.
 
 | Area | What it proves | File |
 |---|---|---|

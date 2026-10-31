@@ -318,6 +318,8 @@ class ControlPanel:
                 self.link.set(path, v)
             else:
                 self.link.set_many(vals)
+            for w in self.link.take_warnings():
+                self.status(w, warn=True)
         self.root.after(33, self.flush)
 
     def push_all(self) -> None:

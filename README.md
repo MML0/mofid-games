@@ -39,7 +39,7 @@
 
 - 🖥️ **Everything an operator needs, no developer required.** Every game ships as a ready-to-run Windows folder. Settings change live from a control panel, and players' names come from a phone.
 - 📡 **Any sensor can drive a game.** Games read player positions through a small input contract, so a keyboard today and a 360° LiDAR tomorrow are the same thing to the game.
-- 🛡️ **Tested like it has to survive a crowd.** Every push runs the test suite on Windows, macOS and Linux. Market Hockey alone has 650+ tests at 95% coverage, and they throw corrupt files, broken sensors and every extreme setting at it.
+- 🛡️ **Tested like it has to survive a crowd.** Every push runs the test suite on Windows and Linux. Market Hockey alone has 650+ tests at 95% coverage, and they throw corrupt files, broken sensors and every extreme setting at it.
 - 🚀 **One tag, one release.** Push a version tag and GitHub Actions tests, builds, smoke-tests the real `.exe` and publishes it to [Releases](https://github.com/MML0/mofid-games/releases).
 
 ## Getting the Windows version
@@ -62,7 +62,7 @@ python3 -m venv .venv
 
 | Workflow | When it runs | What it does |
 |---|---|---|
-| [`tests.yml`](.github/workflows/tests.yml) | every pull request and push to `main` | runs all tests on Windows, macOS and Linux |
+| [`tests.yml`](.github/workflows/tests.yml) | every pull request and push to `main` | runs all tests on Windows and Linux |
 | [`build-windows.yml`](.github/workflows/build-windows.yml) | pushes to `main` and `v*` tags | tests, builds the `.exe`, smoke-tests it, and publishes a Release for tags |
 
 **To add a new game:** create its folder, add it to `matrix.game` in `tests.yml` and to `matrix.include` in `build-windows.yml`, and give it a `packaging/<App>.spec` file.

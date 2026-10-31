@@ -473,6 +473,64 @@ def test_canvas_size_change_reopens_the_display(game):
     assert frames(game, 1).get_size() == (800, 800)
 
 
+@pytest.fixture
+def windowed_game(tmp_path):
+    """Not headless, so F11 really switches between fullscreen and a window."""
+    path = tmp_path / "s.json"
+    Config({"web.enabled": False, "live_link.enabled": False}).save(path)
+    g = GameApp(config_path=path, windowed=True, seed=4)
+    yield g
+    g.shutdown()
+
+
+def record_set_mode(monkeypatch):
+    calls = []
+    real = pygame.display.set_mode
+
+    def spy(size, flags=0, **kw):
+        calls.append(flags)
+        return real(size, flags, **kw)
+
+    monkeypatch.setattr(pygame.display, "set_mode", spy)
+    return calls
+
+
+@pytest.mark.parametrize("change", ["resize", "fullscreen", "monitor"])
+def test_a_scaled_window_is_never_changed_directly(windowed_game, monkeypatch, change):
+    """pygame can crash, only sometimes, when it changes a SCALED window directly. Reopen through a plain window."""
+    g = windowed_game
+    calls = record_set_mode(monkeypatch)
+    if change == "resize":
+        g.cfg.set("display.canvas_width", 800)
+    elif change == "fullscreen":
+        g.cfg.set("display.fullscreen", True)
+    else:
+        g.cfg.set("display.display_index", 1)
+    g._open_display()
+    assert len(calls) >= 2 and calls[0] == 0 and calls[1] & pygame.SCALED
+
+
+def test_f11_goes_back_and_forth_while_playing(windowed_game):
+    g = windowed_game
+    g.engine.start_match()
+    size = g.screen.get_size()
+    for _ in range(4):
+        g._handle_event(key(pygame.K_F11), 0.0)
+        g._open_display()
+        g._present(frames(g, 2))
+        assert g.screen.get_size() == size
+
+
+def test_repeated_resizes_keep_rendering(windowed_game):
+    g = windowed_game
+    for s in (800, 640, 1080, 720):
+        g.cfg.set("display.canvas_width", s)
+        g.cfg.set("display.canvas_height", s)
+        g._open_display()
+        g._present(frames(g, 2))
+        assert g.screen.get_size() == (s, s)
+
+
 def test_bad_display_index_falls_back(game):
     game.cfg.set("display.display_index", game.cfg.schema["display.display_index"].max)
     game._display_key = None

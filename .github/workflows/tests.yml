@@ -1,4 +1,5 @@
-# Runs every game's test suite on each pull request and each push, on the systems the games are developed and shown on.
+# Runs every game's test suite on Windows and Linux for each pull request and each push. macOS is left out because its
+# runners use 10× the Actions minutes: run the tests locally on a Mac.
 # It only tests: the .exe builds and the Releases come from build-windows.yml.
 #
 # Add a game: add its folder to matrix.game below.
@@ -17,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest]
         game: [hocky]
     env:
       SDL_VIDEODRIVER: dummy

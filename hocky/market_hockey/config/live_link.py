@@ -102,19 +102,29 @@ class LiveLinkClient:
         self.sock.setblocking(False)
         self.last_state_time = 0.0
         self.seq = 0
+        self.warnings: list[str] = []
 
     def send(self, msg: dict) -> None:
         data = _encode(msg)
-        if len(data) > MAX_DATAGRAM and msg.get("type") == "set_many" and len(msg["values"]) > 1:
-            items = list(msg["values"].items())
-            half = len(items) // 2
-            self.send({"type": "set_many", "values": dict(items[:half])})
-            self.send({"type": "set_many", "values": dict(items[half:])})
+        if len(data) > MAX_DATAGRAM:
+            if msg.get("type") == "set_many" and len(msg["values"]) > 1:
+                items = list(msg["values"].items())
+                half = len(items) // 2
+                self.send({"type": "set_many", "values": dict(items[:half])})
+                self.send({"type": "set_many", "values": dict(items[half:])})
+                return
+            name = msg.get("path") or ", ".join(msg.get("values", {})) or msg.get("type")
+            self.warnings.append(f"{name} is too large to apply live: press Save and restart the game")
+            log.warning(self.warnings[-1])
             return
         try:
             self.sock.sendto(data, self.game_addr)
         except OSError:
             pass
+
+    def take_warnings(self) -> list[str]:
+        out, self.warnings = self.warnings, []
+        return out
 
     def set(self, path: str, value) -> None:
         self.seq += 1

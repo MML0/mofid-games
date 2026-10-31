@@ -215,7 +215,10 @@ def test_oversized_batches_are_split(link):
 
 def test_a_single_huge_value_does_not_hang_the_panel(link):
     _srv, cl = link
-    cl.set_many({"text.goal": "x" * (MAX_DATAGRAM + 10)})  # dropped, but must return
+    cl.set_many({"text.goal": "x" * (MAX_DATAGRAM + 10)})
+    cl.set("text.banner", "x" * (MAX_DATAGRAM + 10))
+    warnings = cl.take_warnings()
+    assert "text.goal" in warnings[0] and "text.banner" in warnings[1] and cl.take_warnings() == []
 
 
 def test_persian_survives_the_link(link):
