@@ -11,8 +11,12 @@ _font = None
 
 def _f(size=16):
     global _font
-    if _font is None or _font.get_height() != size:
-        _font = pygame.font.Font(None, size + 4)
+    try:
+        if _font is not None and _font.get_height() == size:
+            return _font
+    except pygame.error:  # the font module was restarted since this font was made
+        pass
+    _font = pygame.font.Font(None, size + 4)
     return _font
 
 

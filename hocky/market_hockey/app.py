@@ -296,7 +296,8 @@ class GameApp:
                     if warns:
                         self.live.send({"type": "ack", "ok": False, "warning": "; ".join(warns[:5])}, addr)
             elif t == "command":
-                self._command(str(msg.get("name")), msg.get("args") or {})
+                args = msg.get("args")
+                self._command(str(msg.get("name")), args if isinstance(args, dict) else {})
             elif t == "hello":
                 self._state_t = 0.0
 

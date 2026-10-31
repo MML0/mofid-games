@@ -1,15 +1,50 @@
-# Market Hockey · هاکی بازار
+<p align="center"><img src="docs/media/banner.png" alt="Market Hockey · هاکی بازار"></p>
 
-A two-player circular projection-floor game for **Mofid Securities (کارگزاری مفید)**, inspired by air hockey and
-the META LiDAR projection floor. It is built with Python, **pygame-ce** (the game) and **Tkinter** (the control
-panel). Every parameter lives in JSON and can be edited live while the game runs.
+<p align="center">
+  <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/github/v/release/MML0/mofid-games?label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/tests-650%2B-00B8A0" alt="650+ tests">
+  <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
+  <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
+</p>
+
+<p align="center"><b>Air hockey made of light.</b> Two players stand on opposite sides of a glowing circular floor<br>and defend their goals with paddles that follow them, while the market throws everything it has at them.</p>
+
+<p align="center"><img src="docs/media/gameplay.gif" width="460" alt="Real gameplay: comet trails, power-ups, multi-ball, the market roulette and a goal"></p>
+
+<p align="center"><sub>Rendered by the game itself, with no editing. <code>tools/make_readme_media.py</code> makes every picture on this page.</sub></p>
+
+| | | |
+|:---:|:---:|:---:|
+| <img src="docs/media/waiting.png" width="260" alt="Waiting screen with player names"> | <img src="docs/media/countdown.png" width="260" alt="Countdown"> | <img src="docs/media/rally.png" width="260" alt="A rally with power-up orbs"> |
+| **Names go up on the floor** | **3, 2, 1, شروع!** | **Star-trail rallies** |
+| <img src="docs/media/powerups.png" width="260" alt="Double ball and trajectory reveal"> | <img src="docs/media/chaos.png" width="260" alt="Sudden market swing"> | <img src="docs/media/result.png" width="260" alt="Result screen"> |
+| **Multi-ball + market analysis** | **«نوسان ناگهانی بازار!»** | **Crowned on the floor** |
+
+## Why this one is special
+
+- 🎯 **Real physics, not arcade guesses.** A fixed 240 Hz simulation with curved paddles: where the ball lands on the dome decides where it goes. Tests fire it at maximum speed to prove it can never tunnel through a paddle.
+- 🪐 **Ten power-ups, each one file.** Orbs drift toward the ball like magnets. The market roulette freezes the ball, spins through possible paths and fires. Drop a new file in a folder and it shows up in the game, the JSON and the control panel.
+- 🎛️ **486 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
+- 🌟 **Made for a projector.** Dithered gradients with no banding, supersampled edges, soft additive glow, and a mask that keeps every pixel inside the circle. A test checks that promise frame by frame.
+- ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
+- 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
+- 📡 **Sensor-ready.** The game only ever sees "player position along the rim", so keyboard, AI, replay and a 360° LiDAR are interchangeable. [See how](#adding-a-sensor-360-lidar-and-friends).
+- 🛡️ **Built not to break mid-show.** 650+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
+
+<p align="center"><img src="docs/media/supervisor.png" width="280" alt="The supervisor page on a phone"><br><sub>The supervisor page on a phone (sample names).</sub></p>
+
+## Download
+
+**Windows:** get `MarketHockey-windows.zip` from the [latest release](https://github.com/MML0/mofid-games/releases/latest), unzip it to a writable folder and run `MarketHockey.exe`. Press **Space** to start. A/D and ←/→ move the paddles.
 
 ## Quick start
 
 ```bash
-cd /Users/dayhimit/Documents/MML/projects/mofid/hocky
-python3 -m venv .venv                       # already done in this folder
-.venv/bin/pip install -r requirements.txt   # already done
+cd hocky
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 .venv/bin/python main.py --windowed         # play in a window
 .venv/bin/python main.py                    # fullscreen (projector)
 .venv/bin/python settings_app.py            # control panel (separate window, live-linked)
@@ -110,7 +145,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 ## Live editing and saving
 
 - Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
-- `settings_app.py` edits **every** setting (424) with sliders, exact-value fields, color pickers, dropdowns and key capture.
+- `settings_app.py` edits **every** setting (486) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
@@ -163,9 +198,26 @@ It appears in the spawner, the JSON and the control panel automatically.
 - **Custom icons**: put `assets/icons/<id>.png` in place to replace the drawn icon.
 - **Effect kinds** available to `self.effect(...)`: `paddle_size`, `ball_speed`, `dim`, `reveal`, `shield`, `bull`, `wobble`. Effects are computed from the active list every step, so expiry always restores the previous state.
 
-## LiDAR, TouchDesigner or CCTV pose tracking
+## Adding a sensor (360° LiDAR and friends)
 
-The engine only consumes *"player position 0..1 along their arc"*. Set `Inputs → Player 1/2 input` to **network**, then send JSON over UDP (default `127.0.0.1:9100`; set *Listen on* to `0.0.0.0` for another machine):
+The engine only consumes *"player position 0..1 along their arc"*, so a sensor is a module you plug in, and nothing else in the game changes. The planned setup is a **360° LiDAR** mounted at the center or overhead, with the detection (clustering, feet, calibration) coming from a separate, proven tracker project.
+
+```mermaid
+flowchart LR
+    L["360° LiDAR"] --> T["Tracker<br>clusters · feet · people"]
+    T -- "UDP JSON" --> N["network adapter"]
+    C["CCTV pose / TouchDesigner"] -- "UDP JSON" --> N
+    D["Your driver, in-process"] --> A["your adapter"]
+    K["keyboard · ai · mouse · replay"] --> M
+    N --> M["InputManager<br>spike rejection · One Euro smoothing<br>confidence gate · hold when lost"]
+    A --> M
+    M -- "u = 0..1 per player" --> E["Engine"]
+    E --> R["Renderer → projector"]
+```
+
+There are two ways to connect it, and neither touches the engine:
+
+**A. Keep the tracker as its own program (works today).** Set `Inputs → Player 1/2 input` to **network** and send JSON over UDP (default `127.0.0.1:9100`; set *Listen on* to `0.0.0.0` for another machine):
 
 ```json
 {"type":"tracking","players":[{"id":"p1","x":-0.92,"y":0.20,"conf":0.9},{"id":"p2","x":0.90,"y":-0.10,"conf":0.8}]}
@@ -173,17 +225,68 @@ The engine only consumes *"player position 0..1 along their arc"*. Set `Inputs �
 ```
 
 - **Coordinates** are normalized to the arena: center (0,0), rim = 1, +y up. A per-player `"u"` (0..1) skips the mapping.
-- **Blobs** are assigned to players by which goal arc they're on.
-- **Calibration**: offset, scale, rotation and flip are in `Inputs → Network`.
+- **Send one point per person, not per foot.** Blobs are assigned by which goal arc they're on, and the one nearest the rim plays, so two separate feet would make the paddle hop between them. Merge the feet in the tracker.
+- **Calibration**: offset, scale, rotation and flip are in `Inputs → Network`, so the sensor can be mounted at any angle.
 - **Filters**: One Euro smoothing, spike rejection, confidence gate, hold-when-lost and absent timeout.
 - **Test without hardware**: `.venv/bin/python tools/send_fake_tracking.py` (or `--blobs`).
-- **TouchDesigner**: send that JSON from a UDP Out DAT.
-- **CCTV pose** (MediaPipe / YOLO-pose): run the model in a separate process and send the ankle midpoint per person. Don't import vision models into the game.
-- **Other inputs**: `ai` (single-player vs CPU), `mouse` (debug) and `replay` (record with `input.record`, play back from `input.replay_file`).
+
+**B. Merge the driver into the game.** Add one file and one line:
+
+```python
+# market_hockey/inputs/lidar.py
+from .base import InputAdapter, PlayerSample
+
+class LidarAdapter(InputAdapter):
+    name = "lidar"
+    smooth = True                       # run the sensor filters on this source
+
+    def update(self, now, dt, engine):  # once per frame: read the latest scan; never block
+        ...
+
+    def sample(self, idx, now, dt, engine) -> PlayerSample:
+        ...                             # u along this player's arc: engine.geom.angle_to_u(idx, angle, width)
+```
+
+```python
+# market_hockey/inputs/registry.py
+ADAPTERS = {..., "lidar": "lidar:LidarAdapter"}
+```
+
+That's it. The source appears in the control panel's dropdown, and **`tests/test_input_contract.py` automatically holds it to the rules** every source must follow. If the driver is missing or crashes during a show, that player just reads as absent while the game keeps running.
+
+**Other inputs**: `ai` (single-player vs CPU), `mouse` (debug) and `replay` (record with `input.record`, play back from `input.replay_file`). For CCTV pose (MediaPipe / YOLO-pose), run the model in a separate process and send the ankle midpoint per person, as in route A. From TouchDesigner, use a UDP Out DAT.
+
+## Tests
+
+```bash
+.venv/bin/python -m pytest -q                                     # everything, about two minutes
+.venv/bin/python -m pytest -q --cov=market_hockey                 # with coverage
+.venv/bin/python -m pytest -q tests/test_tracking_protocol.py     # one area
+```
+
+Each pull request runs them on Windows, macOS and Linux, and the `.exe` is only built if they pass. Coverage below 90% fails the run. Add tests alongside each new module; the sensor and power-up tests below pick new modules up by themselves.
+
+| Area | What it proves | File |
+|---|---|---|
+| **Every setting** | Every value of every setting applied live mid-match, and random combinations through whole matches, never crash the game or break physics | `test_settings_fuzz.py` |
+| **Sensors** | Every registered source obeys the same contract: valid samples, drives the engine, stops cleanly, loads lazily | `test_input_contract.py` |
+| **LiDAR path** | A simulated 360° scan → clusters → real UDP → filters → paddles, plus sensor noise, dropouts, mount rotation and 25 kinds of malformed packet | `test_tracking_protocol.py` |
+| **Input plumbing** | Routing, crashing or missing sensors, filters, record and replay, keyboard and mouse | `test_input_manager.py`, `test_inputs.py` |
+| **Physics** | Direction control, no tunnelling at max speed, never stuck in a paddle, speed stays bounded | `test_physics.py`, `test_geometry.py` |
+| **Rules** | Scoring, own goals, serves, golden goal, score and time limits, full match flow | `test_scoring.py`, `test_engine_flow.py` |
+| **Power-ups** | All ten types, magnet, stacking, expiry restores state, and new types register themselves | `test_powerups.py` |
+| **Long play** | Three minutes of AI vs AI matches with all power-ups on, checking every step | `test_soak.py` |
+| **Picture** | No light outside the circle in any state, no banding, every icon draws, Persian shaping, Latin digits | `test_render_units.py`, `test_text_render.py` |
+| **Application** | Hotkeys, exhibition lock, panel commands, projector rotation and flip, logs, ports already in use | `test_app.py` |
+| **Control panel** | Every page opens, every setting has a control, save, undo, presets, search, live link (driven for real through Tk) | `test_control_panel.py` |
+| **Settings files** | Any corrupt or outdated file still starts the game; migrations and atomic saves | `test_config.py`, `test_config_robustness.py` |
+| **Supervisor page** | Commands, bad requests, no path traversal, history, CSV for Excel | `test_web.py`, `test_web_robustness.py` |
+| **Sound** | Valid generated sounds, the right sound per event, silent without a sound card | `test_audio.py` |
+| **What ships** | Presets, defaults and docs are current; assets exist; the build recipe is complete; `core` stays free of UI and sensor code; this README's numbers and links are true | `test_shipped_files.py` |
 
 ## Windows build (.exe)
 
-GitHub Actions builds a ready-to-run Windows folder on every push to `main` that touches `hocky/`. You can also start a build from **Actions → Build Windows → Run workflow**. Download **MarketHockey-windows** from the run's *Artifacts*, unzip it to a writable folder (not *Program Files*), and run `MarketHockey.exe` / `ControlPanel.exe`. Settings, presets and logs are stored next to the `.exe` files.
+Tagged versions appear under [Releases](https://github.com/MML0/mofid-games/releases) as a zip. GitHub Actions also builds a ready-to-run Windows folder on every push to `main` that touches `hocky/`, after the tests pass. You can also start a build from **Actions → Build Windows → Run workflow**. Download **MarketHockey-windows** from the run's *Artifacts*, unzip it to a writable folder (not *Program Files*), and run `MarketHockey.exe` / `ControlPanel.exe`. Settings, presets and logs are stored next to the `.exe` files.
 
 To build locally on Windows:
 
@@ -201,6 +304,8 @@ Then copy the `config`, `assets` and an empty `logs` folder into `dist\MarketHoc
 - `--export-icons DIR`: power-up badges
 - `--selftest-text DIR`: Persian rendering check
 - `tools/make_placeholder_sounds.py [--force]`: regenerate the synthesized sound effects
+- `tools/make_readme_media.py`: regenerate every picture in the READMEs from the real game (needs `pip install pillow`, ffmpeg and Chrome)
+- `tools/send_fake_tracking.py [--blobs]`: pretend to be a LiDAR tracker
 - `logs/matches.csv`: one row per match (scores, power-ups, smart hits)
 - `logs/market_hockey.log`: the log
 
@@ -213,11 +318,12 @@ market_hockey/
   core/        geometry.py, collisions.py, entities.py, engine.py   (pure Python, no pygame)
   powerups/    base.py, registry.py, effects.py, types/*.py         (one file per power-up)
   prediction/  trajectory.py
-  inputs/      keyboard, ai, mouse, network (LiDAR/pose), replay, filters, manager
+  inputs/      base.py (the contract), registry.py (every source), keyboard, ai, mouse, network (LiDAR/pose),
+               replay, filters, manager
   render/      renderer.py, text.py (Persian), icons.py, glow.py, particles.py, overlays.py
   audio/       synth.py (placeholder sounds), audio.py
   ui/          settings_window.py, widgets.py, preview.py, theme.py
-tests/         geometry, physics, scoring, power-ups, prediction, config, inputs, text/mask, soak
+tests/         650+ tests, see "Tests" above
 ```
 
 ## Troubleshooting

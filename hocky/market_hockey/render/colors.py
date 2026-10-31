@@ -26,7 +26,8 @@ def boost(c, amount: float) -> tuple[int, int, int]:
     r, g, b = (v / 255 for v in c[:3])
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
     v = min(1.0, v + (1 - v) * amount * 1.2)
-    s = min(1.0, s + (1 - s) * amount * 0.3)
+    if s > 0:  # white and grays have no hue to saturate: they would turn red
+        s = min(1.0, s + (1 - s) * amount * 0.3)
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
     return int(r * 255), int(g * 255), int(b * 255)
 

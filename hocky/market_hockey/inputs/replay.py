@@ -4,11 +4,28 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 
 from ..paths import ROOT
 from .base import InputAdapter, PlayerSample
 
 log = logging.getLogger(__name__)
+
+
+def _parse_frame(line: str) -> dict | None:
+    """One replay line as {"t": seconds, "p": [[present, u], ...]}, or None if it is not one."""
+    try:
+        rec = json.loads(line)
+        t, players = rec["t"], rec["p"]
+        frame = {"t": float(t), "p": []}
+        for present, u in players:
+            if u is not None:
+                u = float(u)
+                u = min(1.0, max(0.0, u)) if math.isfinite(u) else None
+            frame["p"].append([bool(present), u])
+        return frame if math.isfinite(frame["t"]) else None
+    except (ValueError, TypeError, KeyError, IndexError):
+        return None
 
 
 class Recorder:
@@ -39,7 +56,10 @@ class ReplayAdapter(InputAdapter):
         self.i = 0
         try:
             with open(ROOT / cfg["input.replay_file"], encoding="utf-8") as fh:
-                self.frames = [json.loads(line) for line in fh if line.strip()]
+                parsed = [_parse_frame(line) for line in fh if line.strip()]
+            self.frames = [f for f in parsed if f is not None]
+            if len(self.frames) < len(parsed):
+                log.warning("replay file: skipped %d damaged lines", len(parsed) - len(self.frames))
         except (OSError, ValueError) as exc:
             log.warning("replay file unavailable: %s", exc)
 

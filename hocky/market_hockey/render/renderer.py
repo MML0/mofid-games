@@ -337,6 +337,7 @@ class Renderer:
 
     # ====================================================================== events
     def handle_events(self, events, engine) -> None:
+        self._ensure(engine)  # events can arrive before the first frame is drawn
         cfg = self.cfg
         c = self.c
         g = engine.geom

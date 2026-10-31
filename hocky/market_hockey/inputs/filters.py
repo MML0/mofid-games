@@ -48,7 +48,8 @@ class PlayerFilter:
         self.jump_start = None
 
     def apply(self, s: PlayerSample, now: float, dt: float, cfg, smooth: bool) -> PlayerSample:
-        valid = s.present and s.u is not None and s.confidence >= cfg["input.filters.min_confidence"]
+        valid = (s.present and s.u is not None and math.isfinite(s.u)
+                 and s.confidence >= cfg["input.filters.min_confidence"])
         if valid:
             u = min(1.0, max(0.0, s.u))
             if smooth:

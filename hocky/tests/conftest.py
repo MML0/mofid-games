@@ -1,6 +1,9 @@
+import hashlib
 import os
 import random
+import socket
 import sys
+import time
 from pathlib import Path
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -55,3 +58,47 @@ def run(engine, seconds, dt=1 / 240):
         engine.step(dt, {}, [True, True])
         events += engine.drain_events()
     return events
+
+
+def free_udp_port() -> int:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    return port
+
+
+def wait_for(fn, tries=500):
+    """Loopback UDP is fast but not instant: poll until `fn` returns something truthy, and return it."""
+    for _ in range(tries):
+        got = fn()
+        if got:
+            return got
+        time.sleep(0.002)
+    raise AssertionError("timed out waiting for a network message")
+
+
+def advance_to_playing(engine, dt=1 / 240, limit=20.0):
+    """Start a match and run the real intro and countdown until the ball is in play."""
+    if engine.state == "ATTRACT":
+        engine.start_match()
+    for _ in range(int(limit / dt)):
+        engine.step(dt, {}, [True, True])
+        if engine.state == "PLAYING":
+            return engine
+    raise AssertionError(f"never reached PLAYING (stuck in {engine.state})")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _shipped_files_stay_untouched():
+    """No test may change the settings, presets or match history that ship with or belong to the real game."""
+    root = Path(__file__).resolve().parent.parent
+    watched = [root / "config" / "settings.json", root / "config" / "defaults.json", root / "logs" / "history.jsonl",
+               root / "logs" / "matches.csv", *sorted((root / "config" / "presets").glob("*.json"))]
+
+    def digest():
+        return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None for p in watched}
+
+    before = digest()
+    yield
+    assert digest() == before, "a test modified a real config or log file"

@@ -16,7 +16,7 @@ import time
 
 log = logging.getLogger(__name__)
 HOST = "127.0.0.1"
-MAX_DATAGRAM = 60000
+MAX_DATAGRAM = 8000  # macOS refuses UDP datagrams over 9216 bytes by default
 
 
 def _encode(msg: dict) -> bytes:
@@ -105,7 +105,7 @@ class LiveLinkClient:
 
     def send(self, msg: dict) -> None:
         data = _encode(msg)
-        if len(data) > MAX_DATAGRAM and msg.get("type") == "set_many":
+        if len(data) > MAX_DATAGRAM and msg.get("type") == "set_many" and len(msg["values"]) > 1:
             items = list(msg["values"].items())
             half = len(items) // 2
             self.send({"type": "set_many", "values": dict(items[:half])})
