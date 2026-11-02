@@ -84,10 +84,10 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `hud.glow` | 0.55 | 0 … 1.5 | live | HUD glow |
 | `text.shadow_alpha` | 0.55 | 0 … 1 | live | Text soft shadow |
 | `text.shaping_backend` | auto | auto, harfbuzz, reshaper | live | Persian shaping — auto = HarfBuzz (SDL_ttf) when available, otherwise arabic-reshaper. |
-| `fonts.persian` | IRANSansX-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Persian text font |
-| `fonts.persian_title` | IRANSansX-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Title font |
-| `fonts.digits` | IRANSansX-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Digits font — Timer, scores and countdown (always Latin digits). |
-| `fonts.latin` | IRANSansX-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf | live | Latin text font |
+| `fonts.persian` | Pinar-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Persian text font |
+| `fonts.persian_title` | Pinar-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Title font |
+| `fonts.digits` | SF-Compact-Display-Heavy.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Digits font — Timer, scores and countdown (always Latin digits). |
+| `fonts.latin` | SF-Compact-Display-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Latin text font |
 | `text.toast_size` | 34 | 14 … 120 px | live | Message size |
 | `text.banner_size` | 56 | 20 … 200 px | live | Banner size |
 | `text.toast_duration` | 1.8 | 0.3 … 6 s | live | Message duration |
@@ -121,15 +121,16 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `match.start_mode` | operator_key | operator_key, auto_when_both_present, auto_loop | live | Start trigger — operator_key = Space/Enter or the panel; auto modes start by themselves. |
 | `match.auto_loop_delay_s` | 8.0 | 1 … 60 s | live | Auto-loop idle time |
 | `match.attract_demo` | True | bool | live | Attract demo (AI vs AI) |
-| `match.attract_opacity` | 0.55 | 0.1 … 1 | live | Demo opacity |
+| `match.attract_opacity` | 0.9 | 0.1 … 1 | live | Demo opacity |
+| `match.title_backing` | 0.82 | 0 … 1 | live | Dark backing behind the waiting text — Keeps the game's name and the prompt readable over the moving visuals. 0 removes it. |
 | `match.attract_toasts` | False | bool | live | Power-up messages in the demo — Off keeps the waiting screen clean. |
 | `match.clear_names_after_game` | True | bool | live | Clear player names after each game — Names stay on the result screen, then clear for the next pair of players. |
-| `match.intro_s` | 0.9 | 0.0 … 4 s | live | Intro length |
+| `match.intro_s` | 2.8 | 0.0 … 6 s | live | Intro length — How long the logo takes to come to the center, grow and fade after Start. |
 | `match.goal_pause_s` | 1.4 | 0.2 … 5 s | live | Pause after goal |
 | `match.timer_runs_during_goal_pause` | False | bool | live | Timer runs during goal pause |
 | `match.timer_runs_during_serve` | True | bool | live | Timer runs during serve |
 | `match.final_freeze_s` | 1.6 | 0.2 … 6 s | live | Final freeze |
-| `match.result_s` | 6.0 | 1 … 60 s | live | Result screen time |
+| `match.result_s` | 10.0 | 1 … 60 s | live | Result screen time |
 | `match.result_wait_for_operator` | False | bool | live | Result waits for operator |
 | `scoring.points_per_goal` | 1 | 1 … 10 | live | Points per goal |
 | `scoring.smart_hit_points` | 0 | 0 … 5 | live | Bonus points per smart hit |
@@ -455,9 +456,10 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
-| `countdown.ready_s` | 0.9 | 0 … 3 s | live | 'Ready' time |
-| `countdown.beat_s` | 0.8 | 0.3 … 2 s | live | Beat length (3, 2, 1) |
-| `countdown.go_s` | 0.6 | 0.2 … 2 s | live | 'Go' time |
+| `countdown.ready_s` | 1.2 | 0 … 3 s | live | 'Ready' time |
+| `countdown.start` | 5 | 1 … 9 | live | Count down from — 5 counts 5, 4, 3, 2, 1. |
+| `countdown.beat_s` | 1.0 | 0.3 … 2 s | live | Beat length — Seconds per number. |
+| `countdown.go_s` | 0.8 | 0.2 … 2 s | live | 'Go' time |
 | `countdown.size` | 300 | 60 … 600 px | live | Number size |
 | `countdown.particles` | 40 | 0 … 200 | live | Particles per beat |
 | `fx.dither` | True | bool | live | Dither gradients — Removes visible banding steps in the background and glows. |
@@ -472,6 +474,93 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `fx.ambient_chart` | True | bool | live | Ambient market chart |
 | `fx.ambient_alpha` | 0.12 | 0 … 0.5 | live | Ambient chart opacity |
 | `fx.final_pulse` | True | bool | live | Final-seconds pulse |
+
+## Kinetic Type
+
+| Key | Default | Range / options | Live | Description |
+|---|---|---|---|---|
+| `kinetic.enabled` | True | bool | live | Kinetic type backdrop — The faint wave of letters behind splash, countdown, goals and results. |
+| `kinetic.splash` | True | bool | live | Splash on launch |
+| `kinetic.on_goal` | True | bool | live | Shock wave on goals |
+| `kinetic.goal_at_impact` | False | bool | live | Start goal wave at the impact point — Off keeps every effect on the exact center. |
+| `kinetic.moment_pace` | 1.0 | 0.4 … 2 × | live | Moment pace — Below 1 plays goal, go, result and splash slower. |
+| `kinetic.density` | 55 | 10 … 120 | live | Grid density — Cells per side. On a 4 m floor, 55 makes letters about 5 cm tall. |
+| `kinetic.font_scale` | 0.9 | 0.3 … 2 | live | Font scale — Letter height as a share of the row height. |
+| `kinetic.attract_text` | MOFID SECURITIES/STEADY PROGRESS/MARKET HOCKEY | str | live | Waiting-screen texts — Separate with / . They take turns, each spreading out from the center. |
+| `kinetic.text_interval_s` | 9.0 | 2 … 60 s | live | Text change interval |
+| `kinetic.space_marks` | True | bool | live | Spaces become brand dots — Echoes the dot grid of the brand book. Off leaves empty rings. |
+| `kinetic.text_start` | MARKET HOCKEY | str | live | Match start text |
+| `kinetic.text_ready` | READY | str | live | Ready text |
+| `kinetic.text_go` | GO | str | live | Go text |
+| `kinetic.text_goal` | GOAL | str | live | Goal text |
+| `kinetic.text_final` | MARKET CLOSED | str | live | Match end text |
+| `kinetic.text_winner` | WINNER | str | live | Winner's side text |
+| `kinetic.text_draw` | DRAW | str | live | Draw text |
+| `kinetic.loser_text` | STEADY PROGRESS | str | live | Other side's text on the result — The brand slogan: the brand book rules out sad or discouraging imagery. |
+| `kinetic.font_latin` | SF-Compact-Display-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Latin font |
+| `kinetic.font_persian` | Pinar-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Persian font — Only used if you type Persian into the texts above. |
+| `kinetic.speed` | 0.06 | 0.01 … 0.2 | live | Animation speed — Radians per frame at 60 fps. How fast the rings travel. |
+| `kinetic.frequency` | 0.03 | 0.005 … 0.1 | live | Wave frequency — Radians per reference pixel. Higher = more, tighter waves. |
+| `kinetic.min_stretch` | 0.25 | 0.05 … 1 × | live | Min stretch — Width multiplier in the wave's trough. |
+| `kinetic.max_stretch` | 2.6 | 1 … 8 × | live | Max stretch — Width multiplier on the wave's crest. |
+| `kinetic.max_overlap` | 1.5 | 0.5 … 8 cells | live | Max letter width — How far one letter may spread over its neighbors. Lower = more readable. |
+| `kinetic.drift` | 1.0 | 0 … 2 | live | Waiting-screen drift — How far the sliders wander by themselves while waiting. |
+| `kinetic.color1` | #00A796 | color | live | Color 1 (brand turquoise) |
+| `kinetic.color2` | #53D5FD | color | live | Color 2 (sky blue) |
+| `kinetic.color3` | #94E3FE | color | live | Color 3 (pale sky blue) |
+| `kinetic.loser_color` | #F3716D | color | live | Other side on the result (brand red) |
+| `kinetic.ring_width` | 50.0 | 20 … 200 | live | Ring width — Rings of one color. Smaller = more color changes. |
+| `kinetic.letter_width` | 24.0 | 10 … 200 | live | Letter ring width — Rings of one letter. Close to the cell size keeps words readable. |
+| `kinetic.color_swap` | False | bool | live | Color swap (flicker) — Rotates the colors between rings. Ignored with Reduce flashing. |
+| `kinetic.swap_interval` | 140 | 10 … 300 frames | live | Color swap interval |
+| `kinetic.opacity_wave_speed` | 0.025 | 0 … 0.2 | live | Speed — How fast the letters fade and return, like a heartbeat. |
+| `kinetic.opacity_wave_frequency` | 0.003 | 0 … 0.05 | live | Frequency — 0 fades the whole visual together. Higher = rings of light and dark. |
+| `kinetic.opacity_wave_min` | 0.1 | 0 … 1 | live | Valley opacity — 0 disappears completely. |
+| `kinetic.opacity_wave_max` | 1.0 | 0 … 1 | live | Peak opacity |
+| `kinetic.opacity_wave_sharpness` | 1.5 | 0.5 … 5 | live | Sharpness — 1 is a plain sine. Higher = shorter peaks, like a pulse. |
+| `kinetic.edge_fade_start` | 0.5 | 0 … 1 ×R | live | Fade starts — Letters begin fading here, so they stay clear of the rim. |
+| `kinetic.edge_fade_end` | 0.82 | 0 … 1.2 ×R | live | Fade ends — Letters are gone by here: inside the paddles, walls and goal lines. |
+| `kinetic.opacity_waiting` | 0.85 | 0 … 1 | live | Waiting screen — The waiting screen's dim also applies on top of this. |
+| `kinetic.opacity_countdown` | 0.4 | 0 … 1 | live | Countdown |
+| `kinetic.opacity_moment` | 0.75 | 0 … 1 | live | Peak of a moment — Goal, go, final and result at their brightest. |
+| `kinetic.opacity_result` | 0.5 | 0 … 1 | live | Result screen (resting) |
+| `kinetic.opacity_play` | 0.0 | 0 … 0.3 | live | During play — 0 keeps the arena clean while the ball is live. |
+
+## Brand Motion
+
+| Key | Default | Range / options | Live | Description |
+|---|---|---|---|---|
+| `motion.enabled` | True | bool | live | Moving brand objects — Paper planes, flipping coins, pulsing rings and marks from the brand book. |
+| `motion.splash` | True | bool | live | Opening flood on launch |
+| `motion.waiting_loop` | True | bool | live | Loop on the waiting screen — A 46 second show of every object, one after another. |
+| `motion.on_goal` | True | bool | live | Burst on goals |
+| `motion.in_play` | True | bool | live | Paper planes during play — They cross under the ball at the Level during play below. |
+| `motion.plane_every_s` | 14.0 | 4 … 60 s | live | Plane interval during play |
+| `motion.logo_waiting` | True | bool | live | Logo on the waiting screen — Always there in the background. |
+| `motion.logo_zoom` | True | bool | live | Logo grows and fades after Start — It brightens, springs to the center, grows, and fades out while still growing. |
+| `motion.logo_result` | True | bool | live | Logo on the result screen |
+| `motion.logo_rest` | 0.55 | 0.05 … 1 | live | Waiting opacity — How visible the logo is while waiting. |
+| `motion.logo_size` | 0.27 | 0.1 … 0.7 ×D | live | Waiting width |
+| `motion.logo_result_size` | 0.19 | 0.08 … 0.5 ×D | live | Result screen width |
+| `motion.plane_size` | 0.15 | 0.04 … 0.4 ×D | live | Paper plane |
+| `motion.coin_size` | 0.072 | 0.03 … 0.2 ×D | live | Coin — The coins that fly and fill the wall. |
+| `motion.hero_size` | 0.27 | 0.08 … 0.6 ×D | live | Center coin |
+| `motion.level_waiting` | 1.0 | 0 … 1 | live | Waiting screen — The waiting screen's dim also applies on top of this. |
+| `motion.level_countdown` | 0.9 | 0 … 1 | live | Countdown |
+| `motion.level_moment` | 1.0 | 0 … 1 | live | Goals, match start and end |
+| `motion.level_result` | 0.95 | 0 … 1 | live | Result screen |
+| `motion.level_play` | 0.45 | 0 … 1 | live | During play — Keep it low: the ball must stay the brightest thing. |
+| `motion.result_wall` | 0.85 | 0 … 1 | live | Winner's coin wall once settled — Lower keeps the names and scores easier to read. |
+| `motion.object_opacity` | 0.6 | 0 … 1 | live | Objects as background — Coins, planes, charts and marks all together. Lower sits them further behind the game. |
+| `motion.flood_strength` | 0.6 | 0 … 1 | live | Floods as background — How strongly the floods color the floor. |
+| `motion.chart_strength` | 0.7 | 0 … 1 | live | Market chart — The candles and line, on top of the objects' opacity. |
+| `motion.edge_fade_start` | 0.72 | 0 … 1 ×R | live | Rim fade starts — Objects begin fading here, near the outer circle. |
+| `motion.edge_fade_end` | 0.92 | 0 … 1.2 ×R | live | Rim fade ends — Gone by here. Shorter than the letters' fade, so objects keep their size. |
+| `motion.color_pale` | #DEF1EE | color | live | Flood and light coins (brand tint) |
+| `motion.color_teal` | #00A796 | color | live | Turquoise (brand) |
+| `motion.color_tint` | #5BC4BF | color | live | Light turquoise (brand tint) |
+| `motion.color_dark` | #004C6A | color | live | Dark coins (brand dark blue) |
+| `motion.color_accent` | #832C73 | color | live | Accent coins (brand purple) |
 
 ## Colors
 

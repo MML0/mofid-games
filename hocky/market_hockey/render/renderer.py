@@ -11,12 +11,15 @@ from __future__ import annotations
 import math
 import random
 
+import numpy as np
 import pygame
 
 from ..core.geometry import pp
 from .colors import boost, hex_rgb, mix, scale
 from .glow import AddLayer, GlowCache, radial_background
 from .icons import IconCache
+from .brand_motion import BrandMotion, smoother
+from .kinetic import REF_SIZE, KineticBackdrop
 from .particles import Particles
 from .text import TextRenderer
 
@@ -51,6 +54,8 @@ class Renderer:
         self.glow = GlowCache(4000, cfg["fx.dither_strength"] if cfg["fx.dither"] else 0.0)
         self.icons = IconCache()
         self.particles = Particles(self.rng)
+        self.kinetic = KineticBackdrop(cfg)
+        self.motion = BrandMotion(cfg)
         self._cfg_v = -1
         self._static_dirty_since = None
         self.size = None
@@ -77,6 +82,7 @@ class Renderer:
         self.debug_draw = None  # set by app: callable(renderer, engine, surface)
         self.supervisor_url = ""  # set by app: shown small on the waiting screen
         self._reserved: list[pygame.Rect] = []  # screen space already taken by text this frame
+        self._backings: dict = {}
 
     # ====================================================================== setup
     def _colors(self) -> None:
@@ -343,6 +349,9 @@ class Renderer:
         c = self.c
         g = engine.geom
         cap = cfg["fx.max_particles"]
+        self.kinetic.handle_events(events, engine)
+        self.motion.attach((g.cx, g.cy), g.mask_r, g.R, g.rot)
+        self.motion.handle_events(events, engine)
         for e in events:
             et = e["type"]
             if et == "paddle_hit":
@@ -373,10 +382,9 @@ class Renderer:
                     self.shake_until = self.time + cfg["fx.shake_s"]
                     self._amb_bias = (1.0, col, 6)
             elif et == "countdown_beat":
-                idx = e["index"]
-                cols = [(255, 255, 255), c["p1b"], c["p2b"], c["p1b"], (255, 255, 255)]
-                col = cols[min(idx, 4)]
-                self.flash = (self.time, col, 1.0 if idx in (1, 2, 3) else 0.7)
+                digit = e["label"].isdigit()
+                col = (c["p1b"] if int(e["label"]) % 2 else c["p2b"]) if digit else (255, 255, 255)
+                self.flash = (self.time, col, 1.0 if digit else 0.7)
                 self.rings.append(dict(x=0, y=0, t0=self.time, dur=0.6, r0=20, r1=g.R * 0.9, color=col, w=5))
                 self.particles.converge(g.R, col, cfg["countdown.particles"], cap=cap, life=cfg["countdown.beat_s"] * 0.8)
                 if e["label"] == "go":
@@ -498,12 +506,18 @@ class Renderer:
         C.blit(self.static, (0, 0))
         st = engine.state
         self.particles.update(dt)
+        self.kinetic.attach((g.W, g.H), (g.cx, g.cy, g.mask_r), g.rot, REF_SIZE / max(1.0, 2 * g.mask_r))
+        self.kinetic.update(0.0 if engine.paused else dt, st)
+        self.motion.attach((g.cx, g.cy), g.mask_r, g.R, g.rot)
+        self.motion.update(0.0 if engine.paused else dt, st)
+        self.kinetic.draw(C, self.motion.type_dim)
+        self.motion.draw(C)
 
         if cfg["fx.ambient_chart"]:
             self._ambient(dt)
         self._draw_flash()
         self._walls_fx(engine)
-        if st not in ("ATTRACT", "RESULT", "FINAL"):
+        if st not in ("ATTRACT", "RESULT", "FINAL") and not (st == "INTRO" and self.motion.zoom_t is not None):
             self._hud(engine)
         self._final_pulse(engine)
         self._goal_flash(engine)
@@ -522,6 +536,7 @@ class Renderer:
 
         if st == "INTRO":
             self._intro(engine)
+            self.motion.draw_logo_zoom(C)
         if st == "ATTRACT":
             self._attract(engine)
         elif st == "COUNTDOWN":
@@ -535,7 +550,7 @@ class Renderer:
         if engine.paused:
             self.dim.set_alpha(140)
             C.blit(self.dim, (0, 0))
-            self._text_at(cfg["text.paused"], cfg["text.banner_size"] * 1.4, (255, 255, 255), 0, 0)
+            self._text_at(cfg["text.paused"], cfg["text.banner_size"] * 1.4, (255, 255, 255), 0, 0, ink_center=True)
         if self.debug_draw:
             self.debug_draw(self, engine, C)
 
@@ -692,13 +707,19 @@ class Renderer:
         return self._rot(s, extra_rot)
 
     def _text_at(self, text, size, color, x, y, key="persian", alpha=1.0, scale_k=1.0, extra_rot=0.0, outline=2,
-                 glow=0.0, reserve=False, avoid=False, axis=None, at=None):
+                 glow=0.0, reserve=False, avoid=False, axis=None, at=None, ink_center=False):
         """Draw centered text. reserve=True marks its box as taken; avoid=True moves it to the nearest free spot.
-        `at` = explicit screen position (skips the arena->screen conversion)."""
+        `at` = explicit screen position (skips the arena->screen conversion). ink_center=True centers the visible
+        letters, not the font's line box: a digit's box is tall, so its shape would sit well above the point."""
         s = self._text_surface(text, size, color, key, scale_k, extra_rot, outline, glow)
         cx, cy = at if at is not None else self.to_c(x, y)
         if avoid:
             cx, cy = self._free_spot(s.get_width(), s.get_height(), cx, cy, axis)
+        if ink_center:
+            ink = s.get_bounding_rect(min_alpha=250)
+            if ink.w and ink.h:
+                cx += s.get_width() / 2 - ink.centerx
+                cy += s.get_height() / 2 - ink.centery
         if alpha < 0.999:
             s = s.copy()
             s.set_alpha(int(255 * max(0.0, alpha)))
@@ -1308,41 +1329,101 @@ class Renderer:
     def _intro(self, engine) -> None:
         g = self._g
         prog = min(1.0, engine.state_t / max(0.05, self.cfg["match.intro_s"]))
-        self.dim.set_alpha(int(255 * (1 - prog) * 0.85))
-        self.canvas.blit(self.dim, (0, 0))
+        zoom = self.motion.zoom_t is not None
+        if zoom:  # the arena settles back while the logo has the floor, and the waiting text fades away over it
+            self._darken(int(255 * 0.55 * math.sin(math.pi * prog) ** 2))
+            fade = 1.0 - smoother(engine.state_t / 0.55)
+            if fade > 0.004:
+                self._waiting_text(engine, fade)
+        else:
+            self._darken(int(255 * (1 - prog) * 0.85))
         for side in (-1, 1):
             a = math.radians(90 + g.rot + side * 180 * prog)
-            spr = self.glow.sprite((255, 255, 255), 60, 1.0)
+            spr = self.glow.sprite((255, 255, 255), 60, math.sin(math.pi * prog) ** 2 if zoom else 1.0)
             x, y = self.to_c(g.R * math.cos(a), g.R * math.sin(a))
             self.canvas.blit(spr, (int(x - 60), int(y - 60)), special_flags=pygame.BLEND_ADD)
 
+    def _ink_box(self, text, size, key, outline, glow) -> tuple:
+        """Where the visible letters sit in the text surface: (surface center x, ink left, ink right)."""
+        s = self.text.render(text, size, (255, 255, 255), key, outline=outline, outline_color=(0, 6, 10), glow=glow)
+        ink = s.get_bounding_rect(min_alpha=250)
+        return s.get_width() / 2, ink.left, ink.right
+
+    @staticmethod
+    def _title_offsets(fa_box, en_box, gap) -> tuple:
+        """Surface-center offsets from the divider: the Persian ink starts `gap` to one side, the English to the other."""
+        return gap + fa_box[0] - fa_box[1], -(gap + en_box[2] - en_box[0])
+
+    def _backing(self, x, y, w, h, fade=1.0) -> None:
+        """A soft dark patch behind waiting-screen text, so the moving visuals stay behind it instead of mixing in."""
+        strength = self.cfg["match.title_backing"]
+        if strength <= 0.01:
+            return
+        key = (int(w) // 4 * 4, int(h) // 4 * 4, round(self._g.rot, 1), self.c["arena_inner"])
+        s = self._backings.get(key)
+        if s is None:
+            W, H = max(8, key[0]), max(8, key[1])
+            nx = (np.arange(W, dtype=np.float32)[:, None] + 0.5 - W / 2) / (W / 2)
+            ny = (np.arange(H, dtype=np.float32)[None, :] + 0.5 - H / 2) / (H / 2)
+            d = (np.abs(nx) ** 4 + np.abs(ny) ** 4) ** 0.25  # a soft rounded rectangle
+            edge = np.clip((1.0 - d) / 0.45, 0, 1)
+            s = pygame.Surface((W, H), pygame.SRCALPHA)
+            s.fill((*scale(self.c["arena_inner"], 0.6), 255))
+            alpha = pygame.surfarray.pixels_alpha(s)
+            alpha[:] = (edge * edge * (3 - 2 * edge) * 255).astype(np.uint8)
+            del alpha
+            s = self._rot(s)
+            self._backings[key] = s
+        s.set_alpha(int(255 * strength * fade))
+        sx, sy = self.to_c(x, y)
+        self.canvas.blit(s, s.get_rect(center=(int(sx), int(sy))))
+
+    def _darken(self, amount: int) -> None:
+        """Dim the whole picture; the same result as laying black over it at this alpha, several times faster."""
+        k = 255 - amount
+        if k < 255:
+            self.canvas.fill((k, k, k), special_flags=pygame.BLEND_MULT)
+
+    def _name_at(self, name, size, team, x, y, label=None, lx=0.0, ly=0.0, fade=1.0) -> None:
+        """A player's name on its own dark backing, in a lighter team color that holds up over the visuals."""
+        col = mix(self.c["teamb"][team], (255, 255, 255), 0.5)
+        s = self._text_surface(name, size, col, outline=3)
+        top = (x + lx * 0.5, y + ly * 0.5) if label else (x, y)
+        self._backing(top[0], top[1], s.get_width() + size * 2.4, s.get_height() + size * (2.2 if label else 1.1), fade)
+        if label:
+            self._text_at(label, int(self.cfg["text.toast_size"] * 0.68), col, x + lx, y + ly, alpha=fade, outline=3, reserve=True)
+        self._text_at(name, size, col, x, y, alpha=fade, outline=3, reserve=True)
+
     def _attract(self, engine) -> None:
+        self._darken(int(255 * (1 - self.cfg["match.attract_opacity"])))
+        self._waiting_text(engine)
+
+    def _waiting_text(self, engine, fade=1.0) -> None:
+        """The name of the game, the players and the prompt. After Start they fade out instead of vanishing."""
         cfg = self.cfg
         g = self._g
         c = self.c
-        self.dim.set_alpha(int(255 * (1 - cfg["match.attract_opacity"])))
-        self.canvas.blit(self.dim, (0, 0))
         R = g.R
         bs = cfg["text.banner_size"]
         ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
         rx, ry = -uy, ux  # "right" along the title row (screen-left for RTL reading comes first)
         # title row: «هاکی بازار» | MARKET HOCKEY, side by side, high on the arena
-        fa = self._text_surface(cfg["text.title"], int(bs * 1.3), (255, 255, 255), "persian_title", outline=3, glow=0.35)
-        en = self._text_surface(cfg["text.subtitle"], int(bs * 0.5), c["p1b"], "latin", glow=0.45)
-        gap = bs * 1.6  # clear breathing room between the Persian and the English title
-        total = fa.get_width() * 0.78 + gap + en.get_width() * 0.78  # widths include the shadow padding
         ty = R * 0.34
-        fx = total / 2 - fa.get_width() * 0.39  # Persian on the right
-        ex = -total / 2 + en.get_width() * 0.39  # English on the left
-        self._text_at(cfg["text.title"], int(bs * 1.3), (255, 255, 255), ux * ty - rx * fx, uy * ty - ry * fx,
-                      key="persian_title", outline=3, glow=0.35, reserve=True)
-        self._text_at(cfg["text.subtitle"], int(bs * 0.5), c["p1b"], ux * ty - rx * ex, uy * ty - ry * ex,
-                      key="latin", glow=0.45, reserve=True)
-        mid = total / 2 - fa.get_width() * 0.78 - gap / 2  # the gap between the two titles
-        dx0, dy0 = self.to_c(ux * ty - rx * mid, uy * ty - ry * mid)
-        self.add.begin()
-        self.add.mark(pygame.draw.aaline(self.add.surf, scale(c["lines"], 1.6), (dx0, dy0 - bs * 0.45),
-                                         (dx0, dy0 + bs * 0.45), 2))
+        fa_size, en_size = int(bs * 1.3), int(bs * 0.62)
+        en_col = mix(c["p1b"], (255, 255, 255), 0.6)  # the plain team color sinks into the turquoise behind it
+        fa_box = self._ink_box(cfg["text.title"], fa_size, "persian_title", 3, 0.0)
+        en_box = self._ink_box(cfg["text.subtitle"], en_size, "latin", 3, 0.0)
+        fx, ex = self._title_offsets(fa_box, en_box, bs * 0.8)
+        side = max(abs(fx) + (fa_box[2] - fa_box[1]) / 2, abs(ex) + (en_box[2] - en_box[1]) / 2) + bs * 0.9
+        self._backing(ux * ty, uy * ty, side * 2, bs * 2.7, fade)
+        self._text_at(cfg["text.title"], fa_size, (255, 255, 255), ux * ty - rx * fx, uy * ty - ry * fx,
+                      key="persian_title", alpha=fade, outline=3, reserve=True)
+        self._text_at(cfg["text.subtitle"], en_size, en_col, ux * ty - rx * ex, uy * ty - ry * ex,
+                      key="latin", alpha=fade, outline=3, reserve=True)
+        self.add.begin()  # the divider stands on the arena's center line, whatever the titles' widths
+        self.add.mark(pygame.draw.aaline(self.add.surf, scale(c["lines"], 1.6 * fade),
+                                         self.to_c(ux * (ty - bs * 0.45), uy * (ty - bs * 0.45)),
+                                         self.to_c(ux * (ty + bs * 0.45), uy * (ty + bs * 0.45)), 2))
         self.add.composite(self.canvas)
         # player names entered on the supervisor page
         for i in (0, 1):
@@ -1350,14 +1431,14 @@ class Renderer:
                 continue
             gx, gy = g.goal_dir[i]
             bx, by = gx * R * 0.5, gy * R * 0.5
-            self._text_at(cfg[f"text.player_{i + 1}"], int(cfg["text.toast_size"] * 0.55), c["teamb"][i],
-                          bx + ux * R * 0.1, by + uy * R * 0.1, alpha=0.85, reserve=True)
-            self._text_at(engine.names[i], int(bs * 0.7), c["teamb"][i], bx, by, outline=3, glow=0.6, reserve=True)
-        pulse = 0.65 + 0.35 * math.sin(self.time * 2.4)
-        self._text_at(cfg["text.attract_prompt"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255),
-                      -ux * R * 0.27, -uy * R * 0.27, alpha=pulse, reserve=True)
+            self._name_at(engine.names[i], int(bs * 0.8), i, bx, by, cfg[f"text.player_{i + 1}"], ux * R * 0.1, uy * R * 0.1, fade)
+        pulse = 0.9 + 0.1 * math.sin(self.time * 2.4)  # alive, but never faint enough to lose
+        prompt = self._text_surface(cfg["text.attract_prompt"], int(cfg["text.toast_size"] * 0.95), (255, 255, 255), outline=3)
+        self._backing(-ux * R * 0.27, -uy * R * 0.27, max(prompt.get_width(), prompt.get_height()) + bs * 1.6, bs * 1.5, fade)
+        self._text_at(cfg["text.attract_prompt"], int(cfg["text.toast_size"] * 0.95), (255, 255, 255),
+                      -ux * R * 0.27, -uy * R * 0.27, alpha=pulse * fade, outline=3, reserve=True)
         if self.supervisor_url and cfg["web.show_url_on_arena"]:
-            self._text_at(self.supervisor_url, 18, scale(c["text"], 0.75), -ux * R * 0.62, -uy * R * 0.62,
+            self._text_at(self.supervisor_url, 18, scale(c["text"], 0.75), -ux * R * 0.76, -uy * R * 0.76,
                           key="latin", outline=2, reserve=True)
 
     def _countdown(self, engine) -> None:
@@ -1373,11 +1454,10 @@ class Renderer:
         k = 1 + 0.7 * (1 - ease_out_elastic(min(1.0, t_in / 0.5)))
         a = 1.0 if t < 0.72 else max(0.0, 1 - (t - 0.72) / 0.28)
         col = (255, 255, 255)
-        if label in ("3", "1"):
-            col = mix(self.c["p1b"], (255, 255, 255), 0.45)
-        elif label == "2":
-            col = mix(self.c["p2b"], (255, 255, 255), 0.45)
-        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3, glow=0.8, reserve=True)
+        if label.isdigit():
+            col = mix(self.c["p1b"] if int(label) % 2 else self.c["p2b"], (255, 255, 255), 0.45)
+        self._text_at(text, size, col, 0, 0, key=key, alpha=a, scale_k=k, outline=3, glow=0.8, reserve=True,
+                      ink_center=True)
 
     def _telegraph(self, engine) -> None:
         live = engine.live_balls()
@@ -1405,12 +1485,11 @@ class Renderer:
         c = self.c
         R = g.R
         st_t = engine.state_t
-        self.dim.set_alpha(110)
-        self.canvas.blit(self.dim, (0, 0))
+        self._darken(50)
         if engine.state == "FINAL":
             k = 1 + 0.5 * (1 - ease_out_elastic(min(1.0, st_t / 0.6)))
             self._text_at(cfg["text.final"], int(cfg["text.banner_size"] * 1.5), (255, 255, 255), 0, 0,
-                          key="persian_title", scale_k=k, outline=3, glow=0.5)
+                          key="persian_title", scale_k=k, outline=3, glow=0.5, ink_center=True)
             return
         w = engine.winner
         if w is not None:
@@ -1425,12 +1504,11 @@ class Renderer:
             bx, by = gx * R * 0.5, gy * R * 0.5
             self._text_at(cfg["text.winner"], int(cfg["text.banner_size"] * 1.1), c["teamb"][w], bx + ux * R * 0.31,
                           by + uy * R * 0.31, key="persian_title", outline=3, glow=0.6)
-            k = 1 + 0.08 * math.sin(self.time * 4)
-            ic = self.icons.icon("trophy", "_trophy", int(84 * k), c["smart"])
+            ic = self.icons.icon("trophy", "_trophy", 84, c["smart"])
             sx, sy = self.to_c(bx + ux * R * 0.48, by + uy * R * 0.48)
             ic = self._rot(ic)
             self.add.begin()
-            self.add.blit(self.glow.sprite(c["smart"], 70, 0.5), (sx, sy))
+            self.add.blit(self.glow.sprite(c["smart"], 70, 0.45 + 0.2 * pulse), (sx, sy))
             self.add.composite(self.canvas)
             self.canvas.blit(ic, (int(sx - ic.get_width() / 2), int(sy - ic.get_height() / 2)))
         else:
@@ -1443,10 +1521,12 @@ class Renderer:
                           gx * R * 0.5 + dx * R * 0.06, gy * R * 0.5 + dy * R * 0.06, key="digits", outline=3,
                           glow=cfg["hud.glow"])
             if engine.names[i]:
-                self._text_at(engine.names[i], int(cfg["text.banner_size"] * 0.75), c["teamb"][i],
-                              gx * R * 0.5 - dx * R * 0.16, gy * R * 0.5 - dy * R * 0.16, outline=3, glow=0.4)
+                self._name_at(engine.names[i], int(cfg["text.banner_size"] * 0.75), i,
+                              gx * R * 0.5 - dx * R * 0.16, gy * R * 0.5 - dy * R * 0.16)
         self._text_at(cfg["text.slogan"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255), 0, -R * 0.55,
                       alpha=min(1.0, st_t / 0.8))
+        if cfg["motion.logo_result"]:
+            self.motion.draw_result_logo(self.canvas, min(1.0, st_t / 1.2))
 
     def _toasts(self, engine) -> None:
         cfg = self.cfg

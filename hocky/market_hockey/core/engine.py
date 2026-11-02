@@ -172,18 +172,18 @@ class Engine:
 
     def countdown_info(self):
         cfg = self.cfg
-        seq = [("ready", cfg["countdown.ready_s"]), ("3", cfg["countdown.beat_s"]), ("2", cfg["countdown.beat_s"]),
-               ("1", cfg["countdown.beat_s"]), ("go", cfg["countdown.go_s"])]
+        digits = [(str(n), cfg["countdown.beat_s"]) for n in range(cfg["countdown.start"], 0, -1)]
+        seq = [("ready", cfg["countdown.ready_s"]), *digits, ("go", cfg["countdown.go_s"])]
         t = self.state_t
         for i, (label, length) in enumerate(seq):
             if t < length or i == len(seq) - 1:
                 return label, min(t, length), length, i
             t -= length
-        return "go", 0.0, 1.0, 4
+        return "go", 0.0, 1.0, len(seq) - 1
 
     def countdown_total(self) -> float:
         cfg = self.cfg
-        return cfg["countdown.ready_s"] + 3 * cfg["countdown.beat_s"] + cfg["countdown.go_s"]
+        return cfg["countdown.ready_s"] + cfg["countdown.start"] * cfg["countdown.beat_s"] + cfg["countdown.go_s"]
 
     def request_prediction(self) -> None:
         self._pred_dirty = True

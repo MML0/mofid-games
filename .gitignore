@@ -23,3 +23,6 @@ dist/
 
 # Test coverage data
 .coverage
+
+# Generated designer hand-off frames (rebuild with hocky/tools/export_design_states.py)
+hocky/design/states/

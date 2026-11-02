@@ -97,7 +97,7 @@ def test_full_match_flow_reaches_result(engine):
     for st in ("COUNTDOWN", "PLAYING", "FINAL", "RESULT"):
         assert st in states
     beats = [e["label"] for e in ev if e["type"] == "countdown_beat"]
-    assert beats[:5] == ["ready", "3", "2", "1", "go"]
+    assert beats[:7] == ["ready", "5", "4", "3", "2", "1", "go"]
 
 
 def test_names_clear_after_each_game(engine):

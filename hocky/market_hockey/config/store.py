@@ -149,9 +149,52 @@ V6_DEFAULT_CHANGES = {
     "powerups.types.chaos.fire_mult": (1.1, 1.0),
 }
 
+V7_DEFAULT_CHANGES = {
+    "countdown.ready_s": (0.9, 1.2),
+    "countdown.beat_s": (0.8, 1.1),
+    "countdown.go_s": (0.6, 0.8),
+}
+
+V8_DEFAULT_CHANGES = {
+    "match.attract_opacity": (0.55, 0.72),
+    "fonts.persian": ("IRANSansX-Bold.ttf", "Pinar-Bold.ttf"),
+    "fonts.persian_title": ("IRANSansX-Black.ttf", "Pinar-Black.ttf"),
+    "fonts.digits": ("IRANSansX-Black.ttf", "SF-Compact-Display-Heavy.ttf"),
+    "fonts.latin": ("IRANSansX-Bold.ttf", "SF-Compact-Display-Bold.ttf"),
+}
+
+V9_DEFAULT_CHANGES = {
+    "match.attract_opacity": (0.72, 0.9),
+    "kinetic.density": (35, 55),
+    "kinetic.letter_width": (34, 24),
+    "kinetic.font_latin": ("SF-Compact-Display-Heavy.ttf", "SF-Compact-Display-Bold.ttf"),
+    "kinetic.opacity_waiting": (0.6, 0.85),
+    "kinetic.opacity_countdown": (0.14, 0.4),
+    "kinetic.opacity_moment": (0.22, 0.75),
+    "kinetic.opacity_result": (0.24, 0.5),
+}
+
+V10_DEFAULT_CHANGES = {
+    "countdown.beat_s": (1.1, 1.0),
+}
+
+V11_DEFAULT_CHANGES = {
+    "match.intro_s": (0.9, 1.6),
+    "match.result_s": (6.0, 10.0),
+}
+
+V12_DEFAULT_CHANGES = {
+    "match.intro_s": (1.6, 2.8),
+}
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
-                              4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES)}
+                              4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
+                              6: _changes(V7_DEFAULT_CHANGES), 7: _changes(V8_DEFAULT_CHANGES),
+                              8: _changes(V9_DEFAULT_CHANGES),
+                              9: _changes(V10_DEFAULT_CHANGES),
+                              10: _changes(V11_DEFAULT_CHANGES),
+                              11: _changes(V12_DEFAULT_CHANGES)}
 
 
 class Config:

@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 12
 
 TABS = [
     "Display & Projection",
@@ -28,6 +28,8 @@ TABS = [
     "Trajectory",
     "Smart Move",
     "FX & Countdown",
+    "Kinetic Type",
+    "Brand Motion",
     "Colors",
     "Audio",
     "Inputs",
@@ -200,10 +202,10 @@ def _core(sb: SchemaBuilder) -> None:
     sb.section("HUD & Text", "Fonts")
     sb.e("text.shaping_backend", "auto", ("auto", "harfbuzz", "reshaper"), "Persian shaping",
          "auto = HarfBuzz (SDL_ttf) when available, otherwise arabic-reshaper.")
-    sb.font("fonts.persian", "IRANSansX-Bold.ttf", "Persian text font")
-    sb.font("fonts.persian_title", "IRANSansX-Black.ttf", "Title font")
-    sb.font("fonts.digits", "IRANSansX-Black.ttf", "Digits font", "Timer, scores and countdown (always Latin digits).")
-    sb.font("fonts.latin", "IRANSansX-Bold.ttf", "Latin text font")
+    sb.font("fonts.persian", "Pinar-Bold.ttf", "Persian text font")
+    sb.font("fonts.persian_title", "Pinar-Black.ttf", "Title font")
+    sb.font("fonts.digits", "SF-Compact-Display-Heavy.ttf", "Digits font", "Timer, scores and countdown (always Latin digits).")
+    sb.font("fonts.latin", "SF-Compact-Display-Bold.ttf", "Latin text font")
     sb.section("HUD & Text", "Messages")
     sb.i("text.toast_size", 34, 14, 120, 1, "px", "Message size")
     sb.i("text.banner_size", 56, 20, 200, 1, "px", "Banner size")
@@ -242,16 +244,18 @@ def _core(sb: SchemaBuilder) -> None:
          "operator_key = Space/Enter or the panel; auto modes start by themselves.")
     sb.f("match.auto_loop_delay_s", 8.0, 1, 60, 0.5, "s", "Auto-loop idle time")
     sb.b("match.attract_demo", True, "Attract demo (AI vs AI)")
-    sb.f("match.attract_opacity", 0.55, 0.1, 1, 0.01, "", "Demo opacity")
+    sb.f("match.attract_opacity", 0.9, 0.1, 1, 0.01, "", "Demo opacity")
+    sb.f("match.title_backing", 0.82, 0, 1, 0.01, "", "Dark backing behind the waiting text",
+         "Keeps the game's name and the prompt readable over the moving visuals. 0 removes it.")
     sb.b("match.attract_toasts", False, "Power-up messages in the demo", "Off keeps the waiting screen clean.")
     sb.b("match.clear_names_after_game", True, "Clear player names after each game",
          "Names stay on the result screen, then clear for the next pair of players.")
-    sb.f("match.intro_s", 0.9, 0.0, 4, 0.1, "s", "Intro length")
+    sb.f("match.intro_s", 2.8, 0.0, 6, 0.1, "s", "Intro length", "How long the logo takes to come to the center, grow and fade after Start.")
     sb.f("match.goal_pause_s", 1.4, 0.2, 5, 0.1, "s", "Pause after goal")
     sb.b("match.timer_runs_during_goal_pause", False, "Timer runs during goal pause")
     sb.b("match.timer_runs_during_serve", True, "Timer runs during serve")
     sb.f("match.final_freeze_s", 1.6, 0.2, 6, 0.1, "s", "Final freeze")
-    sb.f("match.result_s", 6.0, 1, 60, 0.5, "s", "Result screen time")
+    sb.f("match.result_s", 10.0, 1, 60, 0.5, "s", "Result screen time")
     sb.b("match.result_wait_for_operator", False, "Result waits for operator")
     sb.section("Match & Scoring", "Scoring")
     sb.i("scoring.points_per_goal", 1, 1, 10, 1, "", "Points per goal")
@@ -430,9 +434,10 @@ def _core(sb: SchemaBuilder) -> None:
 
     # ------------------------------------------------------------------ fx
     sb.section("FX & Countdown", "Countdown")
-    sb.f("countdown.ready_s", 0.9, 0, 3, 0.05, "s", "'Ready' time")
-    sb.f("countdown.beat_s", 0.8, 0.3, 2, 0.05, "s", "Beat length (3, 2, 1)")
-    sb.f("countdown.go_s", 0.6, 0.2, 2, 0.05, "s", "'Go' time")
+    sb.f("countdown.ready_s", 1.2, 0, 3, 0.05, "s", "'Ready' time")
+    sb.i("countdown.start", 5, 1, 9, 1, "", "Count down from", "5 counts 5, 4, 3, 2, 1.")
+    sb.f("countdown.beat_s", 1.0, 0.3, 2, 0.05, "s", "Beat length", "Seconds per number.")
+    sb.f("countdown.go_s", 0.8, 0.2, 2, 0.05, "s", "'Go' time")
     sb.i("countdown.size", 300, 60, 600, 5, "px", "Number size")
     sb.i("countdown.particles", 40, 0, 200, 1, "", "Particles per beat")
     sb.section("FX & Countdown", "Flashes & effects")
@@ -449,7 +454,101 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("fx.ambient_alpha", 0.12, 0, 0.5, 0.01, "", "Ambient chart opacity")
     sb.b("fx.final_pulse", True, "Final-seconds pulse")
 
+    # ------------------------------------------------------------------ kinetic typography backdrop
+    sb.section("Kinetic Type", "Backdrop")
+    sb.b("kinetic.enabled", True, "Kinetic type backdrop", "The faint wave of letters behind splash, countdown, goals and results.")
+    sb.b("kinetic.splash", True, "Splash on launch")
+    sb.b("kinetic.on_goal", True, "Shock wave on goals")
+    sb.b("kinetic.goal_at_impact", False, "Start goal wave at the impact point", "Off keeps every effect on the exact center.")
+    sb.f("kinetic.moment_pace", 1.0, 0.4, 2, 0.05, "×", "Moment pace", "Below 1 plays goal, go, result and splash slower.")
+    sb.section("Kinetic Type", "Grid & typography")
+    sb.i("kinetic.density", 55, 10, 120, 1, "", "Grid density", "Cells per side. On a 4 m floor, 55 makes letters about 5 cm tall.")
+    sb.f("kinetic.font_scale", 0.9, 0.3, 2, 0.05, "", "Font scale", "Letter height as a share of the row height.")
+    sb.s("kinetic.attract_text", "MOFID SECURITIES|STEADY PROGRESS|MARKET HOCKEY",
+         "Waiting-screen texts", "Separate with | . They take turns, each spreading out from the center.")
+    sb.f("kinetic.text_interval_s", 9.0, 2, 60, 0.5, "s", "Text change interval")
+    sb.b("kinetic.space_marks", True, "Spaces become brand dots", "Echoes the dot grid of the brand book. Off leaves empty rings.")
+    sb.s("kinetic.text_start", "MARKET HOCKEY", "Match start text")
+    sb.s("kinetic.text_ready", "READY", "Ready text")
+    sb.s("kinetic.text_go", "GO", "Go text")
+    sb.s("kinetic.text_goal", "GOAL", "Goal text")
+    sb.s("kinetic.text_final", "MARKET CLOSED", "Match end text")
+    sb.s("kinetic.text_winner", "WINNER", "Winner's side text")
+    sb.s("kinetic.text_draw", "DRAW", "Draw text")
+    sb.s("kinetic.loser_text", "STEADY PROGRESS", "Other side's text on the result",
+         "The brand slogan: the brand book rules out sad or discouraging imagery.")
+    sb.font("kinetic.font_latin", "SF-Compact-Display-Bold.ttf", "Latin font")
+    sb.font("kinetic.font_persian", "Pinar-Black.ttf", "Persian font", "Only used if you type Persian into the texts above.")
+    sb.section("Kinetic Type", "Motion & wave")
+    sb.f("kinetic.speed", 0.06, 0.01, 0.2, 0.01, "", "Animation speed", "Radians per frame at 60 fps. How fast the rings travel.")
+    sb.f("kinetic.frequency", 0.03, 0.005, 0.1, 0.001, "", "Wave frequency", "Radians per reference pixel. Higher = more, tighter waves.")
+    sb.f("kinetic.min_stretch", 0.25, 0.05, 1, 0.05, "×", "Min stretch", "Width multiplier in the wave's trough.")
+    sb.f("kinetic.max_stretch", 2.6, 1, 8, 0.1, "×", "Max stretch", "Width multiplier on the wave's crest.")
+    sb.f("kinetic.max_overlap", 1.5, 0.5, 8, 0.1, "cells", "Max letter width", "How far one letter may spread over its neighbors. Lower = more readable.")
+    sb.f("kinetic.drift", 1.0, 0, 2, 0.05, "", "Waiting-screen drift", "How far the sliders wander by themselves while waiting.")
+    sb.section("Kinetic Type", "Colors & rings")
+    sb.c("kinetic.color1", "#00A796", "Color 1 (brand turquoise)")
+    sb.c("kinetic.color2", "#53D5FD", "Color 2 (sky blue)")
+    sb.c("kinetic.color3", "#94E3FE", "Color 3 (pale sky blue)")
+    sb.c("kinetic.loser_color", "#F3716D", "Other side on the result (brand red)")
+    sb.f("kinetic.ring_width", 50, 20, 200, 5, "", "Ring width", "Rings of one color. Smaller = more color changes.")
+    sb.f("kinetic.letter_width", 24, 10, 200, 1, "", "Letter ring width", "Rings of one letter. Close to the cell size keeps words readable.")
+    sb.b("kinetic.color_swap", False, "Color swap (flicker)", "Rotates the colors between rings. Ignored with Reduce flashing.")
+    sb.i("kinetic.swap_interval", 140, 10, 300, 10, "frames", "Color swap interval")
+    sb.section("Kinetic Type", "Opacity wave (waiting screen)")
+    sb.f("kinetic.opacity_wave_speed", 0.025, 0, 0.2, 0.001, "", "Speed", "How fast the letters fade and return, like a heartbeat.")
+    sb.f("kinetic.opacity_wave_frequency", 0.003, 0, 0.05, 0.001, "", "Frequency", "0 fades the whole visual together. Higher = rings of light and dark.")
+    sb.f("kinetic.opacity_wave_min", 0.1, 0, 1, 0.01, "", "Valley opacity", "0 disappears completely.")
+    sb.f("kinetic.opacity_wave_max", 1.0, 0, 1, 0.01, "", "Peak opacity")
+    sb.f("kinetic.opacity_wave_sharpness", 1.5, 0.5, 5, 0.1, "", "Sharpness", "1 is a plain sine. Higher = shorter peaks, like a pulse.")
+    sb.section("Kinetic Type", "Faintness")
+    sb.f("kinetic.edge_fade_start", 0.5, 0, 1, 0.01, "×R", "Fade starts", "Letters begin fading here, so they stay clear of the rim.")
+    sb.f("kinetic.edge_fade_end", 0.82, 0, 1.2, 0.01, "×R", "Fade ends", "Letters are gone by here: inside the paddles, walls and goal lines.")
+    sb.f("kinetic.opacity_waiting", 0.85, 0, 1, 0.01, "", "Waiting screen", "The waiting screen's dim also applies on top of this.")
+    sb.f("kinetic.opacity_countdown", 0.4, 0, 1, 0.01, "", "Countdown")
+    sb.f("kinetic.opacity_moment", 0.75, 0, 1, 0.01, "", "Peak of a moment", "Goal, go, final and result at their brightest.")
+    sb.f("kinetic.opacity_result", 0.5, 0, 1, 0.01, "", "Result screen (resting)")
+    sb.f("kinetic.opacity_play", 0.0, 0, 0.3, 0.01, "", "During play", "0 keeps the arena clean while the ball is live.")
+
     # ------------------------------------------------------------------ colors
+    sb.section("Brand Motion", "Moving objects")
+    sb.b("motion.enabled", True, "Moving brand objects", "Paper planes, flipping coins, pulsing rings and marks from the brand book.")
+    sb.b("motion.splash", True, "Opening flood on launch")
+    sb.b("motion.waiting_loop", True, "Loop on the waiting screen", "A 46 second show of every object, one after another.")
+    sb.b("motion.on_goal", True, "Burst on goals")
+    sb.b("motion.in_play", True, "Paper planes during play", "They cross under the ball at the Level during play below.")
+    sb.f("motion.plane_every_s", 14.0, 4, 60, 1, "s", "Plane interval during play")
+    sb.section("Brand Motion", "Mofid logo")
+    sb.b("motion.logo_waiting", True, "Logo on the waiting screen", "Always there in the background.")
+    sb.b("motion.logo_zoom", True, "Logo grows and fades after Start", "It brightens, springs to the center, grows, and fades out while still growing.")
+    sb.b("motion.logo_result", True, "Logo on the result screen")
+    sb.f("motion.logo_rest", 0.55, 0.05, 1, 0.01, "", "Waiting opacity", "How visible the logo is while waiting.")
+    sb.f("motion.logo_size", 0.27, 0.1, 0.7, 0.01, "×D", "Waiting width")
+    sb.f("motion.logo_result_size", 0.19, 0.08, 0.5, 0.01, "×D", "Result screen width")
+    sb.section("Brand Motion", "Sizes (share of the arena's diameter)")
+    sb.f("motion.plane_size", 0.15, 0.04, 0.4, 0.005, "×D", "Paper plane")
+    sb.f("motion.coin_size", 0.072, 0.03, 0.2, 0.002, "×D", "Coin", "The coins that fly and fill the wall.")
+    sb.f("motion.hero_size", 0.27, 0.08, 0.6, 0.01, "×D", "Center coin")
+    sb.section("Brand Motion", "Strength")
+    sb.f("motion.level_waiting", 1.0, 0, 1, 0.01, "", "Waiting screen", "The waiting screen's dim also applies on top of this.")
+    sb.f("motion.level_countdown", 0.9, 0, 1, 0.01, "", "Countdown")
+    sb.f("motion.level_moment", 1.0, 0, 1, 0.01, "", "Goals, match start and end")
+    sb.f("motion.level_result", 0.95, 0, 1, 0.01, "", "Result screen")
+    sb.f("motion.level_play", 0.45, 0, 1, 0.01, "", "During play", "Keep it low: the ball must stay the brightest thing.")
+    sb.f("motion.result_wall", 0.85, 0, 1, 0.01, "", "Winner's coin wall once settled", "Lower keeps the names and scores easier to read.")
+    sb.f("motion.object_opacity", 0.6, 0, 1, 0.01, "", "Objects as background",
+         "Coins, planes, charts and marks all together. Lower sits them further behind the game.")
+    sb.f("motion.flood_strength", 0.6, 0, 1, 0.01, "", "Floods as background", "How strongly the floods color the floor.")
+    sb.f("motion.chart_strength", 0.7, 0, 1, 0.01, "", "Market chart", "The candles and line, on top of the objects' opacity.")
+    sb.f("motion.edge_fade_start", 0.72, 0, 1, 0.01, "×R", "Rim fade starts", "Objects begin fading here, near the outer circle.")
+    sb.f("motion.edge_fade_end", 0.92, 0, 1.2, 0.01, "×R", "Rim fade ends", "Gone by here. Shorter than the letters' fade, so objects keep their size.")
+    sb.section("Brand Motion", "Colors")
+    sb.c("motion.color_pale", "#DEF1EE", "Flood and light coins (brand tint)")
+    sb.c("motion.color_teal", "#00A796", "Turquoise (brand)")
+    sb.c("motion.color_tint", "#5BC4BF", "Light turquoise (brand tint)")
+    sb.c("motion.color_dark", "#004C6A", "Dark coins (brand dark blue)")
+    sb.c("motion.color_accent", "#832C73", "Accent coins (brand purple)")
+
     sb.section("Colors", "Teams")
     sb.c("colors.p1", "#00A796", "Player 1 (Mofid turquoise)")
     sb.c("colors.p2", "#832C73", "Player 2 (Mofid purple)")

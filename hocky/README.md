@@ -3,8 +3,8 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.3-00B8A0" alt="Download v1.0.3"></a>
-  <img src="https://img.shields.io/badge/tests-650%2B-00B8A0" alt="650+ tests">
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.4-00B8A0" alt="Download v1.0.4"></a>
+  <img src="https://img.shields.io/badge/tests-790%2B-00B8A0" alt="790+ tests">
   <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
   <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
 </p>
@@ -26,12 +26,14 @@
 
 - 🎯 **Real physics, not arcade guesses.** A fixed 240 Hz simulation with curved paddles: where the ball lands on the dome decides where it goes. Tests fire it at maximum speed to prove it can never tunnel through a paddle.
 - 🪐 **Ten power-ups, each one file.** Orbs drift toward the ball like magnets. The market roulette freezes the ball, spins through possible paths and fires. Drop a new file in a folder and it shows up in the game, the JSON and the control panel.
-- 🎛️ **486 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
+- 🔤 **Kinetic type backdrop.** A wave of stretching English letters in the brand colors behind the splash, countdown, goals and results, with every slider animated. Preview it with `tools/kinetic_lab.py`; see [the notes](docs/KINETIC_TYPOGRAPHY.md).
+- ✈️ **Moving brand objects.** Paper planes, flipping coins, pulsing rings, a dot grid with a heartbeat and a market chart, all made from the brand book's own shapes. They run on the waiting screen and at every big moment.
+- 🎛️ **565 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
 - 🌟 **Made for a projector.** Dithered gradients with no banding, supersampled edges, soft additive glow, and a mask that keeps every pixel inside the circle. A test checks that promise frame by frame.
 - ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
 - 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
 - 📡 **Sensor-ready.** The game only ever sees "player position along the rim", so keyboard, AI, replay and a 360° LiDAR are interchangeable. [See how](#adding-a-sensor-360-lidar-and-friends).
-- 🛡️ **Built not to break mid-show.** 650+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
+- 🛡️ **Built not to break mid-show.** 790+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
 
 <p align="center"><img src="docs/media/supervisor.png" width="280" alt="The supervisor page on a phone"><br><sub>The supervisor page on a phone (sample names).</sub></p>
 
@@ -145,7 +147,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 ## Live editing and saving
 
 - Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
-- `settings_app.py` edits **every** setting (486) with sliders, exact-value fields, color pickers, dropdowns and key capture.
+- `settings_app.py` edits **every** setting (565) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
@@ -324,7 +326,7 @@ market_hockey/
   render/      renderer.py, text.py (Persian), icons.py, glow.py, particles.py, overlays.py
   audio/       synth.py (placeholder sounds), audio.py
   ui/          settings_window.py, widgets.py, preview.py, theme.py
-tests/         650+ tests, see "Tests" above
+tests/         790+ tests, see "Tests" above
 ```
 
 ## Troubleshooting
