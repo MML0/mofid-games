@@ -112,3 +112,26 @@ def test_waiting_screen_text_never_overlaps(tmp_path):
                     assert not rs[i].colliderect(rs[j]), (rs[i], rs[j])
     finally:
         app.shutdown()
+
+
+def test_demo_message_waits_when_the_waiting_screen_is_full():
+    from market_hockey.app import GameApp
+
+    app = GameApp(headless=True, seed=4)
+    app.engine.set_names("سارا احمدی", "Reza Karimi")
+    r = app.renderer
+    t = 0.0
+    try:
+        for _ in range(3):
+            t += 1 / 60
+            app.tick(1 / 60, t)
+        for _ in range(2):  # the most one side can hold, and more than fit beside a name
+            r.toast("حجم معاملات افزایش یافت!", (255, 255, 255), 1)
+        for _ in range(5):
+            t += 1 / 60
+            app.tick(1 / 60, t)
+            rs = r._reserved
+            assert all(not a.colliderect(b) for i, a in enumerate(rs) for b in rs[i + 1:])
+        assert len(r.toasts) == 2 and "pos" not in r.toasts[1]  # no room yet: it is kept until a spot frees up
+    finally:
+        app.shutdown()

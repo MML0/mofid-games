@@ -1579,6 +1579,8 @@ class Renderer:
                     gx, gy = g.goal_dir[side]
                     axis = (-gy, -gx)  # slide along the player's side
                 pos = self._free_spot(full.get_width(), full.get_height(), *self.to_c(x, y), axis)
+                if engine.state == "ATTRACT" and not self._fits(full.get_rect(center=pos)):
+                    continue  # the waiting screen is full: a demo message waits rather than cover a name
                 t["pos"] = pos
             self._text_at(t["text"], t["size"], t["color"], 0, 0, alpha=a, scale_k=k, extra_rot=extra, outline=3,
                           glow=0.35, at=pos)
