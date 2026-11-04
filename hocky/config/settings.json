@@ -122,7 +122,7 @@
     "timer_runs_during_goal_pause": false,
     "timer_runs_during_serve": true,
     "final_freeze_s": 1.6,
-    "result_s": 10.0,
+    "result_s": 15.0,
     "result_wait_for_operator": false
   },
   "scoring": {
@@ -523,7 +523,7 @@
     "opacity_waiting": 0.85,
     "opacity_countdown": 0.4,
     "opacity_moment": 0.75,
-    "opacity_result": 0.5,
+    "opacity_result": 0.35,
     "opacity_play": 0.0
   },
   "motion": {
@@ -554,9 +554,9 @@
     "neutral_ball": "#E8F4F8",
     "ball_core": "#FFFFFF",
     "projection_boost": 0.35,
-    "good": "#39E46F",
-    "bad": "#FF3B3B",
-    "neutral": "#9B6BFF",
+    "good": "#7DD87D",
+    "bad": "#F3716D",
+    "neutral": "#DEF1EE",
     "smart": "#FFD54A",
     "arena_inner": "#03141C",
     "arena_outer": "#062A3A",
@@ -652,7 +652,7 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 12,
+    "schema_version": 13,
     "saved_at": "2026-11-02 22:38:52",
     "app": "Market Hockey"
   }

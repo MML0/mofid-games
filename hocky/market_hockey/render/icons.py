@@ -153,28 +153,35 @@ class IconCache:
         return s
 
     def badge(self, name, type_id, radius, ring_color, bad: bool, icon_scale: float = 0.62) -> pygame.Surface:
-        """The orb body: dark disc, class-colored ring (dashed for bad), white icon."""
+        """The orb body, as a coin in the brand's style: a disc in the class color with a light rim and a fine bevel
+        line, and the white icon. A bad orb's rim is broken into dashes, so it reads as a warning without color."""
         r = max(6, int(radius))
         key = ("badge", name, type_id, r, tuple(ring_color), bad, round(icon_scale, 2))
         s = self.cache.get(key)
         if s is None:
             S = 2 * r + 6
-            big = pygame.Surface((S * 2, S * 2), pygame.SRCALPHA)
-            C = S
-            R2 = r * 2
-            pygame.draw.circle(big, (6, 22, 30, 235), (C, C), R2)
-            lw = max(3, R2 // 9)
+            Q = 4  # drawn four times larger, then reduced: clean edges at a small size
+            big = pygame.Surface((S * Q, S * Q), pygame.SRCALPHA)
+            C = S * Q // 2
+            R4 = r * Q
+            col = tuple(int(v) for v in ring_color[:3])
+            face = tuple(int(v * 0.72) for v in col)
+            rim = tuple(int(v + (255 - v) * 0.55) for v in col)
+            lw = max(4, R4 // 8)
+            pygame.draw.circle(big, (*face, 255), (C, C), R4)
             if bad:
-                n = 14
+                n = 12
+                rect = pygame.Rect(C - R4, C - R4, 2 * R4, 2 * R4)
                 for k in range(n):
                     a0 = k / n * math.tau
-                    a1 = a0 + math.tau / n * 0.6
-                    rect = pygame.Rect(C - R2, C - R2, 2 * R2, 2 * R2)
-                    pygame.draw.arc(big, ring_color, rect, a0, a1, lw)
-                pygame.draw.circle(big, (*ring_color, 90), (C, C), R2 - lw - 2, 2)
+                    pygame.draw.arc(big, rim, rect, a0, a0 + math.tau / n * 0.62, lw)
             else:
-                pygame.draw.circle(big, ring_color, (C, C), R2, lw)
-            isz = int(R2 * 2 * icon_scale)
+                pygame.draw.circle(big, rim, (C, C), R4, lw)
+            pygame.draw.circle(big, (*rim, 110), (C, C), int(R4 * 0.8), max(2, Q))  # the bevel, as on a coin
+            shine = pygame.Surface((S * Q, S * Q), pygame.SRCALPHA)  # a soft light from above
+            pygame.draw.ellipse(shine, (255, 255, 255, 34), pygame.Rect(C - R4 * 0.62, C - R4 * 0.86, R4 * 1.24, R4 * 0.8))
+            big.blit(shine, (0, 0))
+            isz = int(R4 * 2 * icon_scale)
             icon = pygame.Surface((isz, isz), pygame.SRCALPHA)
             override = ICONS_DIR / f"{type_id}.png"
             if override.exists():

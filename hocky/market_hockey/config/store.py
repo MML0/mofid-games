@@ -187,6 +187,17 @@ V12_DEFAULT_CHANGES = {
     "match.intro_s": (1.6, 2.8),
 }
 
+V13_DEFAULT_CHANGES = {
+    "match.result_s": (10.0, 15.0),
+    "kinetic.opacity_result": (0.5, 0.35),
+    "motion.logo_rest": (0.55, 0.75),
+    "motion.logo_size": (0.27, 0.32),
+    "motion.logo_result_size": (0.19, 0.24),
+    "colors.good": ("#39E46F", "#7DD87D"),
+    "colors.bad": ("#FF3B3B", "#F3716D"),
+    "colors.neutral": ("#9B6BFF", "#DEF1EE"),
+}
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
                               4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
@@ -194,7 +205,8 @@ MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: 
                               8: _changes(V9_DEFAULT_CHANGES),
                               9: _changes(V10_DEFAULT_CHANGES),
                               10: _changes(V11_DEFAULT_CHANGES),
-                              11: _changes(V12_DEFAULT_CHANGES)}
+                              11: _changes(V12_DEFAULT_CHANGES),
+                              12: _changes(V13_DEFAULT_CHANGES)}
 
 
 class Config:

@@ -850,22 +850,27 @@ class Renderer:
             gi = (0.5 + 0.7 * o.pulled) * blink * a
             self.add.blit(self.glow.sprite(cls_col, orb_r * 2.4 * max(0.3, k), gi), self.to_c(x, y))
             body = self.icons.badge(icon, o.type_id, orb_r, cls_col, o.cls == "bad", cfg["powerups.icon_scale"])
-            if abs(k - 1) > 0.01:
+            # now and then it turns over like the brand's coins, and is face-on again in a moment
+            turn = ((self.time + o.id * 1.37) % 3.6) / 0.7
+            squash = max(0.1, abs(math.cos(math.pi * smoother(turn)))) if turn < 1 and o.state == "idle" else 1.0
+            if abs(k - 1) > 0.01 or squash < 0.999:
                 sz = max(2, int(body.get_width() * k))
-                body = pygame.transform.smoothscale(body, (sz, sz))
+                body = pygame.transform.smoothscale(body, (max(2, int(sz * squash)), sz))
             if a < 0.999:
                 body = body.copy()
                 body.set_alpha(int(255 * a))
             cx, cy = self.to_c(x, y)
             self.canvas.blit(body, (int(cx - body.get_width() / 2), int(cy - body.get_height() / 2)))
             if o.state in ("spawning", "idle"):
+                # its time left as a ring of the brand's dots, going out one by one
                 rem = max(0.0, 1 - o.age / max(0.01, o.life))
-                rr = orb_r + 7
-                rect = pygame.Rect(0, 0, 2 * rr, 2 * rr)
-                rect.center = (int(cx), int(cy))
-                if rem > 0.01:
-                    self.add.mark(pygame.draw.arc(self.add.surf, (110, 110, 110), rect, math.pi / 2,
-                                                  math.pi / 2 + math.tau * rem, 2))
+                rr = orb_r + 9
+                n = 20
+                dot = scale(mix(cls_col, (255, 255, 255), 0.4), 0.55)
+                for j in range(int(math.ceil(rem * n - 1e-6))):
+                    ang = math.pi / 2 + math.tau * j / n
+                    self.add.mark(pygame.draw.circle(self.add.surf, dot, (int(cx + rr * math.cos(ang)),
+                                                                          int(cy - rr * math.sin(ang))), 2))
 
     # ---------------------------------------------------------------- predictions
     def _predictions(self, engine) -> None:
@@ -1355,28 +1360,32 @@ class Renderer:
         return gap + fa_box[0] - fa_box[1], -(gap + en_box[2] - en_box[0])
 
     def _backing(self, x, y, w, h, fade=1.0) -> None:
-        """A soft dark patch behind waiting-screen text, so the moving visuals stay behind it instead of mixing in."""
-        strength = self.cfg["match.title_backing"]
+        """A pool of quiet behind waiting-screen text: the visuals under it dim smoothly toward its middle, so they stay
+        behind the words instead of mixing in. It multiplies the picture, never paints over it, and has no edge to see."""
+        strength = self.cfg["match.title_backing"] * max(0.0, min(1.0, fade))
         if strength <= 0.01:
             return
-        key = (int(w) // 4 * 4, int(h) // 4 * 4, round(self._g.rot, 1), self.c["arena_inner"])
+        level = int(strength * 24 + 0.5)  # a few steps: the cache stays small while it fades
+        key = (int(w) // 8 * 8, int(h) // 8 * 8, round(self._g.rot, 1), level)
         s = self._backings.get(key)
         if s is None:
-            W, H = max(8, key[0]), max(8, key[1])
+            W, H = max(16, int(key[0] * 1.5)), max(16, int(key[1] * 2.0))
             nx = (np.arange(W, dtype=np.float32)[:, None] + 0.5 - W / 2) / (W / 2)
             ny = (np.arange(H, dtype=np.float32)[None, :] + 0.5 - H / 2) / (H / 2)
-            d = (np.abs(nx) ** 4 + np.abs(ny) ** 4) ** 0.25  # a soft rounded rectangle
-            edge = np.clip((1.0 - d) / 0.45, 0, 1)
-            s = pygame.Surface((W, H), pygame.SRCALPHA)
-            s.fill((*scale(self.c["arena_inner"], 0.6), 255))
-            alpha = pygame.surfarray.pixels_alpha(s)
-            alpha[:] = (edge * edge * (3 - 2 * edge) * 255).astype(np.uint8)
-            del alpha
-            s = self._rot(s)
+            r = (np.abs(nx) ** 2.4 + np.abs(ny) ** 2.4) ** (1 / 2.4)  # between an ellipse and the text's rectangle
+            t = np.clip((1.0 - r) / 0.7, 0, 1)
+            shade = t * t * t * (t * (t * 6 - 15) + 10) * (level / 24 * 0.8)  # smootherstep: no visible edge
+            dark = pygame.Surface((W, H))
+            pygame.surfarray.pixels3d(dark)[:] = (shade * 255).astype(np.uint8)[:, :, None]
+            dark = self._rot(dark)  # rotation fills the corners with black, which here means "no shade"
+            s = pygame.Surface(dark.get_size())
+            s.fill((255, 255, 255))
+            s.blit(dark, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
+            if len(self._backings) > 256:
+                self._backings.clear()
             self._backings[key] = s
-        s.set_alpha(int(255 * strength * fade))
         sx, sy = self.to_c(x, y)
-        self.canvas.blit(s, s.get_rect(center=(int(sx), int(sy))))
+        self.canvas.blit(s, s.get_rect(center=(int(sx), int(sy))), special_flags=pygame.BLEND_RGB_MULT)
 
     def _darken(self, amount: int) -> None:
         """Dim the whole picture; the same result as laying black over it at this alpha, several times faster."""
@@ -1588,7 +1597,7 @@ class Renderer:
         self.toasts = keep
 
     def _absent(self, engine) -> None:
-        if engine.state == "ATTRACT":
+        if engine.state in ("ATTRACT", "FINAL", "RESULT"):  # nobody needs to step in once the match is over
             return
         cfg = self.cfg
         for p in engine.paddles:

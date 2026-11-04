@@ -105,10 +105,10 @@ Site mode keeps pygame's FreeSansBold, the closest match to the sketch's Helveti
 | Object | From the reference | From the brand book |
 |---|---|---|
 | Flood | The disc floods, grooved with pulsing rings, and an iris opens | Brand tint, turquoise and the team colors |
-| Center coin | A disc turning over from picture to picture | The book's icons and the bull |
+| Center coin | A disc turning over from picture to picture | The group's sub-brands and the bull |
 | Paper plane | A folded plane banking across the board | The Telegram icon's plane, folded in 3D, with a trail of brand dots |
-| Flying coins | Emoji arriving and leaving | The book's icons on brand-colored coins |
-| Coin wall | The wall of flipping emoji | The same coins. On the result it fills the winner's half and keeps clear of the text |
+| Flying coins | Emoji arriving and leaving | The group's sub-brands on pale coins, in their own colors, and the book's icons on brand-colored coins |
+| Coin wall | The wall of flipping emoji | The same coins, about three in five a sub-brand. On the result it keeps to the rim of the winner's half |
 | Dot grid | The bloom from the center | The identity page's dot grid: dots swell and open into the five marks, on a heartbeat |
 | Fine rings | The pulsing concentric rings | Turquoise and tint, lit by two sines beating against each other |
 | Market chart | (added for this client) | The shapes of the book's chart icons, with red for falling candles |
@@ -116,12 +116,16 @@ Site mode keeps pygame's FreeSansBold, the closest match to the sketch's Helveti
 
 **When they run.** The waiting screen plays a 46 second loop. The match start floods, the countdown (5 to 1, `countdown.start`) runs a ring with one dot going round it, GO floods again, and each goal floods and throws marks in the scorer's color. A plane crosses during play every 14 seconds at 45% strength.
 
-**Staying in the background.** Objects are drawn together on one layer at 60% (`motion.object_opacity`), floods at 60% (`motion.flood_strength`) and the chart a little lower still (`motion.chart_strength`). All of them fade between 0.72 and 0.92 of the radius (`motion.edge_fade_start`, `motion.edge_fade_end`), a shorter fade than the letters' 0.5 to 0.82, so objects keep their size. On the waiting screen a soft dark backing (`match.title_backing`) sits behind the title and the prompt, so the visuals pass behind the text.
+**Staying in the background.** Objects are drawn together on one layer at 60% (`motion.object_opacity`), floods at 60% (`motion.flood_strength`) and the chart a little lower still (`motion.chart_strength`). All of them fade between 0.72 and 0.92 of the radius (`motion.edge_fade_start`, `motion.edge_fade_end`), a shorter fade than the letters' 0.5 to 0.82, so objects keep their size. On the waiting screen the visuals dim smoothly behind the title, the names and the prompt (`match.title_backing`), with no edge to see, and the coin walls keep out of them. Text has a wide, soft drop shadow (`text.shadow_alpha`) instead of a dark rim.
 
-**The Mofid logo.** The book's stacked logo, the bull above کارگزاری مفید and پیشرفت مداوم, in white on transparent, baked from the book's vectors. It stays in the background of the waiting screen at 55% (`motion.logo_rest`). After Start the same logo brightens, a damped spring carries it to the center with one soft overshoot and a little growth, its growth then builds, and it fades to zero while still growing, over `match.intro_s`. All of it follows smooth curves with no phases to switch between. The waiting text fades out over it. The result screen has a small logo at its head.
+**The Mofid logo.** The group's logo, the bull above گروه مالی مفید, white on transparent (`assets/brand/group_stacked.png`, the client's own file). It stays in the background of the waiting screen at 75% (`motion.logo_rest`). After Start the same logo brightens, a damped spring carries it to the center with one soft overshoot and a little growth, its growth then builds, and it fades to zero while still growing, over `match.intro_s`. All of it follows smooth curves with no phases to switch between. The waiting text fades out over it. During the match it lies faint in the middle of the floor, under the game (`motion.logo_play`, 14%). The result screen, which stays 15 seconds, has it at its head.
 
 **Brand rules kept.** A goal in any team color but turquoise floods in fine bands, because the book limits purple and red as backgrounds. Red is only used for falling candles and the other side on the result. The bull only appears in white, on turquoise or dark blue.
 
 **Sharpness on a 4 m floor.** A 1080 px canvas gives 3.7 mm per pixel, so a projector with more pixels (and a larger `display.canvas_width` and `canvas_height`) is the one thing that can make it sharper still. Within that: rings are computed per radius, polygons are antialiased each frame instead of rotating a bitmap, coins are built large and reduced, and letters are built at 4x with tightened edges.
 
-To rebuild the icons from the PDF: `python3 tools/make_brand_icons.py /path/to/Brnadbook-V04.pdf` (needs PyMuPDF).
+**Sub-brands.** ایزی تریدر, مفید اپ, مفید کارت جت, بورس ویو and 2.0, بیمه زندگی مفید, آموزش مفید and the funds عیار, حامی, توان, همنگ, آتیه and طلای گرمی, from the client's Game Icons PDF. Each keeps its own colors on its white page, and the page takes the pale coin's color, so no square shows.
+
+**Power-up orbs.** Each orb is a coin in the brand's style: a disc in its class color (green good, Mofid red bad, the brand's pale for neutral), a light rim, a fine bevel line, a soft light from above and the white icon. A bad orb's rim is broken into dashes. Now and then an orb turns over like the coins, and a ring of brand dots around it goes out one by one as its time runs down.
+
+To rebuild the icons from the PDFs: `python3 tools/make_brand_icons.py /path/to/Brnadbook-V04.pdf "/path/to/Game Icons.pdf"` (needs PyMuPDF).

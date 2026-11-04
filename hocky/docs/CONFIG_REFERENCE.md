@@ -130,7 +130,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `match.timer_runs_during_goal_pause` | False | bool | live | Timer runs during goal pause |
 | `match.timer_runs_during_serve` | True | bool | live | Timer runs during serve |
 | `match.final_freeze_s` | 1.6 | 0.2 … 6 s | live | Final freeze |
-| `match.result_s` | 10.0 | 1 … 60 s | live | Result screen time |
+| `match.result_s` | 15.0 | 1 … 60 s | live | Result screen time |
 | `match.result_wait_for_operator` | False | bool | live | Result waits for operator |
 | `scoring.points_per_goal` | 1 | 1 … 10 | live | Points per goal |
 | `scoring.smart_hit_points` | 0 | 0 … 5 | live | Bonus points per smart hit |
@@ -523,7 +523,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `kinetic.opacity_waiting` | 0.85 | 0 … 1 | live | Waiting screen — The waiting screen's dim also applies on top of this. |
 | `kinetic.opacity_countdown` | 0.4 | 0 … 1 | live | Countdown |
 | `kinetic.opacity_moment` | 0.75 | 0 … 1 | live | Peak of a moment — Goal, go, final and result at their brightest. |
-| `kinetic.opacity_result` | 0.5 | 0 … 1 | live | Result screen (resting) |
+| `kinetic.opacity_result` | 0.35 | 0 … 1 | live | Result screen (resting) |
 | `kinetic.opacity_play` | 0.0 | 0 … 0.3 | live | During play — 0 keeps the arena clean while the ball is live. |
 
 ## Brand Motion
@@ -539,9 +539,12 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `motion.logo_waiting` | True | bool | live | Logo on the waiting screen — Always there in the background. |
 | `motion.logo_zoom` | True | bool | live | Logo grows and fades after Start — It brightens, springs to the center, grows, and fades out while still growing. |
 | `motion.logo_result` | True | bool | live | Logo on the result screen |
-| `motion.logo_rest` | 0.55 | 0.05 … 1 | live | Waiting opacity — How visible the logo is while waiting. |
-| `motion.logo_size` | 0.27 | 0.1 … 0.7 ×D | live | Waiting width |
-| `motion.logo_result_size` | 0.19 | 0.08 … 0.5 ×D | live | Result screen width |
+| `motion.logo_rest` | 0.75 | 0.05 … 1 | live | Waiting opacity — How visible the logo is while waiting. |
+| `motion.logo_size` | 0.32 | 0.1 … 0.7 ×D | live | Waiting width |
+| `motion.logo_result_size` | 0.24 | 0.08 … 0.5 ×D | live | Result screen width |
+| `motion.logo_play` | True | bool | live | Logo in the middle during the match — Faint, under the game, like a mark on the ice. |
+| `motion.logo_play_opacity` | 0.14 | 0.02 … 0.6 | live | Match opacity |
+| `motion.logo_play_size` | 0.36 | 0.1 … 0.8 ×D | live | Match width |
 | `motion.plane_size` | 0.15 | 0.04 … 0.4 ×D | live | Paper plane |
 | `motion.coin_size` | 0.072 | 0.03 … 0.2 ×D | live | Coin — The coins that fly and fill the wall. |
 | `motion.hero_size` | 0.27 | 0.08 … 0.6 ×D | live | Center coin |
@@ -571,9 +574,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `colors.neutral_ball` | #E8F4F8 | color | live | Untouched ball |
 | `colors.ball_core` | #FFFFFF | color | live | Ball core |
 | `colors.projection_boost` | 0.35 | 0 … 1 | live | Projection boost — Lifts glow/trail brightness of dark brand colors (keeps hue). |
-| `colors.good` | #39E46F | color | live | Good (green) |
-| `colors.bad` | #FF3B3B | color | live | Bad (red) |
-| `colors.neutral` | #9B6BFF | color | live | Neutral (violet) |
+| `colors.good` | #7DD87D | color | live | Good (green, clear of the turquoise team) |
+| `colors.bad` | #F3716D | color | live | Bad (Mofid red) |
+| `colors.neutral` | #DEF1EE | color | live | Neutral (Mofid pale, a silver coin) |
 | `colors.smart` | #FFD54A | color | live | Smart hit gold |
 | `colors.arena_inner` | #03141C | color | live | Arena center |
 | `colors.arena_outer` | #062A3A | color | live | Arena edge |

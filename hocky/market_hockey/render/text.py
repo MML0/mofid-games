@@ -176,18 +176,21 @@ class TextRenderer:
         return s
 
     def _effects(self, text, size, surf, shadow_a, scol, key, glow, color) -> pygame.Surface:
-        pad = max(6, int(size * 0.22))
+        pad = max(6, int(size * (0.27 if shadow_a > 0 else 0.22)))
         W, H = surf.get_width() + 2 * pad, surf.get_height() + 2 * pad
         out = pygame.Surface((W, H), pygame.SRCALPHA)
         out.fill((*color, 0))
         if shadow_a > 0:
+            # a drop shadow the way light makes one: wide, soft and a little below, plus a faint close one that
+            # seats the letters. No dark rim hugging the strokes.
             dark = self._compose(text, size, scol, key)
-            base = pygame.Surface((W, H), pygame.SRCALPHA)
-            base.fill((*scol, 0))  # same RGB in transparent pixels: no dark/light fringes when blurring
-            base.blit(dark, (pad, pad + max(1, int(size * 0.04))))
-            sh = self._blur(base, max(2, int(size * 0.06)), scol)
-            sh.set_alpha(int(255 * min(1.0, shadow_a)))
-            out.blit(sh, (0, 0))
+            for radius, drop, share in ((0.13, 0.06, 0.8), (0.04, 0.025, 0.4)):
+                base = pygame.Surface((W, H), pygame.SRCALPHA)
+                base.fill((*scol, 0))  # same RGB in transparent pixels: no dark/light fringes when blurring
+                base.blit(dark, (pad, pad + max(1, int(size * drop))))
+                sh = self._blur(base, max(2, int(size * radius)), scol)
+                sh.set_alpha(int(255 * min(1.0, shadow_a * share)))
+                out.blit(sh, (0, 0))
         if glow > 0:
             base = pygame.Surface((W, H), pygame.SRCALPHA)
             base.fill((*color, 0))

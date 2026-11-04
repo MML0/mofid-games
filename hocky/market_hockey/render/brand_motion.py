@@ -30,8 +30,8 @@ SUB = 2  # radial table entries per pixel of radius
 FLIP_STEPS = 10
 SPRITE_LIMIT = 2600
 WARM_PER_FRAME = 5  # coins built ahead per frame, so the wall's first wave finds them ready
-LOGO_FILE = "logo_stacked"
-LOGO_ASPECT = 0.66  # height / width of the stacked logo
+LOGO_FILE = "group_stacked"  # the group's logo, the bull over «گروه مالی مفید», white on transparent
+LOGO_ASPECT = 0.414  # its height / width
 LOGO_EDGE = np.clip((np.arange(256, dtype=np.float32) - 22.0) * 255.0 / 200.0, 0, 255).astype(np.uint8)  # crisper small text
 LOGO_ROW_WAITING, LOGO_ROW_RESULT = -0.62, 0.68  # height on the arena, as a share of the radius (up is positive)
 CHEER_EVERY_S = 3.2  # the winner's bursts repeat this often, so a long result screen stays alive
@@ -45,6 +45,11 @@ MARKS = ("dot", "plus", "minus", "times", "slash")
 GAME_ICONS = ("chart", "money", "financial", "star", "risk", "stairs", "pie", "badge", "dataviz", "low_risk", "assets",
               "donut", "check", "game", "return", "market_map", "academy", "binoculars")
 WIN_ICONS = ("star", "badge", "bull", "financial", "check", "stairs")
+# the group's sub-brands (tools/make_brand_icons.py): they show on pale coins in their own colors
+BRANDS = tuple("brand_" + n for n in ("easytrader", "mofid_app", "jet", "boursview2", "boursview", "life_insurance",
+                                      "academy_mofid", "ayar", "hami", "tavan", "hamnang", "atieh", "gold"))
+COINS = BRANDS * 2 + GAME_ICONS  # what the coins show: the sub-brands about three times in five
+WIN_COINS = BRANDS + WIN_ICONS
 FACES = ("pale", "teal", "dark", "pale", "teal", "accent", "pale", "dark")
 
 
@@ -209,7 +214,19 @@ class Art:
             base, rim, _, _ = self.faces[face]
             pygame.draw.circle(big, rim, (n // 2, n // 2), n // 2)
             pygame.draw.circle(big, base, (n // 2, n // 2), int(n * 0.455))
-            icon = self._tint(name, face)
+            icon = None if name.startswith("brand_") else self._tint(name, face)
+            logo = self._icon(name) if name.startswith("brand_") else None
+            if logo is not None:
+                # the logo keeps its own colors, and its white page becomes exactly the face's color: no square shows.
+                # Its box is small enough that even its corners fall inside the face.
+                lw, lh = logo.get_size()
+                k2 = min(n * 0.7 / lw, n * 0.5 / lh)
+                lg = pygame.transform.smoothscale(logo, (max(1, int(lw * k2)), max(1, int(lh * k2))))
+                rgb = pygame.surfarray.pixels3d(lg)
+                paper = max(1, int(rgb.max()))  # reduction leaves the white page a shade under 255
+                rgb[:] = np.clip(rgb * (np.array(base, dtype=np.float32) / paper) + 0.5, 0, 255).astype(np.uint8)
+                del rgb
+                big.blit(lg, lg.get_rect(center=(n // 2, n // 2)))
             if icon is not None:
                 w = int(n * 0.62)
                 ic = pygame.transform.smoothscale(icon, (w, w))
@@ -230,6 +247,8 @@ class Art:
     def coin(self, name: str, face: str, size: int, theta: float) -> pygame.Surface:
         """A coin turned by theta around its horizontal axis: squashed, and darker as it goes edge-on."""
         size = max(4, int(size) & ~1)
+        if name.startswith("brand_"):
+            face = "pale"  # a sub-brand always sits on the pale face, the closest to its own white page
         c = abs(math.cos(theta))
         step = int(c * FLIP_STEPS + 0.5)
         if step >= FLIP_STEPS:
@@ -300,8 +319,8 @@ class Art:
 
     def warm_list(self, size: int):
         """Every coin a wall can show, for building ahead a few per frame."""
-        for name in dict.fromkeys(WIN_ICONS + GAME_ICONS):
-            for face in self.faces:
+        for name in dict.fromkeys(WIN_COINS + COINS):
+            for face in ("pale",) if name.startswith("brand_") else self.faces:
                 for step in range(FLIP_STEPS + 1):
                     yield (name, face, size, math.acos(step / FLIP_STEPS))
 
@@ -578,8 +597,8 @@ class FlyingCoin(Actor):
         self.dur = rng.uniform(2.6, 4.2)
         self.size = stage.coin_px * rng.uniform(0.9, 1.5)
         self.turns = rng.uniform(2.0, 4.0)
-        self.front = (rng.choice(GAME_ICONS), rng.choice(FACES))
-        self.back = (rng.choice(GAME_ICONS), rng.choice(FACES))
+        self.front = (rng.choice(COINS), rng.choice(FACES))
+        self.back = (rng.choice(COINS), rng.choice(FACES))
         self.r1 = stage.R * rng.uniform(0.62, 0.84)
 
     def _center(self) -> tuple:
@@ -615,7 +634,7 @@ class CoinWall(Actor):
     type_level = 0.25
     fade_out = 0.45
 
-    def __init__(self, stage, dur=7.0, half=None, icons=GAME_ICONS, every=2.3, hold_alpha=1.0, delay=0.0, inner=0.0,
+    def __init__(self, stage, dur=7.0, half=None, icons=COINS, every=2.3, hold_alpha=1.0, delay=0.0, inner=0.0,
                  keep_clear=()):
         super().__init__(stage, delay)
         self.dur, self.half, self.icons, self.every, self.hold_alpha = dur, half, icons, every, hold_alpha
@@ -987,6 +1006,7 @@ class BrandMotion:
         self.zoom_t: float | None = None
         self._zoom_from = 0.0
         self._logo_alpha = 0.0
+        self._ad_alpha = 0.0
         self._next_cheer = 0.0
         self.objects: pygame.Surface | None = None
         self.edge_mask: pygame.Surface | None = None
@@ -1040,8 +1060,8 @@ class BrandMotion:
         self._flyer_until = 0.0
 
     def _hero_sides(self, count=4) -> list:
-        icons = self.rng.sample(GAME_ICONS, count)
-        return [(i, self.rng.choice(("pale", "teal", "dark", "pale"))) for i in icons]
+        """The big coin's faces: the group's sub-brands, each readable at that size."""
+        return [(i, "pale") for i in self.rng.sample(BRANDS, count)]
 
     def cue_flood(self, color=None, hero=True, dur=2.2) -> None:
         pal = self.art.palette
@@ -1049,7 +1069,7 @@ class BrandMotion:
         reduce = self.cfg["fx.reduce_flashing"]
         self.add(Flood(self, color, dur=dur, strength=0.45 if reduce else 1.0))
         if hero:
-            self.add(HeroCoin(self, [("bull", "teal")] + self._hero_sides(3), self.hero_px, delay=0.55))
+            self.add(HeroCoin(self, [("bull", "teal")] + self._hero_sides(3), int(self.hero_px * 0.75), delay=0.55))
         self.add(Plane(self, delay=0.5), Plane(self, delay=1.2), Plane(self, delay=2.0),
                  Shock(self, pal["teal"], rings=5, dur=1.2, width=9, gap=0.17, delay=3.0))
 
@@ -1066,12 +1086,30 @@ class BrandMotion:
     def cue_pulse(self) -> None:
         pal = self.art.palette
         self.add(PulseBed(self, pal["teal"], pal["pale"], dur=7.8))
-        self.add(HeroCoin(self, self._hero_sides(6), int(self.hero_px * 0.82), turn_s=1.1, delay=0.4))
+        # small enough to sit between the title and the prompt
+        self.add(HeroCoin(self, self._hero_sides(6), int(self.hero_px * 0.62), turn_s=1.1, delay=0.4))
         self.add(Plane(self, delay=1.5), Plane(self, delay=4.5))
 
     def cue_wall(self) -> None:
-        # the title and the prompt keep the middle, and the logo its row
-        self.add(CoinWall(self, dur=7.5, inner=0.42, keep_clear=(self._logo_clear(LOGO_ROW_WAITING),)))
+        # the title and the prompt keep the middle; the names, the title's ends and the logo keep their places
+        self.add(CoinWall(self, dur=7.5, inner=0.42, keep_clear=self._waiting_clear()))
+
+    def _waiting_clear(self) -> tuple:
+        """Where the waiting screen writes, for the coin walls to stay out of: the title, prompt, names and logo."""
+        R = self.R
+        a = math.radians(90 + self.rot)
+        ux, uy = math.cos(a), -math.sin(a)  # "up" on the canvas
+        turned = abs(math.sin(math.radians(self.rot))) > 0.7
+
+        def box(x, y, hw, hh):
+            return (x, y, hh, hw) if turned else (x, y, hw, hh)
+
+        boxes = [box(ux * R * 0.34, uy * R * 0.34, R * 0.5, R * 0.12), box(-ux * R * 0.27, -uy * R * 0.27, R * 0.4, R * 0.06),
+                 self._logo_clear(LOGO_ROW_WAITING)]
+        for team in (0, 1):
+            dx, dy = self._dir(team)
+            boxes.append(box(dx * R * 0.5 + ux * R * 0.05, dy * R * 0.5 + uy * R * 0.05, R * 0.25, R * 0.14))
+        return tuple(boxes)
 
     def cue_goal(self, scorer: int) -> None:
         pal = self.art.palette
@@ -1123,8 +1161,9 @@ class BrandMotion:
         side = self._dir(w)
         bright = mix(self.teams[w], WHITE, 0.45)
         label = (side[0] * R * 0.5, side[1] * R * 0.5 - R * 0.16, R * 0.17, R * 0.42)  # trophy, winner, score, name
-        self.add(CoinWall(self, dur=3600, half=side, icons=WIN_ICONS, every=2.6, hold_alpha=self.cfg["motion.result_wall"],
-                          keep_clear=(label, slogan, logo)))
+        # the coins keep to the rim: the winner's trophy, name and score stand in calm space
+        self.add(CoinWall(self, dur=3600, half=side, icons=WIN_COINS, every=2.6, hold_alpha=self.cfg["motion.result_wall"],
+                          inner=0.6, keep_clear=(label, slogan, logo)))
         self._cheer()
 
     def _cheer(self) -> None:
@@ -1144,7 +1183,7 @@ class BrandMotion:
     def _logo_clear(self, row: float) -> tuple:
         """The logo's rectangle on screen, for the coin walls to stay out of."""
         size = self.cfg["motion.logo_size" if row == LOGO_ROW_WAITING else "motion.logo_result_size"]
-        return (0.0, -row * self.R, self.R * size, self.R * size * LOGO_ASPECT)
+        return (0.0, -row * self.R, self.R * size * 1.12, self.R * size * LOGO_ASPECT * 1.2)  # with a little air
 
     def _dir(self, team: int) -> tuple:
         x, y = self.goal_dirs[team]
@@ -1215,6 +1254,8 @@ class BrandMotion:
         self.flood_strength = cfg["motion.flood_strength"]
         rest = cfg["motion.logo_rest"] if self.state == "ATTRACT" and cfg["motion.logo_waiting"] else 0.0
         self._logo_alpha += (rest - self._logo_alpha) * (1 - math.exp(-2.5 * dt))  # back from a match, it fades in gently
+        ad = cfg["motion.logo_play_opacity"] if self.state in ("SERVE", "PLAYING", "GOAL") and cfg["motion.logo_play"] else 0.0
+        self._ad_alpha += (ad - self._ad_alpha) * (1 - math.exp(-(1.2 if ad else 3.0) * dt))  # in slowly, out quickly
         if self.zoom_t is not None:
             self.zoom_t += dt
             if self.zoom_t >= cfg["match.intro_s"] or self.state != "INTRO":
@@ -1256,6 +1297,7 @@ class BrandMotion:
         layer.fade_edge(start, end)
         layer.composite(canvas, self.cx, self.cy)
         self.draw_rest_logo(canvas)
+        self.draw_play_logo(canvas)
         opacity = level * cfg["motion.object_opacity"]
         if opacity < 0.01 or not any(a.paints and a.started for a in self.actors):
             return
@@ -1304,6 +1346,11 @@ class BrandMotion:
         if self._logo_alpha <= 0.01 or self.zoom_t is not None:
             return
         self._blit_logo(canvas, self._rest_width(), self._logo_place(LOGO_ROW_WAITING), self._logo_alpha)
+
+    def draw_play_logo(self, canvas: pygame.Surface) -> None:
+        """During the match: the logo faint in the middle of the floor, under the game, like a sponsor's mark on ice."""
+        if self._ad_alpha > 0.004:
+            self._blit_logo(canvas, int(self.R * 2 * self.cfg["motion.logo_play_size"]), (self.cx, self.cy), self._ad_alpha)
 
     def draw_result_logo(self, canvas: pygame.Surface, alpha: float) -> None:
         """The logo at the head of the result screen, with nothing around it."""

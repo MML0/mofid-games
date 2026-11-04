@@ -8,7 +8,7 @@ import pytest
 
 from market_hockey.config import Config
 from market_hockey.core.engine import Engine
-from market_hockey.render.brand_motion import (BRAND_DIR, GAME_ICONS, MARKS, WIN_ICONS, ZOOM_END, ZOOM_FADE, spring_step, Actor, BrandMotion,
+from market_hockey.render.brand_motion import (BRAND_DIR, BRANDS, GAME_ICONS, MARKS, WIN_ICONS, ZOOM_END, ZOOM_FADE, spring_step, Actor, BrandMotion,
                                                CoinWall, Flood, HeroCoin, Plane, RadialLayer)
 from market_hockey.render.renderer import Renderer
 
@@ -33,7 +33,7 @@ def run(m, seconds, dt=1 / 60):
 
 
 def test_every_icon_in_use_is_a_baked_brand_file():
-    for name in set(GAME_ICONS + WIN_ICONS) | {"bull", "plane", "logo_stacked"}:
+    for name in set(GAME_ICONS + WIN_ICONS) | {"bull", "plane", "group_stacked"} | set(BRANDS):
         assert (BRAND_DIR / f"{name}.png").exists(), name
 
 
@@ -261,7 +261,8 @@ def test_every_count_runs_and_colors_alternate(start):
 
 
 def test_small_objects_only_composite_their_own_area_and_nothing_is_cut_or_left_behind():
-    m = motion({"motion.object_opacity": 1.0, "motion.edge_fade_start": 1.1, "motion.edge_fade_end": 1.2})
+    m = motion({"motion.object_opacity": 1.0, "motion.edge_fade_start": 1.1, "motion.edge_fade_end": 1.2,
+                "motion.waiting_loop": False})
     m.add(Plane(m, a0=0.5, dur=2.0))
     c = pygame.Surface((400, 400))
     frames = []
@@ -293,7 +294,7 @@ def test_the_center_coin_is_not_cut_by_its_area():
 
 
 def test_the_result_screen_lasts_ten_seconds_and_keeps_moving():
-    assert Config({})["match.result_s"] == 10.0
+    assert Config({})["match.result_s"] == 15.0
     m = motion(state="RESULT")
     m.goal_dirs = ((-1.0, 0.0), (1.0, 0.0))
     m.winner = 0
@@ -362,7 +363,7 @@ def test_the_same_logo_is_on_the_waiting_screen_with_no_jump_when_start_is_press
     m, c = _logo_frame()
     m.draw(c)
     rest = pygame.surfarray.array3d(c).copy()
-    assert 100 < rest.max() < 170 and rest[:, :200].max() == 0  # soft, and low on the arena
+    assert 140 < rest.max() < 215 and rest[:, :200].max() == 0  # soft, and low on the arena
     m, c = _logo_frame(seconds=0.0)
     m.draw_logo_zoom(c)
     first = pygame.surfarray.array3d(c)
@@ -371,11 +372,11 @@ def test_the_same_logo_is_on_the_waiting_screen_with_no_jump_when_start_is_press
 
 def test_the_logo_is_white_on_transparent_with_no_box_or_disc():
     m = motion()
-    img = pygame.image.load(str(BRAND_DIR / "logo_stacked.png"))
+    img = pygame.image.load(str(BRAND_DIR / "group_stacked.png"))
     alpha = pygame.surfarray.array_alpha(img)
-    assert img.get_width() >= 3000 and alpha[0, 0] == 0 and alpha[-1, -1] == 0 and alpha.max() == 255
+    assert img.get_width() >= 800 and alpha[0, 0] == 0 and alpha[-1, -1] == 0 and alpha.max() == 255
     assert (alpha == 0).mean() > 0.5  # most of the image is see-through
-    assert ((alpha > 0) & (alpha < 255)).mean() < 0.02  # hard vector edges, not a soft raster
+    assert ((alpha > 0) & (alpha < 255)).mean() < 0.05  # crisp edges
     m._logo_alpha = 1.0
     m.state = "ATTRACT"
     c = pygame.Surface((400, 400))
@@ -415,7 +416,7 @@ def test_the_logo_leaves_with_the_zoom_and_returns_softly_after_a_match():
     m.update(1 / 60)
     assert m._logo_alpha < 0.05
     run(m, 3)
-    assert m._logo_alpha == pytest.approx(0.55, abs=0.05)
+    assert m._logo_alpha == pytest.approx(0.75, abs=0.05)
 
 
 def test_objects_fade_where_they_are_instead_of_jumping_when_a_state_ends():

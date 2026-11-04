@@ -123,7 +123,7 @@
     "timer_runs_during_goal_pause": false,
     "timer_runs_during_serve": true,
     "final_freeze_s": 1.6,
-    "result_s": 10.0,
+    "result_s": 15.0,
     "result_wait_for_operator": false
   },
   "scoring": {
@@ -525,7 +525,7 @@
     "opacity_waiting": 0.85,
     "opacity_countdown": 0.4,
     "opacity_moment": 0.75,
-    "opacity_result": 0.5,
+    "opacity_result": 0.35,
     "opacity_play": 0.0
   },
   "motion": {
@@ -538,9 +538,12 @@
     "logo_waiting": true,
     "logo_zoom": true,
     "logo_result": true,
-    "logo_rest": 0.55,
-    "logo_size": 0.27,
-    "logo_result_size": 0.19,
+    "logo_rest": 0.75,
+    "logo_size": 0.32,
+    "logo_result_size": 0.24,
+    "logo_play": true,
+    "logo_play_opacity": 0.14,
+    "logo_play_size": 0.36,
     "plane_size": 0.15,
     "coin_size": 0.072,
     "hero_size": 0.27,
@@ -567,9 +570,9 @@
     "neutral_ball": "#E8F4F8",
     "ball_core": "#FFFFFF",
     "projection_boost": 0.35,
-    "good": "#39E46F",
-    "bad": "#FF3B3B",
-    "neutral": "#9B6BFF",
+    "good": "#7DD87D",
+    "bad": "#F3716D",
+    "neutral": "#DEF1EE",
     "smart": "#FFD54A",
     "arena_inner": "#03141C",
     "arena_outer": "#062A3A",
@@ -665,8 +668,8 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 12,
-    "saved_at": "2026-11-03 01:38:36",
+    "schema_version": 13,
+    "saved_at": "2026-11-04 19:09:05",
     "app": "Market Hockey"
   }
 }

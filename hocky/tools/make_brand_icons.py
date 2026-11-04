@@ -1,9 +1,13 @@
-"""Bake the brand book's vector icons, bull and stacked logo into assets/brand as transparent PNGs.
+"""Bake the brand book's vector icons and bull into assets/brand as transparent PNGs.
 
-    python3 tools/make_brand_icons.py /path/to/Brnadbook-V04.pdf
+    python3 tools/make_brand_icons.py /path/to/Brnadbook-V04.pdf ["/path/to/Game Icons.pdf"]
 
 Needs PyMuPDF, but only for this step: the game just loads the PNGs. The shapes are redrawn from the PDF's own
 vector paths, in their own colors, so nothing is traced or restyled.
+
+The second, optional PDF holds the group's sub-brands, one per page. Each is rendered as it is, on its white page and
+cropped to the logo, for the coins' pale faces (brand_*.png). The group logo, group_stacked.png, is the client's own
+white PNG (Asset 71) copied in by hand.
 """
 
 from __future__ import annotations
@@ -19,7 +23,10 @@ ICON_PAGE = 20
 HEADER_PAGE = 4
 GRID_X, GRID_Y, CELL = 93.6, 128.0, 54.55
 LABEL_INK = 0.5  # the icon captions are the only mid grey on the page
-LOGO_STACKED = (4, 49, 73)  # the logo with the name under the bull: page, first and past-the-last drawing
+# the sub-brands' PDF, page by page
+BRANDS = ("easytrader", "mofid_app", "jet", "boursview2", "boursview", "life_insurance", "academy_mofid",
+          "ayar", "hami", "tavan", "hamnang", "atieh", "gold")
+BRAND_PX = 640  # the longest side of a baked sub-brand
 # name: (column, row) in the book's icon table
 ICONS = {
     "check": (1, 0), "money": (4, 0), "pie": (10, 0), "assets": (11, 0),
@@ -78,6 +85,28 @@ def bake(paths, name: str, width: int = 0) -> None:
     page.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=True).save(OUT / f"{name}.png")
 
 
+def bake_brands(path: str) -> None:
+    """Each page's logo on its own white ground, cropped with a small margin. Near-white is made pure white, so the
+    coin can lay it over its face by multiplying and no square shows around it."""
+    import numpy as np
+
+    doc = pymupdf.open(path)
+    for name, page in zip(BRANDS, doc):
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(6, 6), alpha=False)
+        a = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)[:, :, :3].astype(np.int16)
+        a = np.where(a.min(axis=2, keepdims=True) >= 238, 255, a)
+        ink = np.argwhere(a.min(axis=2) < 230)
+        (y0, x0), (y1, x1) = ink.min(axis=0), ink.max(axis=0)
+        m = int(max(y1 - y0, x1 - x0) * 0.04)
+        y0, x0, y1, x1 = max(0, y0 - m), max(0, x0 - m), min(pix.height, y1 + m), min(pix.width, x1 + m)
+        crop = np.ascontiguousarray(a[y0:y1, x0:x1].astype(np.uint8))
+        out = pymupdf.Pixmap(pymupdf.csRGB, crop.shape[1], crop.shape[0], crop.tobytes(), False)
+        k = BRAND_PX / max(out.width, out.height)
+        if k < 1:
+            out = pymupdf.Pixmap(out, int(out.width * k), int(out.height * k), None)
+        out.save(OUT / f"brand_{name}.png")
+
+
 def main() -> None:
     doc = pymupdf.open(sys.argv[1])
     OUT.mkdir(parents=True, exist_ok=True)
@@ -99,8 +128,10 @@ def main() -> None:
         bake(paths, name)
     bull = doc[HEADER_PAGE - 1].get_drawings()[0]  # the page header's logo starts with the bull
     bake([bull], "bull")
-    bake(doc[LOGO_STACKED[0] - 1].get_drawings()[LOGO_STACKED[1]:LOGO_STACKED[2]], "logo_stacked", 3000)
-    print(f"{len(ICONS) + 2} files in {OUT}")
+    print(f"{len(ICONS) + 1} files in {OUT}")
+    if len(sys.argv) > 2:
+        bake_brands(sys.argv[2])
+        print(f"{len(BRANDS)} sub-brands in {OUT}")
 
 
 if __name__ == "__main__":

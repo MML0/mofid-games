@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 TABS = [
     "Display & Projection",
@@ -255,7 +255,7 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("match.timer_runs_during_goal_pause", False, "Timer runs during goal pause")
     sb.b("match.timer_runs_during_serve", True, "Timer runs during serve")
     sb.f("match.final_freeze_s", 1.6, 0.2, 6, 0.1, "s", "Final freeze")
-    sb.f("match.result_s", 10.0, 1, 60, 0.5, "s", "Result screen time")
+    sb.f("match.result_s", 15.0, 1, 60, 0.5, "s", "Result screen time")
     sb.b("match.result_wait_for_operator", False, "Result waits for operator")
     sb.section("Match & Scoring", "Scoring")
     sb.i("scoring.points_per_goal", 1, 1, 10, 1, "", "Points per goal")
@@ -507,7 +507,7 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("kinetic.opacity_waiting", 0.85, 0, 1, 0.01, "", "Waiting screen", "The waiting screen's dim also applies on top of this.")
     sb.f("kinetic.opacity_countdown", 0.4, 0, 1, 0.01, "", "Countdown")
     sb.f("kinetic.opacity_moment", 0.75, 0, 1, 0.01, "", "Peak of a moment", "Goal, go, final and result at their brightest.")
-    sb.f("kinetic.opacity_result", 0.5, 0, 1, 0.01, "", "Result screen (resting)")
+    sb.f("kinetic.opacity_result", 0.35, 0, 1, 0.01, "", "Result screen (resting)")
     sb.f("kinetic.opacity_play", 0.0, 0, 0.3, 0.01, "", "During play", "0 keeps the arena clean while the ball is live.")
 
     # ------------------------------------------------------------------ colors
@@ -522,9 +522,12 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("motion.logo_waiting", True, "Logo on the waiting screen", "Always there in the background.")
     sb.b("motion.logo_zoom", True, "Logo grows and fades after Start", "It brightens, springs to the center, grows, and fades out while still growing.")
     sb.b("motion.logo_result", True, "Logo on the result screen")
-    sb.f("motion.logo_rest", 0.55, 0.05, 1, 0.01, "", "Waiting opacity", "How visible the logo is while waiting.")
-    sb.f("motion.logo_size", 0.27, 0.1, 0.7, 0.01, "×D", "Waiting width")
-    sb.f("motion.logo_result_size", 0.19, 0.08, 0.5, 0.01, "×D", "Result screen width")
+    sb.f("motion.logo_rest", 0.75, 0.05, 1, 0.01, "", "Waiting opacity", "How visible the logo is while waiting.")
+    sb.f("motion.logo_size", 0.32, 0.1, 0.7, 0.01, "×D", "Waiting width")
+    sb.f("motion.logo_result_size", 0.24, 0.08, 0.5, 0.01, "×D", "Result screen width")
+    sb.b("motion.logo_play", True, "Logo in the middle during the match", "Faint, under the game, like a mark on the ice.")
+    sb.f("motion.logo_play_opacity", 0.14, 0.02, 0.6, 0.01, "", "Match opacity")
+    sb.f("motion.logo_play_size", 0.36, 0.1, 0.8, 0.01, "×D", "Match width")
     sb.section("Brand Motion", "Sizes (share of the arena's diameter)")
     sb.f("motion.plane_size", 0.15, 0.04, 0.4, 0.005, "×D", "Paper plane")
     sb.f("motion.coin_size", 0.072, 0.03, 0.2, 0.002, "×D", "Coin", "The coins that fly and fill the wall.")
@@ -556,9 +559,9 @@ def _core(sb: SchemaBuilder) -> None:
     sb.c("colors.ball_core", "#FFFFFF", "Ball core")
     sb.f("colors.projection_boost", 0.35, 0, 1, 0.01, "", "Projection boost", "Lifts glow/trail brightness of dark brand colors (keeps hue).")
     sb.section("Colors", "Power-up classes")
-    sb.c("colors.good", "#39E46F", "Good (green)")
-    sb.c("colors.bad", "#FF3B3B", "Bad (red)")
-    sb.c("colors.neutral", "#9B6BFF", "Neutral (violet)")
+    sb.c("colors.good", "#7DD87D", "Good (green, clear of the turquoise team)")
+    sb.c("colors.bad", "#F3716D", "Bad (Mofid red)")
+    sb.c("colors.neutral", "#DEF1EE", "Neutral (Mofid pale, a silver coin)")
     sb.c("colors.smart", "#FFD54A", "Smart hit gold")
     sb.section("Colors", "Arena")
     sb.c("colors.arena_inner", "#03141C", "Arena center")
