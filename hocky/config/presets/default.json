@@ -635,6 +635,20 @@
       "flip_y": false,
       "timeout_s": 0.5
     },
+    "lidar": {
+      "autostart": true,
+      "serial_port": "auto",
+      "tracker_window": "hidden",
+      "settings_file": "LIdar/game_settings.json",
+      "replay_file": "",
+      "port": 7000,
+      "bind": "127.0.0.1",
+      "angle_offset_deg": 0.0,
+      "mirror_x": false,
+      "mirror_y": false,
+      "swap_players": false,
+      "timeout_s": 0.5
+    },
     "filters": {
       "min_confidence": 0.4,
       "dead_zone": 0.002,
@@ -669,7 +683,7 @@
   },
   "_meta": {
     "schema_version": 13,
-    "saved_at": "2026-11-04 19:09:05",
+    "saved_at": "2026-11-04 20:38:21",
     "app": "Market Hockey"
   }
 }

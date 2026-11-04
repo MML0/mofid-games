@@ -28,11 +28,11 @@
 - 🪐 **Ten power-ups, each one file.** Orbs drift toward the ball like magnets. The market roulette freezes the ball, spins through possible paths and fires. Drop a new file in a folder and it shows up in the game, the JSON and the control panel.
 - 🔤 **Kinetic type backdrop.** A wave of stretching English letters in the brand colors behind the splash, countdown, goals and results, with every slider animated. Preview it with `tools/kinetic_lab.py`; see [the notes](docs/KINETIC_TYPOGRAPHY.md).
 - ✈️ **Moving brand objects.** Paper planes, flipping coins, pulsing rings, a dot grid with a heartbeat and a market chart, all made from the brand book's own shapes. They run on the waiting screen and at every big moment.
-- 🎛️ **568 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
+- 🎛️ **580 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
 - 🌟 **Made for a projector.** Dithered gradients with no banding, supersampled edges, soft additive glow, and a mask that keeps every pixel inside the circle. A test checks that promise frame by frame.
 - ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
 - 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
-- 📡 **Sensor-ready.** The game only ever sees "player position along the rim", so keyboard, AI, replay and a 360° LiDAR are interchangeable. [See how](#adding-a-sensor-360-lidar-and-friends).
+- 📡 **Played with your feet.** A floor LiDAR tracks each player's feet and moves their paddle, and the game starts and stops the tracker itself. The game only ever sees "player position along the rim", so keyboard, AI, replay and the LiDAR are interchangeable. [See how](#lidar-playing-with-your-feet).
 - 🛡️ **Built not to break mid-show.** 790+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
 
 <p align="center"><img src="docs/media/supervisor.png" width="280" alt="The supervisor page on a phone"><br><sub>The supervisor page on a phone (sample names).</sub></p>
@@ -147,7 +147,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 ## Live editing and saving
 
 - Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
-- `settings_app.py` edits **every** setting (568) with sliders, exact-value fields, color pickers, dropdowns and key capture.
+- `settings_app.py` edits **every** setting (580) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
@@ -201,9 +201,32 @@ It appears in the spawner, the JSON and the control panel automatically.
 - **Custom icons**: put `assets/icons/<id>.png` in place to replace the drawn icon.
 - **Effect kinds** available to `self.effect(...)`: `paddle_size`, `ball_speed`, `dim`, `reveal`, `shield`, `bull`, `wobble`. Effects are computed from the active list every step, so expiry always restores the previous state.
 
-## Adding a sensor (360° LiDAR and friends)
+## LiDAR: playing with your feet
 
-The engine only consumes *"player position 0..1 along their arc"*, so a sensor is a module you plug in, and nothing else in the game changes. The planned setup is a **360° LiDAR** mounted at the center or overhead, with the detection (clustering, feet, calibration) coming from a separate, proven tracker project.
+A 2D LiDAR (LDROBOT STL27L) lies on the floor and sees the players' feet. The tracker in `LIdar/` turns them into one paddle per player and sends it to the game; the game puts each paddle at the player's angle on its own circle, so it sits under their feet. The tracker is the delivered, tested package, used unchanged; its full guide is [`LIdar/docs/INTEGRATION.md`](LIdar/docs/INTEGRATION.md).
+
+```mermaid
+flowchart LR
+    L["STL27L LiDAR<br>(USB serial)"] --> T["LidarTracker<br>background · feet · players"]
+    T -- "OSC /paddle, UDP 7000" --> A["lidar input"]
+    A -- "u = 0..1 per player" --> E["Game"]
+```
+
+**To play with it**: in the control panel set `Inputs → Player 1 input` and `Player 2 input` to **lidar**, and press **Save**. `LiDAR serial port` is `auto`: the tracker finds the LiDAR's USB adapter (CP210x) itself; set it by hand (`COM4`, `/dev/cu.usbserial-…`) only if there are several. The game starts the tracker itself (`LidarTracker.exe` in the build, `lidar_tracker.py` from source) and stops it when it closes; if the game crashes, the tracker quits on its own, so the serial port is never left held. When it starts, the tracker scans the **empty floor for 10 seconds**, so keep the circle clear. Its output is in `logs/lidar_tracker.log`.
+
+**Calibrating on site** (in this order):
+
+1. Set `Tracker window` to **setup** and restart the game. The tracker's map and settings windows open: follow [INTEGRATION.md §6](LIdar/docs/INTEGRATION.md) (lidar rotation and mirror, then the arena circle through 3–4 people's feet, then the players' dividing line). It saves to `LIdar/game_settings.json`. The dividing line should run through the game's top and bottom walls: **Line rotation 90°** for the standard layout (player 1 on the left).
+2. Stand on the circle and walk: if the paddle is not under your feet, turn it with `Angle offset`, or use `Mirror left / right` / `Mirror up / down` if it moves the wrong way. `Swap players` if the sides are crossed.
+3. Set `Tracker window` back to **hidden**.
+
+**Without the LiDAR**: set `Play a recording instead` to `LIdar/samples/session_2players.pkl` and `Tracker calibration file` to `LIdar/samples/session_2players.settings.json`: a recorded player walks along the left side.
+
+**What the game does with it**: only the angle is used, with no extra smoothing (the tracker already predicts and smooths at 60 Hz). A player nobody stands in for (`active 0`), or no message for `Message timeout`, reads as absent, as with every other source. Everything is under `Inputs → LiDAR`; the keyboard and the other sources still work, per player.
+
+## Adding a sensor
+
+The engine only consumes *"player position 0..1 along their arc"*, so a sensor is a module you plug in, and nothing else in the game changes. The LiDAR above is one such module.
 
 ```mermaid
 flowchart LR
@@ -233,14 +256,14 @@ There are two ways to connect it, and neither touches the engine:
 - **Filters**: One Euro smoothing, spike rejection, confidence gate, hold-when-lost and absent timeout.
 - **Test without hardware**: `.venv/bin/python tools/send_fake_tracking.py` (or `--blobs`).
 
-**B. Merge the driver into the game.** Add one file and one line:
+**B. Merge the driver into the game.** Add one file and one line (this is how `lidar.py` is built):
 
 ```python
-# market_hockey/inputs/lidar.py
+# market_hockey/inputs/depthcam.py
 from .base import InputAdapter, PlayerSample
 
-class LidarAdapter(InputAdapter):
-    name = "lidar"
+class DepthCamAdapter(InputAdapter):
+    name = "depthcam"
     smooth = True                       # run the sensor filters on this source
 
     def update(self, now, dt, engine):  # once per frame: read the latest scan; never block
@@ -252,7 +275,7 @@ class LidarAdapter(InputAdapter):
 
 ```python
 # market_hockey/inputs/registry.py
-ADAPTERS = {..., "lidar": "lidar:LidarAdapter"}
+ADAPTERS = {..., "depthcam": "depthcam:DepthCamAdapter"}
 ```
 
 That's it. The source appears in the control panel's dropdown, and **`tests/test_input_contract.py` automatically holds it to the rules** every source must follow. If the driver is missing or crashes during a show, that player just reads as absent while the game keeps running.
@@ -299,7 +322,7 @@ py -3.12 -m venv .venv
 .venv\Scripts\pyinstaller --noconfirm packaging\MarketHockey.spec
 ```
 
-Then copy the `config`, `assets` and an empty `logs` folder into `dist\MarketHockey\`. The recipe is `packaging/MarketHockey.spec`. If a packaged run fails, look in `logs/game_crash.log` / `logs/control_panel_crash.log`.
+Then copy the `config`, `assets`, `LIdar` and an empty `logs` folder into `dist\MarketHockey\`. The build also holds `LidarTracker.exe`, which the game starts when a player's input is *lidar*. The recipe is `packaging/MarketHockey.spec`. If a packaged run fails, look in `logs/game_crash.log` / `logs/control_panel_crash.log`.
 
 ## Tools
 
@@ -321,8 +344,9 @@ market_hockey/
   core/        geometry.py, collisions.py, entities.py, engine.py   (pure Python, no pygame)
   powerups/    base.py, registry.py, effects.py, types/*.py         (one file per power-up)
   prediction/  trajectory.py
-  inputs/      base.py (the contract), registry.py (every source), keyboard, ai, mouse, network (LiDAR/pose),
-               replay, filters, manager
+  inputs/      base.py (the contract), registry.py (every source), keyboard, ai, mouse, network (pose / JSON),
+               lidar + osc (the floor LiDAR), replay, filters, manager
+LIdar/         the LiDAR foot tracker as delivered (docs/INTEGRATION.md); lidar_tracker.py starts it
   render/      renderer.py, text.py (Persian), icons.py, glow.py, particles.py, overlays.py
   audio/       synth.py (placeholder sounds), audio.py
   ui/          settings_window.py, widgets.py, preview.py, theme.py

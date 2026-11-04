@@ -188,7 +188,7 @@ def test_the_engine_knows_nothing_about_sensors():
 
 def test_only_the_network_and_link_modules_open_sockets_for_input():
     users = {f.relative_to(PKG).as_posix() for f in PKG.rglob("*.py") if "socket" in imports_of(f)}
-    assert users <= {"inputs/network.py", "config/live_link.py", "web/server.py"}
+    assert users <= {"inputs/network.py", "inputs/lidar.py", "inputs/osc.py", "config/live_link.py", "web/server.py"}
 
 
 def test_no_stray_debug_code():

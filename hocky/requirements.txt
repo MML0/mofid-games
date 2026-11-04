@@ -1,5 +1,6 @@
 pygame-ce>=2.5.0
 numpy>=1.26
 arabic-reshaper>=3.0.0
+pyserial>=3.5  # the LiDAR tracker's serial port (LIdar/)
 pytest>=8.0
 pytest-cov>=5.0

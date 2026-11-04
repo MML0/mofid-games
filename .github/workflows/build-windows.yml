@@ -68,6 +68,7 @@ jobs:
           $out = "dist/${{ matrix.app }}"
           Copy-Item -Recurse -Force assets "$out/assets"
           Copy-Item -Recurse -Force config "$out/config"
+          if (Test-Path LIdar) { Copy-Item -Recurse -Force LIdar "$out/LIdar" }   # calibration, docs, sample recording
           New-Item -ItemType Directory -Force "$out/logs" | Out-Null
           Copy-Item README.md "$out/README.md"
           if (Test-Path docs/MarketHockey_Guide_FA.pdf) { Copy-Item docs/MarketHockey_Guide_FA.pdf "$out/" }
@@ -84,6 +85,12 @@ jobs:
           Write-Host "exit code $($p.ExitCode), screenshots: $count"
           Get-ChildItem "dist/${{ matrix.app }}/logs" -Filter *crash* -ErrorAction SilentlyContinue | Get-Content
           if ($p.ExitCode -ne 0 -or $count -lt 5) { throw "The built game failed its smoke test" }
+          # the LiDAR tracker: replay the sample recording for a few seconds
+          $lidar = Resolve-Path "dist/${{ matrix.app }}/LidarTracker.exe"
+          $rec = Resolve-Path "dist/${{ matrix.app }}/LIdar/samples"
+          $q = Start-Process -FilePath $lidar -ArgumentList @("--headless", "--no-osc", "--time", "15", "--replay", "$rec/session_2players.pkl", "--settings", "$rec/session_2players.settings.json") -Wait -PassThru -NoNewWindow
+          Write-Host "LidarTracker exit code $($q.ExitCode)"
+          if ($q.ExitCode -ne 0) { throw "The built LiDAR tracker failed its smoke test" }
           Remove-Item "dist/${{ matrix.app }}/logs/*" -Force -ErrorAction SilentlyContinue
 
       - name: Zip

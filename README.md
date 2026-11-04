@@ -38,7 +38,7 @@
 ## Why build them this way
 
 - 🖥️ **Everything an operator needs, no developer required.** Every game ships as a ready-to-run Windows folder. Settings change live from a control panel, and players' names come from a phone.
-- 📡 **Any sensor can drive a game.** Games read player positions through a small input contract, so a keyboard today and a 360° LiDAR tomorrow are the same thing to the game.
+- 📡 **Any sensor can drive a game.** Games read player positions through a small input contract, so a keyboard and the floor LiDAR that tracks players' feet are the same thing to the game.
 - 🛡️ **Tested like it has to survive a crowd.** Every pull request and push to `main` runs the test suite on Windows and Linux. Market Hockey alone has 790+ tests at 95% coverage, and they throw corrupt files, broken sensors and every extreme setting at it.
 - 🚀 **One tag, one release.** Push a version tag and GitHub Actions tests, builds, smoke-tests the real `.exe` and publishes it to [Releases](https://github.com/MML0/mofid-games/releases).
 

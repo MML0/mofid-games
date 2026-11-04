@@ -1,4 +1,5 @@
-# PyInstaller recipe: builds MarketHockey(.exe) and ControlPanel(.exe) into ONE folder that share their libraries.
+# PyInstaller recipe: builds MarketHockey(.exe), ControlPanel(.exe) and LidarTracker(.exe) into ONE folder that share
+# their libraries.
 #
 #   pip install -r requirements-build.txt
 #   pyinstaller --noconfirm packaging/MarketHockey.spec
@@ -34,12 +35,21 @@ def analysis(script):
 
 a_game = analysis("main.py")
 a_panel = analysis("settings_app.py")
+# the LiDAR tracker: LIdar/ as delivered, with its setup window in the same .exe (see lidar_tracker.py)
+LIDAR = os.path.join(HERE, "LIdar")
+a_lidar = Analysis([os.path.join(HERE, "lidar_tracker.py")], pathex=[HERE, LIDAR],
+                   hiddenimports=hidden + ["floor_game", "lidar_setup", "serial", "serial.tools.list_ports"],
+                   datas=datas, excludes=excludes, noarchive=False)
 
 exe_game = EXE(PYZ(a_game.pure), a_game.scripts, [], exclude_binaries=True, name="MarketHockey",
                console=False, icon=icon, upx=False)
 exe_panel = EXE(PYZ(a_panel.pure), a_panel.scripts, [], exclude_binaries=True, name="ControlPanel",
                 console=False, icon=icon, upx=False)
+# a console program: the game starts it without a window and keeps its output in logs/lidar_tracker.log
+exe_lidar = EXE(PYZ(a_lidar.pure), a_lidar.scripts, [], exclude_binaries=True, name="LidarTracker",
+                console=True, icon=icon, upx=False)
 
 coll = COLLECT(exe_game, a_game.binaries, a_game.datas,
                exe_panel, a_panel.binaries, a_panel.datas,
+               exe_lidar, a_lidar.binaries, a_lidar.datas,
                upx=False, name="MarketHockey")

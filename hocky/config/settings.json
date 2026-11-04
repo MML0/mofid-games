@@ -115,6 +115,7 @@
     "auto_loop_delay_s": 8.0,
     "attract_demo": true,
     "attract_opacity": 0.9,
+    "title_backing": 0.82,
     "attract_toasts": false,
     "clear_names_after_game": true,
     "intro_s": 2.8,
@@ -459,6 +460,7 @@
   },
   "countdown": {
     "ready_s": 1.2,
+    "start": 5,
     "beat_s": 1.0,
     "go_s": 0.8,
     "size": 300,
@@ -533,6 +535,15 @@
     "on_goal": true,
     "in_play": true,
     "plane_every_s": 14.0,
+    "logo_waiting": true,
+    "logo_zoom": true,
+    "logo_result": true,
+    "logo_rest": 0.75,
+    "logo_size": 0.32,
+    "logo_result_size": 0.24,
+    "logo_play": true,
+    "logo_play_opacity": 0.14,
+    "logo_play_size": 0.36,
     "plane_size": 0.15,
     "coin_size": 0.072,
     "hero_size": 0.27,
@@ -542,6 +553,11 @@
     "level_result": 0.95,
     "level_play": 0.45,
     "result_wall": 0.85,
+    "object_opacity": 0.6,
+    "flood_strength": 0.6,
+    "chart_strength": 0.7,
+    "edge_fade_start": 0.72,
+    "edge_fade_end": 0.92,
     "color_pale": "#DEF1EE",
     "color_teal": "#00A796",
     "color_tint": "#5BC4BF",
@@ -576,10 +592,10 @@
   },
   "input": {
     "p1": {
-      "source": "keyboard"
+      "source": "lidar"
     },
     "p2": {
-      "source": "keyboard"
+      "source": "lidar"
     },
     "keyboard": {
       "p1_left": "a",
@@ -619,6 +635,20 @@
       "flip_y": false,
       "timeout_s": 0.5
     },
+    "lidar": {
+      "autostart": true,
+      "serial_port": "auto",
+      "tracker_window": "setup",
+      "settings_file": "LIdar/game_settings.json",
+      "replay_file": "",
+      "port": 7000,
+      "bind": "127.0.0.1",
+      "angle_offset_deg": 0.0,
+      "mirror_x": false,
+      "mirror_y": false,
+      "swap_players": false,
+      "timeout_s": 0.5
+    },
     "filters": {
       "min_confidence": 0.4,
       "dead_zone": 0.002,
@@ -653,7 +683,7 @@
   },
   "_meta": {
     "schema_version": 13,
-    "saved_at": "2026-11-02 22:38:52",
+    "saved_at": "2026-11-04 20:06:15",
     "app": "Market Hockey"
   }
 }

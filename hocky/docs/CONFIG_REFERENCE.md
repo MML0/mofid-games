@@ -601,8 +601,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
-| `input.p1.source` | keyboard | keyboard, ai, mouse, network, replay | live | Player 1 input — network = LiDAR / CCTV pose tracker over UDP. |
-| `input.p2.source` | keyboard | keyboard, ai, mouse, network, replay | live | Player 2 input |
+| `input.p1.source` | keyboard | keyboard, ai, mouse, network, lidar, replay | live | Player 1 input — lidar = the floor LiDAR (feet). network = another tracker sending JSON over UDP. |
+| `input.p2.source` | keyboard | keyboard, ai, mouse, network, lidar, replay | live | Player 2 input |
 | `input.keyboard.p1_left` | a | key | live | P1 left key |
 | `input.keyboard.p1_right` | d | key | live | P1 right key |
 | `input.keyboard.p2_left` | left | key | live | P2 left key |
@@ -633,6 +633,18 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `input.network.flip_x` | False | bool | live | Flip X |
 | `input.network.flip_y` | False | bool | live | Flip Y |
 | `input.network.timeout_s` | 0.5 | 0.05 … 5 s | live | Message timeout |
+| `input.lidar.autostart` | True | bool | restart | Start the tracker with the game — The game runs LidarTracker itself and stops it on exit. Off: start it yourself. |
+| `input.lidar.serial_port` | auto | str | restart | LiDAR serial port — auto = find the LiDAR's USB adapter (CP210x). Or COM4, /dev/cu.usbserial-... Takes effect when the tracker starts. |
+| `input.lidar.tracker_window` | hidden | hidden, setup | restart | Tracker window — setup = the tracker's map and settings windows, for calibrating on site. |
+| `input.lidar.settings_file` | LIdar/game_settings.json | str | restart | Tracker calibration file — Written by the tracker's setup window. |
+| `input.lidar.replay_file` |  | str | restart | Play a recording instead — e.g. LIdar/samples/session_2players.pkl, to try it without the LiDAR. Empty = the real LiDAR. |
+| `input.lidar.port` | 7000 | 1024 … 65535 | restart | OSC port |
+| `input.lidar.bind` | 127.0.0.1 | 127.0.0.1, 0.0.0.0 | restart | Listen on — 0.0.0.0 if the tracker runs on another PC. |
+| `input.lidar.angle_offset_deg` | 0.0 | -180 … 180 ° | live | Angle offset — Turns every paddle around the circle until it is under the player's feet. |
+| `input.lidar.mirror_x` | False | bool | live | Mirror left / right — When the projection is mirrored against the floor. |
+| `input.lidar.mirror_y` | False | bool | live | Mirror up / down |
+| `input.lidar.swap_players` | False | bool | live | Swap players — Tracker player 1 drives game player 2, and the other way. |
+| `input.lidar.timeout_s` | 0.5 | 0.05 … 5 s | live | Message timeout — No message for this long: the player is absent. |
 | `input.filters.min_confidence` | 0.4 | 0 … 1 | live | Min confidence |
 | `input.filters.dead_zone` | 0.002 | 0 … 0.05 range | live | Dead zone |
 | `input.filters.max_jump_per_s` | 6.0 | 0.5 … 50 range/s | live | Spike rejection |

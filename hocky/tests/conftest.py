@@ -21,6 +21,16 @@ def cfg():
     return Config()
 
 
+@pytest.fixture(autouse=True)
+def _no_lidar_tracker(monkeypatch, request):
+    """A test that switches a player to "lidar" must not start a real tracker process on a serial port. Tests of the
+    tracker itself ask for it with @pytest.mark.real_tracker."""
+    if "real_tracker" not in request.keywords:
+        from market_hockey.inputs import lidar
+
+        monkeypatch.setattr(lidar.LidarAdapter, "_launch", lambda self: None)
+
+
 @pytest.fixture
 def engine(cfg):
     e = Engine(cfg, random.Random(3))

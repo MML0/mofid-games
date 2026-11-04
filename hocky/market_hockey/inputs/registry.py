@@ -13,6 +13,7 @@ ADAPTERS = {
     "ai": "ai:AIAdapter",
     "mouse": "mouse:MouseAdapter",
     "network": "network:NetworkAdapter",
+    "lidar": "lidar:LidarAdapter",
     "replay": "replay:ReplayAdapter",
 }
 

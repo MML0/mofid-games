@@ -584,7 +584,8 @@ def _core(sb: SchemaBuilder) -> None:
     # ------------------------------------------------------------------ inputs
     src = tuple(ADAPTERS)
     sb.section("Inputs", "Sources")
-    sb.e("input.p1.source", "keyboard", src, "Player 1 input", "network = LiDAR / CCTV pose tracker over UDP.")
+    sb.e("input.p1.source", "keyboard", src, "Player 1 input",
+         "lidar = the floor LiDAR (feet). network = another tracker sending JSON over UDP.")
     sb.e("input.p2.source", "keyboard", src, "Player 2 input")
     sb.section("Inputs", "Keyboard")
     sb.k("input.keyboard.p1_left", "a", "P1 left key")
@@ -620,6 +621,27 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("input.network.flip_x", False, "Flip X")
     sb.b("input.network.flip_y", False, "Flip Y")
     sb.f("input.network.timeout_s", 0.5, 0.05, 5, 0.05, "s", "Message timeout")
+    sb.section("Inputs", "LiDAR (floor feet tracker)")
+    sb.b("input.lidar.autostart", True, "Start the tracker with the game",
+         "The game runs LidarTracker itself and stops it on exit. Off: start it yourself.", live=False)
+    sb.s("input.lidar.serial_port", "auto", "LiDAR serial port",
+         "auto = find the LiDAR's USB adapter (CP210x). Or COM4, /dev/cu.usbserial-... Takes effect when the tracker starts.",
+         live=False)
+    sb.e("input.lidar.tracker_window", "hidden", ("hidden", "setup"), "Tracker window",
+         "setup = the tracker's map and settings windows, for calibrating on site.", live=False)
+    sb.s("input.lidar.settings_file", "LIdar/game_settings.json", "Tracker calibration file",
+         "Written by the tracker's setup window.", live=False)
+    sb.s("input.lidar.replay_file", "", "Play a recording instead",
+         "e.g. LIdar/samples/session_2players.pkl, to try it without the LiDAR. Empty = the real LiDAR.", live=False)
+    sb.i("input.lidar.port", 7000, 1024, 65535, 1, "", "OSC port", live=False)
+    sb.e("input.lidar.bind", "127.0.0.1", ("127.0.0.1", "0.0.0.0"), "Listen on",
+         "0.0.0.0 if the tracker runs on another PC.", live=False)
+    sb.f("input.lidar.angle_offset_deg", 0.0, -180, 180, 0.5, "°", "Angle offset",
+         "Turns every paddle around the circle until it is under the player's feet.")
+    sb.b("input.lidar.mirror_x", False, "Mirror left / right", "When the projection is mirrored against the floor.")
+    sb.b("input.lidar.mirror_y", False, "Mirror up / down")
+    sb.b("input.lidar.swap_players", False, "Swap players", "Tracker player 1 drives game player 2, and the other way.")
+    sb.f("input.lidar.timeout_s", 0.5, 0.05, 5, 0.05, "s", "Message timeout", "No message for this long: the player is absent.")
     sb.section("Inputs", "Filters & presence")
     sb.f("input.filters.min_confidence", 0.4, 0, 1, 0.01, "", "Min confidence")
     sb.f("input.filters.dead_zone", 0.002, 0, 0.05, 0.001, "range", "Dead zone")
