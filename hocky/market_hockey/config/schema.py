@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 TABS = [
     "Display & Projection",
@@ -207,10 +207,10 @@ def _core(sb: SchemaBuilder) -> None:
     sb.font("fonts.digits", "SF-Compact-Display-Heavy.ttf", "Digits font", "Timer, scores and countdown (always Latin digits).")
     sb.font("fonts.latin", "SF-Compact-Display-Bold.ttf", "Latin text font")
     sb.section("HUD & Text", "Messages")
-    sb.i("text.toast_size", 34, 14, 120, 1, "px", "Message size")
-    sb.i("text.banner_size", 56, 20, 200, 1, "px", "Banner size")
+    sb.i("text.toast_size", 26, 14, 120, 1, "px", "Message size")
+    sb.i("text.banner_size", 46, 20, 200, 1, "px", "Banner size")
     sb.f("text.toast_duration", 1.8, 0.3, 6, 0.1, "s", "Message duration")
-    sb.f("text.toast_radius", 0.52, 0.1, 0.9, 0.01, "×R", "Message distance from center")
+    sb.f("text.toast_radius", 0.66, 0.1, 0.9, 0.01, "×R", "Message distance from center")
     strings = [
         ("title", "هاکی بازار", "Title"),
         ("subtitle", "MARKET HOCKEY", "Subtitle"),
@@ -238,7 +238,9 @@ def _core(sb: SchemaBuilder) -> None:
     sb.i("match.duration_s", 60, 10, 900, 5, "s", "Match duration", "Applies from the next match.")
     sb.b("match.score_limit_enabled", True, "Score limit enabled")
     sb.i("match.score_limit", 7, 1, 50, 1, "goals", "Score limit")
-    sb.e("match.tie_rule", "draw", ("draw", "golden_goal"), "When time runs out tied")
+    sb.e("match.tie_rule", "draw", ("draw", "golden_goal"), "When time runs out tied",
+         "golden_goal: the clock stops and play goes on until someone scores, so the game always has a winner. "
+         "draw: the match ends level.")
     sb.section("Match & Scoring", "Flow")
     sb.e("match.start_mode", "operator_key", ("operator_key", "auto_when_both_present", "auto_loop"), "Start trigger",
          "operator_key = Space/Enter or the panel; auto modes start by themselves.")
@@ -370,11 +372,11 @@ def _core(sb: SchemaBuilder) -> None:
     # ------------------------------------------------------------------ power-ups (global)
     sb.section("Power-ups", "Spawning")
     sb.b("powerups.enabled", True, "Power-ups enabled")
-    sb.f("powerups.spawn_interval_min_s", 2.5, 0.5, 30, 0.5, "s", "Spawn interval min")
-    sb.f("powerups.spawn_interval_max_s", 5.0, 0.5, 60, 0.5, "s", "Spawn interval max")
-    sb.i("powerups.max_active_orbs", 3, 0, 8, 1, "", "Max orbs at once")
+    sb.f("powerups.spawn_interval_min_s", 1.5, 0.5, 30, 0.5, "s", "Spawn interval min")
+    sb.f("powerups.spawn_interval_max_s", 3.0, 0.5, 60, 0.5, "s", "Spawn interval max")
+    sb.i("powerups.max_active_orbs", 5, 0, 8, 1, "", "Max orbs at once")
     sb.i("powerups.max_bad_orbs", 1, 0, 8, 1, "", "Max red orbs at once")
-    sb.i("powerups.orb_radius", 30, 10, 90, 1, "px", "Orb radius")
+    sb.i("powerups.orb_radius", 60, 10, 90, 1, "px", "Orb radius")
     sb.f("powerups.hitbox_scale", 1.35, 0.5, 3.0, 0.05, "× orb", "Orb hitbox size", "Collection radius relative to the drawn orb.")
     sb.f("powerups.orb_lifetime_s", 9.0, 1, 60, 0.5, "s", "Orb lifetime")
     sb.f("powerups.spawn_anim_s", 0.35, 0.05, 2, 0.05, "s", "Spawn animation")
@@ -386,6 +388,13 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("powerups.no_repeat", True, "No same type twice in a row")
     sb.f("powerups.icon_scale", 0.62, 0.3, 1, 0.01, "× orb", "Icon size")
     sb.f("powerups.bob_px", 4.0, 0, 20, 0.5, "px", "Idle bob")
+    sb.section("Power-ups", "Floating text (when an orb is collected)")
+    sb.b("powerups.float_text.enabled", True, "Floating text enabled")
+    sb.f("powerups.float_text.duration_s", 0.8, 0.1, 3, 0.05, "s", "Duration", "From the pop to fully faded out.")
+    sb.b("powerups.float_text.hide_collector_message", True, "Hide the collector's side message",
+         "The floating text already says it. The opponent's message still shows.")
+    sb.i("powerups.float_text.size", 30, 14, 120, 1, "px", "Text size")
+    sb.i("powerups.float_text.rise_px", 120, 0, 500, 5, "px", "Float distance")
     sb.section("Power-ups", "Magnet (orbs drawn toward the ball)")
     sb.b("powerups.magnet.enabled", True, "Magnet enabled")
     sb.f("powerups.magnet.strength", 2200, 0, 10000, 10, "px/s²", "Pull strength")
@@ -516,6 +525,7 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("motion.splash", True, "Opening flood on launch")
     sb.b("motion.waiting_loop", True, "Loop on the waiting screen", "A 46 second show of every object, one after another.")
     sb.b("motion.on_goal", True, "Burst on goals")
+    sb.b("motion.planes", True, "Paper planes", "Off: no paper planes anywhere, in play or on any other screen.")
     sb.b("motion.in_play", True, "Paper planes during play", "They cross under the ball at the Level during play below.")
     sb.f("motion.plane_every_s", 14.0, 4, 60, 1, "s", "Plane interval during play")
     sb.section("Brand Motion", "Mofid logo")

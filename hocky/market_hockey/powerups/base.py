@@ -26,6 +26,8 @@ class PowerUpType:
     toast_c = ""  # message on the collector's side
     toast_o = ""  # message on the opponent's side
     banner = False  # also show the collector message as a central banner
+    glow = ""  # "#RRGGBB": its own glow and splash color; empty = the color of its class
+    float_text = ""  # pops up at the orb when collected; empty = the collector message
 
     # ---- schema ---------------------------------------------------------------
     def add_schema(self, sb) -> None:
@@ -43,6 +45,10 @@ class PowerUpType:
         sb.f(f"{p}.cooldown_s", 3.0, 0, 60, 0.5, "s", "Re-spawn cooldown")
         sb.s(f"{p}.toast_collector", self.toast_c, "Message (collector side)", rtl=True)
         sb.s(f"{p}.toast_opponent", self.toast_o, "Message (opponent side)", rtl=True)
+        sb.s(f"{p}.float_text", self.float_text, "Floating text",
+             "Pops up at the orb when it is collected. Empty: the collector message is used.", rtl=True)
+        sb.b(f"{p}.custom_color", bool(self.glow), "Use its own glow color", "Off: it glows in its color class.")
+        sb.c(f"{p}.glow_color", self.glow or "#FFFFFF", "Glow and splash color")
         self.extra_schema(sb, p)
 
     def extra_schema(self, sb, p: str) -> None:

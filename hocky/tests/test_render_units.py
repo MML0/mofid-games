@@ -183,6 +183,7 @@ def test_a_custom_icon_file_replaces_the_drawn_one(tmp_path, monkeypatch):
     img.fill((1, 2, 3, 255))
     pygame.image.save(img, str(tmp_path / "expand.png"))
     monkeypatch.setattr(icons, "ICONS_DIR", tmp_path)
+    monkeypatch.setattr(icons, "ORBS_DIR", tmp_path / "no_faces")  # a branded coin face would take priority
     s = icons.IconCache().icon("expand", "expand", 32)
     assert s.get_at((16, 16))[:3] == (1, 2, 3)
 

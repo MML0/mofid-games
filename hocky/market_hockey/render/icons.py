@@ -1,6 +1,7 @@
 """Procedural vector icons for power-ups, drawn with pygame primitives (crisp at any size).
 
-assets/icons/<type_id>.png overrides the procedural icon for that power-up.
+assets/icons/<type_id>.png overrides the procedural icon for that power-up. assets/orbs/<type_id>.png is a whole branded
+coin face (see tools/make_orb_faces.py): it fills the orb instead of sitting on it, and takes over the small icons too.
 """
 
 from __future__ import annotations
@@ -9,7 +10,7 @@ import math
 
 import pygame
 
-from ..paths import ICONS_DIR
+from ..paths import ICONS_DIR, ORBS_DIR
 
 
 def _aa_poly(s, color, pts):
@@ -130,12 +131,33 @@ class IconCache:
     def __init__(self):
         self.cache: dict = {}
         self.files: dict = {}
+        self.faces: dict = {}
+
+    def face(self, type_id: str) -> pygame.Surface | None:
+        """The power-up's branded coin face, or None if it has none."""
+        if type_id not in self.faces:
+            path = ORBS_DIR / f"{type_id}.png"
+            img = None
+            if path.exists():
+                try:
+                    img = pygame.image.load(str(path))
+                    if img.get_bitsize() != 32:
+                        img = None  # smoothscale needs the alpha channel that every generated face has
+                except pygame.error:
+                    img = None
+            self.faces[type_id] = img
+        return self.faces[type_id]
 
     def icon(self, name: str, type_id: str, size: int, color=(255, 255, 255)) -> pygame.Surface:
         size = max(8, int(size))
         key = (name, type_id, size, tuple(color))
         s = self.cache.get(key)
         if s is None:
+            face = self.face(type_id)
+            if face is not None:
+                s = pygame.transform.smoothscale(face, (size, size))
+                self.cache[key] = s
+                return s
             override = ICONS_DIR / f"{type_id}.png"
             if override.exists():
                 try:
@@ -167,8 +189,11 @@ class IconCache:
             col = tuple(int(v) for v in ring_color[:3])
             face = tuple(int(v * 0.72) for v in col)
             rim = tuple(int(v + (255 - v) * 0.55) for v in col)
-            lw = max(4, R4 // 8)
+            art = self.face(type_id)
+            lw = max(4, R4 // 12 if art is not None else R4 // 8)
             pygame.draw.circle(big, (*face, 255), (C, C), R4)
+            if art is not None:
+                big.blit(pygame.transform.smoothscale(art, (2 * R4, 2 * R4)), (C - R4, C - R4))
             if bad:
                 n = 12
                 rect = pygame.Rect(C - R4, C - R4, 2 * R4, 2 * R4)
@@ -177,6 +202,10 @@ class IconCache:
                     pygame.draw.arc(big, rim, rect, a0, a0 + math.tau / n * 0.62, lw)
             else:
                 pygame.draw.circle(big, rim, (C, C), R4, lw)
+            if art is not None:  # the client's artwork stays exactly as it was drawn: no bevel, shine or icon over it
+                s = pygame.transform.smoothscale(big, (S, S))
+                self.cache[key] = s
+                return s
             pygame.draw.circle(big, (*rim, 110), (C, C), int(R4 * 0.8), max(2, Q))  # the bevel, as on a coin
             shine = pygame.Surface((S * Q, S * Q), pygame.SRCALPHA)  # a soft light from above
             pygame.draw.ellipse(shine, (255, 255, 255, 34), pygame.Rect(C - R4 * 0.62, C - R4 * 0.86, R4 * 1.24, R4 * 0.8))

@@ -17,6 +17,8 @@ class TrajectoryReveal(PowerUpType):
     duration = 12.0
     unlock_phase = 2
     toast_c = "مسیر حرکت را تحلیل کن!"
+    float_text = "تحلیل مسیر"
+    glow = "#A35BFF"  # purple
     toast_o = ""
 
     def extra_schema(self, sb, p):

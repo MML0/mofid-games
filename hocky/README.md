@@ -28,7 +28,7 @@
 - 🪐 **Ten power-ups, each one file.** Orbs drift toward the ball like magnets. The market roulette freezes the ball, spins through possible paths and fires. Drop a new file in a folder and it shows up in the game, the JSON and the control panel.
 - 🔤 **Kinetic type backdrop.** A wave of stretching English letters in the brand colors behind the splash, countdown, goals and results, with every slider animated. Preview it with `tools/kinetic_lab.py`; see [the notes](docs/KINETIC_TYPOGRAPHY.md).
 - ✈️ **Moving brand objects.** Paper planes, flipping coins, pulsing rings, a dot grid with a heartbeat and a market chart, all made from the brand book's own shapes. They run on the waiting screen and at every big moment.
-- 🎛️ **581 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
+- 🎛️ **617 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
 - 🌟 **Made for a projector.** Dithered gradients with no banding, supersampled edges, soft additive glow, and a mask that keeps every pixel inside the circle. A test checks that promise frame by frame.
 - ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
 - 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
@@ -147,7 +147,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 ## Live editing and saving
 
 - Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
-- `settings_app.py` edits **every** setting (581) with sliders, exact-value fields, color pickers, dropdowns and key capture.
+- `settings_app.py` edits **every** setting (617) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
@@ -199,6 +199,7 @@ It appears in the spawner, the JSON and the control panel automatically.
 
 - **To remove a power-up**, untick *Enabled* (or delete the file).
 - **Custom icons**: put `assets/icons/<id>.png` in place to replace the drawn icon.
+- **Branded orbs**: `assets/orbs/<id>.png` is a whole round coin face, built from the client's artwork by `tools/make_orb_faces.py`. Each power-up also has its own glow color and the text that floats away when it is collected.
 - **Effect kinds** available to `self.effect(...)`: `paddle_size`, `ball_speed`, `dim`, `reveal`, `shield`, `bull`, `wobble`. Effects are computed from the active list every step, so expiry always restores the previous state.
 
 ## LiDAR: playing with your feet

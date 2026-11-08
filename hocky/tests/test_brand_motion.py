@@ -110,6 +110,27 @@ def test_planes_cross_during_play_only_when_allowed():
     assert not m.actors
 
 
+def test_the_planes_tick_removes_them_from_every_screen():
+    m = motion({"motion.planes": False, "motion.plane_every_s": 4.0}, state="PLAYING")
+    run(m, 6)
+    assert not any(isinstance(a, Plane) for a in m.actors)
+    m.cue_flood()
+    m.cue_market()
+    m.cue_pulse()
+    m.cue_goal(0)
+    m.cue_beat("go", 1.0)
+    assert m.actors and not any(isinstance(a, Plane) for a in m.actors)  # the rest of each moment still plays
+
+
+def test_unticking_planes_clears_those_already_in_the_air():
+    m = motion(state="PLAYING")
+    m.add(Plane(m, a0=0.5, dur=3.0))
+    run(m, 0.5)
+    m.cfg.set("motion.planes", False)
+    run(m, 2.0)
+    assert not any(isinstance(a, Plane) for a in m.actors)
+
+
 def test_all_marks_draw():
     m = motion()
     for name in MARKS:

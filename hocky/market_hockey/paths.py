@@ -26,6 +26,7 @@ ASSETS_DIR = APP_DIR / "assets" if (APP_DIR / "assets").exists() else BUNDLE_DIR
 FONTS_DIR = ASSETS_DIR / "fonts"
 SOUNDS_DIR = ASSETS_DIR / "sounds"
 ICONS_DIR = ASSETS_DIR / "icons"
+ORBS_DIR = ASSETS_DIR / "orbs"
 IMAGES_DIR = ASSETS_DIR / "images"
 LOGS_DIR = APP_DIR / "logs"
 DOCS_DIR = APP_DIR / "docs"

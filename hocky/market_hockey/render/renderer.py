@@ -68,6 +68,7 @@ class Renderer:
         self.rings: list[dict] = []
         self.toasts: list[dict] = []
         self.flights: list[dict] = []
+        self.floats: list[dict] = []
         self.wall_hits: list[tuple] = []
         self.banners: list[dict] = []
         self.pending_marks: list[dict] = []
@@ -395,7 +396,7 @@ class Renderer:
                     self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.4, r0=10, r1=60,
                                            color=(255, 255, 255), w=3))
             elif et == "orb_spawned":
-                col = c["class"].get(e["cls"], c["neutral"])
+                col = self._orb_color(e["type_id"], e["cls"])
                 self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.45, r0=6,
                                        r1=cfg["powerups.orb_radius"] * 2.2, color=boost(col, 0.2), w=3))
             elif et == "powerup_collected":
@@ -440,22 +441,33 @@ class Renderer:
             elif et == "match_start":
                 self.trails.clear()
                 self.toasts.clear()
+                self.floats.clear()
                 self.banners.clear()
                 self.pending_marks.clear()
             elif et == "state" and e["state"] in ("ATTRACT", "SERVE", "FINAL"):
                 if e["state"] == "ATTRACT":
                     self.toasts.clear()
+                    self.floats.clear()
                 self.banners.clear()
                 self.pending_marks.clear()
+
+    def _orb_color(self, type_id, cls) -> tuple:
+        """A power-up's glow and splash color: its own if it has one, otherwise its class color."""
+        pre = f"powerups.types.{type_id}"
+        if self.cfg.get(f"{pre}.custom_color", False):
+            return hex_rgb(self.cfg[f"{pre}.glow_color"])
+        return self.c["class"].get(cls, self.c["neutral"])
 
     def _on_collect(self, e, engine) -> None:
         cfg = self.cfg
         c = self.c
         cap = cfg["fx.max_particles"]
-        col_cls = c["class"].get(e["cls"], c["neutral"])
+        col_cls = self._orb_color(e["type_id"], e["cls"])
         col_team = c["teamb"][e["collector"]]
+        custom = cfg.get(f"powerups.types.{e['type_id']}.custom_color", False)
         self.particles.burst(e["x"], e["y"], col_cls, 30, (120, 360), (0.3, 0.8), cap=cap)
-        self.particles.burst(e["x"], e["y"], col_team, 24, (80, 300), (0.3, 0.8), cap=cap)
+        self.particles.burst(e["x"], e["y"], mix(col_cls, (255, 255, 255), 0.45) if custom else col_team, 24,
+                             (80, 300), (0.3, 0.8), cap=cap)
         self.rings.append(dict(x=e["x"], y=e["y"], t0=self.time, dur=0.5, r0=cfg["powerups.orb_radius"],
                                r1=cfg["powerups.orb_radius"] * 3, color=col_cls, w=4))
         t = engine.types.get(e["type_id"])
@@ -463,7 +475,12 @@ class Renderer:
                                  icon=t.icon if t else "", type_id=e["type_id"], color=col_cls))
         if engine.state == "ATTRACT" and not cfg["match.attract_toasts"]:
             return
-        if e.get("toast_c"):
+        text = e.get("float_text") or e.get("toast_c")
+        if text and cfg["powerups.float_text.enabled"]:
+            self.floats.append(dict(text=text, x=e["x"], y=e["y"], color=mix(col_cls, (255, 255, 255), 0.3),
+                                    t0=self.time, dur=cfg["powerups.float_text.duration_s"]))
+        floated = text and cfg["powerups.float_text.enabled"] and cfg["powerups.float_text.hide_collector_message"]
+        if e.get("toast_c") and not floated:
             self.toast(e["toast_c"], col_team, e["collector"], cls_color=col_cls)
         if e.get("toast_o"):
             self.toast(e["toast_o"], c["teamb"][1 - e["collector"]], 1 - e["collector"], cls_color=col_cls)
@@ -546,6 +563,7 @@ class Renderer:
         elif st in ("FINAL", "RESULT"):
             self._result(engine)
         self._toasts(engine)
+        self._floating_text()
         self._absent(engine)
         if engine.paused:
             self.dim.set_alpha(140)
@@ -817,7 +835,7 @@ class Renderer:
         for o in engine.orbs:
             t = engine.types.get(o.type_id)
             icon = t.icon if t else ""
-            cls_col = c["class"].get(o.cls, c["neutral"])
+            cls_col = self._orb_color(o.type_id, o.cls)
             if o.state == "spawning":
                 k = ease_out_back(o.state_t / max(0.01, cfg["powerups.spawn_anim_s"]))
                 a = 1.0
@@ -860,6 +878,11 @@ class Renderer:
                 body = body.copy()
                 body.set_alpha(int(255 * a))
             cx, cy = self.to_c(x, y)
+            if self.icons.face(o.type_id) is not None:
+                # the glow rings the coin and never lies over the client's artwork, so its colors stay true
+                hole = pygame.Rect(0, 0, max(2, body.get_width() - 8), max(2, body.get_height() - 8))
+                hole.center = (int(cx), int(cy))
+                self.add.mark(pygame.draw.ellipse(self.add.surf, (0, 0, 0), hole))
             self.canvas.blit(body, (int(cx - body.get_width() / 2), int(cy - body.get_height() / 2)))
             if o.state in ("spawning", "idle"):
                 # its time left as a ring of the brand's dots, going out one by one
@@ -1595,6 +1618,26 @@ class Renderer:
                           glow=0.35, at=pos)
             self._reserve(full.get_rect(center=pos))
         self.toasts = keep
+
+    def _floating_text(self) -> None:
+        """The text an orb leaves behind: it pops at the orb, floats away and is gone within its duration."""
+        cfg = self.cfg
+        g = self._g
+        size = cfg["powerups.float_text.size"]
+        rise = cfg["powerups.float_text.rise_px"]
+        ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))  # "up" for the text's reader
+        keep = []
+        for f in self.floats:
+            t = (self.time - f["t0"]) / max(0.01, f["dur"])
+            if t >= 1:
+                continue
+            keep.append(f)
+            k = 0.5 + 0.5 * ease_out_back(t / 0.28)
+            a = 1.0 - smoother((t - 0.45) / 0.55)
+            d = rise * ease_out_cubic(t)
+            self._text_at(f["text"], size, f["color"], f["x"] + ux * d, f["y"] + uy * d, alpha=a, scale_k=k, outline=3,
+                          glow=0.5)
+        self.floats = keep
 
     def _absent(self, engine) -> None:
         if engine.state in ("ATTRACT", "FINAL", "RESULT"):  # nobody needs to step in once the match is over

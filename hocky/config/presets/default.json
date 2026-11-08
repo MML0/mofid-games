@@ -78,10 +78,10 @@
   "text": {
     "shadow_alpha": 0.55,
     "shaping_backend": "auto",
-    "toast_size": 34,
-    "banner_size": 56,
+    "toast_size": 26,
+    "banner_size": 46,
     "toast_duration": 1.8,
-    "toast_radius": 0.52,
+    "toast_radius": 0.66,
     "title": "هاکی بازار",
     "subtitle": "MARKET HOCKEY",
     "attract_prompt": "برای شروع، روبه‌روی هم بایستید",
@@ -241,11 +241,11 @@
   },
   "powerups": {
     "enabled": true,
-    "spawn_interval_min_s": 2.5,
-    "spawn_interval_max_s": 5.0,
-    "max_active_orbs": 3,
+    "spawn_interval_min_s": 1.5,
+    "spawn_interval_max_s": 3.0,
+    "max_active_orbs": 5,
     "max_bad_orbs": 1,
-    "orb_radius": 30,
+    "orb_radius": 60,
     "hitbox_scale": 1.35,
     "orb_lifetime_s": 9.0,
     "spawn_anim_s": 0.35,
@@ -256,6 +256,13 @@
     "no_repeat": true,
     "icon_scale": 0.62,
     "bob_px": 4.0,
+    "float_text": {
+      "enabled": true,
+      "duration_s": 0.8,
+      "hide_collector_message": true,
+      "size": 30,
+      "rise_px": 120
+    },
     "magnet": {
       "enabled": true,
       "strength": 2200.0,
@@ -280,6 +287,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "پدلت بزرگ شد!",
         "toast_opponent": "",
+        "float_text": "بالکر بزرگ",
+        "custom_color": true,
+        "glow_color": "#3D97C9",
         "multiplier": 1.5
       },
       "shrink": {
@@ -293,6 +303,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "پدل حریف کوچک شد!",
         "toast_opponent": "پدلت کوچک شد!",
+        "float_text": "بالکر حریف کوچک",
+        "custom_color": true,
+        "glow_color": "#FF3B45",
         "multiplier": 0.6
       },
       "speed_up": {
@@ -306,6 +319,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "نوسان بازار افزایش یافت!",
         "toast_opponent": "",
+        "float_text": "زیاد شدن سرعت",
+        "custom_color": true,
+        "glow_color": "#D4B96F",
         "multiplier": 1.4,
         "scope": "this_ball"
       },
@@ -320,6 +336,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "",
         "toast_opponent": "",
+        "float_text": "",
+        "custom_color": false,
+        "glow_color": "#FFFFFF",
         "mode": "sequence",
         "title": "نوسان ناگهانی بازار!",
         "subtitle": "مسیر توپ به‌صورت تصادفی تغییر می‌کند",
@@ -350,6 +369,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "حجم معاملات افزایش یافت!",
         "toast_opponent": "",
+        "float_text": "دو توپ",
+        "custom_color": true,
+        "glow_color": "#3D9BFF",
         "mode": "delayed",
         "extra_balls": 1,
         "spawn_delay_s": 0.5,
@@ -370,6 +392,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "مسیر حرکت را تحلیل کن!",
         "toast_opponent": "",
+        "float_text": "تحلیل مسیر",
+        "custom_color": true,
+        "glow_color": "#A35BFF",
         "beneficiary": "collector"
       },
       "slow_down": {
@@ -383,6 +408,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "بازار وارد دوره‌ی آرام شد.",
         "toast_opponent": "",
+        "float_text": "",
+        "custom_color": false,
+        "glow_color": "#FFFFFF",
         "multiplier": 0.7,
         "scope": "this_ball"
       },
@@ -397,6 +425,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "بازار در مسیر اصلاح قرار گرفت.",
         "toast_opponent": "",
+        "float_text": "",
+        "custom_color": false,
+        "glow_color": "#FFFFFF",
         "alpha": 0.35,
         "min_visibility": 0.25
       },
@@ -411,6 +442,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "حد نوسان فعال شد!",
         "toast_opponent": "",
+        "float_text": "",
+        "custom_color": false,
+        "glow_color": "#FFFFFF",
         "coverage_percent": 100.0,
         "charges": 1
       },
@@ -425,6 +459,9 @@
         "cooldown_s": 3.0,
         "toast_collector": "بازار صعودی! گل بعدی دو امتیازی",
         "toast_opponent": "",
+        "float_text": "",
+        "custom_color": false,
+        "glow_color": "#FFFFFF",
         "multiplier": 2
       }
     }
@@ -533,6 +570,7 @@
     "splash": true,
     "waiting_loop": true,
     "on_goal": true,
+    "planes": true,
     "in_play": true,
     "plane_every_s": 14.0,
     "logo_waiting": true,
@@ -683,7 +721,7 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 13,
+    "schema_version": 14,
     "saved_at": "2026-11-04 20:38:21",
     "app": "Market Hockey"
   }
