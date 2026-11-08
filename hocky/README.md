@@ -28,7 +28,7 @@
 - 🪐 **Ten power-ups, each one file.** Orbs drift toward the ball like magnets. The market roulette freezes the ball, spins through possible paths and fires. Drop a new file in a folder and it shows up in the game, the JSON and the control panel.
 - 🔤 **Kinetic type backdrop.** A wave of stretching English letters in the brand colors behind the splash, countdown, goals and results, with every slider animated. Preview it with `tools/kinetic_lab.py`; see [the notes](docs/KINETIC_TYPOGRAPHY.md).
 - ✈️ **Moving brand objects.** Paper planes, flipping coins, pulsing rings, a dot grid with a heartbeat and a market chart, all made from the brand book's own shapes. They run on the waiting screen and at every big moment.
-- 🎛️ **580 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
+- 🎛️ **581 settings, all live.** Every speed, color, sound and Persian message has a slider or field, and most change the running game instantly over a local link. Nobody needs to touch code at the exhibition.
 - 🌟 **Made for a projector.** Dithered gradients with no banding, supersampled edges, soft additive glow, and a mask that keeps every pixel inside the circle. A test checks that promise frame by frame.
 - ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
 - 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
@@ -147,7 +147,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 ## Live editing and saving
 
 - Each power-up has its own page in the sidebar (◦ entries under *Power-ups*).
-- `settings_app.py` edits **every** setting (580) with sliders, exact-value fields, color pickers, dropdowns and key capture.
+- `settings_app.py` edits **every** setting (581) with sliders, exact-value fields, color pickers, dropdowns and key capture.
 - Changes go to the running game **live** over UDP on 127.0.0.1:9201. A green dot means the setting applies live; an orange dot means it applies on restart.
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
@@ -222,7 +222,7 @@ flowchart LR
 
 **Without the LiDAR**: set `Play a recording instead` to `LIdar/samples/session_2players.pkl` and `Tracker calibration file` to `LIdar/samples/session_2players.settings.json`: a recorded player walks along the left side.
 
-**What the game does with it**: only the angle is used, with no extra smoothing (the tracker already predicts and smooths at 60 Hz). A player nobody stands in for (`active 0`), or no message for `Message timeout`, reads as absent, as with every other source. Everything is under `Inputs → LiDAR`; the keyboard and the other sources still work, per player.
+**What the game does with it**: only the angle is used, with no extra smoothing (the tracker already predicts and smooths at 60 Hz). With `Paddle follows at once` (on by default) a LiDAR paddle also skips the paddle's `Max slide speed`, so when a player jumps or runs to another spot the paddle is there on the next frame (the tracker teleports it; see *Teleport from* in the tracker's Paddle tab). A player nobody stands in for (`active 0`), or no message for `Message timeout`, reads as absent, as with every other source. Everything is under `Inputs → LiDAR`; the keyboard and the other sources still work, per player.
 
 ## Adding a sensor
 

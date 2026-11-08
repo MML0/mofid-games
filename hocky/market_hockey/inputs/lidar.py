@@ -165,4 +165,4 @@ class LidarAdapter(InputAdapter):
         if engine is None:
             return PlayerSample(False, None, rec[3], now, xy, self.name)
         u = engine.geom.angle_to_u(idx, math.degrees(ang), engine.paddle_width(idx))
-        return PlayerSample(True, float(u), rec[3], now, xy, self.name)
+        return PlayerSample(True, float(u), rec[3], now, xy, self.name, bool(self.cfg["input.lidar.instant_paddle"]))

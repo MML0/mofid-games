@@ -520,7 +520,11 @@ class Engine:
             p.target = clamp(p.target, lo, hi)
             p.prev_theta = p.theta
             maxd = pp(cfg, i, "max_speed_deg_s") * dt
-            if pp(cfg, i, "follow_mode") == "spring":
+            if s is not None and s.present and s.u is not None and getattr(s, "instant", False):
+                # the source already smooths, limits and teleports: following it adds only lag
+                p.omega_s = 0.0
+                delta = p.target - p.theta
+            elif pp(cfg, i, "follow_mode") == "spring":
                 k = pp(cfg, i, "follow_stiffness")
                 p.omega_s += (k * k * (p.target - p.theta) - 2 * k * p.omega_s) * dt
                 delta = clamp(p.omega_s * dt, -maxd, maxd)

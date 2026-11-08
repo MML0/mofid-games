@@ -37,8 +37,13 @@ def _custom(k):
 GAME_TABS = [
 
     ("Lidar", [
-        Field("rotation", "Rotate map", 0.0, -180, 180, 0.5, "°",
+        Field("rotation", "Rotate map", 0.0, -180, 180, 0.05, "°",
               help="Turn all lidar points so the map matches the room."),
+        Field("lidar_scale", "Lidar scale", 1.0, 0.5, 2.0, 0.001, "x",
+              help="Makes the whole lidar map bigger or smaller around the lidar, "
+                   "without changing the arena circle. 1 = the lidar's real "
+                   "distances. The 4-point calibration (K in the Floor game "
+                   "window) sets this for you."),
         Field("flip_x", "Mirror X", False, help="Swap left and right (lidar mounted upside down)."),
         Field("flip_y", "Mirror Y", False, help="Swap down and up."),
         Field("min_distance", "Min distance", 100, 0, 1000, 10, "mm",
@@ -64,28 +69,34 @@ GAME_TABS = [
     ]),
 
     ("Arena", [
-        Field("diameter", "Diameter", 4000, 600, 10000, 10, "mm",
+        Field("diameter", "Diameter", 4000, 600, 10000, 1, "mm",
               help="Diameter of the game circle. Paddles always sit on this line. "
                    "You can also drag the circle on the map."),
-        Field("center_x", "Center X", 0, -5000, 5000, 10, "mm",
+        Field("center_x", "Center X", 0, -5000, 5000, 1, "mm",
               help="Arena center, left / right of the lidar. You can also drag the "
                    "center cross on the map."),
-        Field("center_y", "Center Y", 0, -5000, 5000, 10, "mm",
+        Field("center_y", "Center Y", 0, -5000, 5000, 1, "mm",
               help="Arena center, down / up of the lidar (or drag the cross)."),
-        Field("band_in", "Track inside", 600, 0, 3000, 10, "mm",
+        Field("band_in", "Track inside", 600, 0, 3000, 1, "mm",
               help="Feet up to this far INSIDE the circle belong to a player. "
                    "Anything deeper inside is ignored."),
-        Field("band_out", "Track outside", 600, 0, 3000, 10, "mm",
+        Field("band_out", "Track outside", 600, 0, 3000, 1, "mm",
               help="Feet up to this far OUTSIDE the circle belong to a player. "
                    "Anything farther out (spectators) is ignored."),
         Field("paddle_size", "Paddle size", 250, 50, 800, 10, "mm",
               help="Paddle diameter. Drawing only; the game decides collisions."),
+        Field("calib_radius", "Calib. points out", 85, 30, 100, 1, "%",
+              help="How far out the 4 calibration points sit, as % of the circle "
+                   "radius (K in the Floor game window)."),
+        Field("calib_turn", "Calib. points turn", 30, -180, 180, 1, "°",
+              help="Turns the 4 calibration points around the circle. Use it when "
+                   "one object hides another from the lidar."),
     ]),
 
     ("Players", [
         Field("players", "Players", 2, 1, MAX_PLAYERS, 1, "",
               help="Number of players. Each one owns one sector of the circle."),
-        Field("line_angle", "Line rotation", 90.0, -180, 180, 0.5, "°",
+        Field("line_angle", "Line rotation", 90.0, -180, 180, 0.05, "°",
               help="Angle of the first dividing line (0° = right, counter-clockwise). "
                    "Turns all sectors together. You can also drag a line's handle."),
         Field("border_gap", "Border limit", 10.0, 0.0, 45.0, 0.5, "°",
@@ -130,6 +141,13 @@ GAME_TABS = [
     ]),
 
     ("Paddle", [
+        Field("jump_distance", "Teleport from", 800, 0, 3000, 10, "mm",
+              help="When the feet show up this far from where the player was "
+                   "(a jump, a fast run, a new player), the player and the paddle "
+                   "go there at once instead of gliding. Feet outside the Player "
+                   "radius while the old spot is empty always teleport. Keep it "
+                   "above half a running stride (~700 mm) or the paddle hops each "
+                   "step. 0 = always glide (old behaviour)."),
         Field("correction_time", "Correction speed", 0.12, 0.0, 2.0, 0.01, "s",
               help="How fast the player position follows the feet. Lower = "
                    "faster, higher = smoother."),
@@ -283,8 +301,8 @@ class GameSettings(Settings):
     def to_world(self, angle, dist):
 
         a = np.radians(angle + self.rotation)
-        x = np.cos(a) * dist
-        y = np.sin(a) * dist
+        x = np.cos(a) * dist * self.lidar_scale
+        y = np.sin(a) * dist * self.lidar_scale
 
         if self.flip_x:
             x = -x
@@ -325,8 +343,9 @@ class GameSettings(Settings):
 
 
     def reach(self):
+        """Farthest raw lidar distance that can land on the tracking band."""
 
-        return math.hypot(self.center_x, self.center_y) + self.radius + self.band_out
+        return (math.hypot(self.center_x, self.center_y) + self.radius + self.band_out) / self.lidar_scale
 
 
     def output(self, x, y):

@@ -47,8 +47,8 @@ RING = (24, 26, 32)
 GUIDE = {
     "Lidar": [
         "1. Keep the floor empty and press Scan background.",
-        "2. Rotate / mirror until the map matches the room (red line = lidar 0°).",
-        "3. White points on the empty floor are noise: raise Background gap.",
+        "2. White points on the empty floor are noise: raise Background gap.",
+        "3. Press K in the Floor game window to calibrate with 4 objects.",
     ],
     "Arena": [
         "Drag the circle onto the play area: the cross moves it, the edge sets the size.",
@@ -92,6 +92,7 @@ def main():
     last_message = 0.0
     calib_left = None
     calib_at = 0.0
+    calib_rev = 0           # newest 4-point calibration already shown on the sliders
 
 
     # -------------------------
@@ -186,6 +187,12 @@ def main():
             # P in the game window switched the game dots: show it here too
             if "game_dots" in message and bool(message["game_dots"]) != cfg.game_dots:
                 cfg.game_dots = bool(message["game_dots"])
+
+            # the 4-point calibration in the game window moved the sliders
+            if message.get("calib_rev", 0) != calib_rev:
+                calib_rev = message["calib_rev"]
+                cfg.apply(message["calib_values"])
+                panel.flash("Calibrated")
 
             if "x" in message:
                 points = (unpack_array(message["x"]), unpack_array(message["y"]),

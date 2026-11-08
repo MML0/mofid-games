@@ -20,6 +20,8 @@ Run     python floor_game.py --port COM4
 
 Keys    P lidar dots on / off   V fit view   F fullscreen   S open the setup window
         B scan background   H key hint   ESC quit
+        K calibrate with 4 points on the floor (see calibration.py)
+        C put the circle back after the lidar got bumped (one object on a point)
 Mouse   drag move the map, wheel zoom
 
 OSC     /paddle [player, x, y, angle, active, confidence]   every frame
@@ -37,9 +39,10 @@ import time
 
 import numpy as np
 
+from calibration import CHANGED, Calibrator
 from feet_tracker import Game
 from game_settings import GameSettings
-from game_view import BACK, DIM, TEXT, View, draw_arena, draw_chips, snapshot
+from game_view import BACK, DIM, TEXT, View, draw_arena, draw_calibration, draw_chips, snapshot
 from lib import Scan
 from link import ENGINE_PORT, SETUP_PORT, Endpoint, pack_array
 from use_lib import BG_BIN, Background, make_blobs, scan_background
@@ -210,6 +213,9 @@ class Engine:
         self.rescan = False
         self.last_link = 0.0
         self.centers = (np.arange(self.background.bins) + 0.5) * BG_BIN
+        self.calib = Calibrator(cfg)
+        self.loose = None           # calibrating: new points anywhere, not only near the circle
+        self.calib_rev = 0          # counts calibrations so the setup window follows them
 
 
     # -------------------------
@@ -259,6 +265,11 @@ class Engine:
             self.game.update_scan(self.blobs, scan.t)
             self.new_scan = True
 
+            if self.calib.active and self.background.threshold is not None:
+                bg = self.background
+                self.loose = (scan.dist >= cfg.min_distance) & (scan.dist < bg.threshold[bg._bin(scan.angle)])
+                self.calib.feed(make_blobs(scan, self.x, self.y, self.loose, cfg), scan.t)
+
         now = time.monotonic()
         self.game.step(now)
         self.send_osc()
@@ -266,6 +277,20 @@ class Engine:
         if now - self.last_link >= 1 / SETUP_FPS:
             self.last_link = now
             self.send_setup()
+
+
+    def calibration_changed(self):
+        """The 4-point calibration changed the map: use it now, save it, tell the setup window."""
+
+        self.background.update_split()
+        self.lidar.split_angle = self.background.split_angle
+        self.game.reset()
+        self.calib_rev += 1
+
+        try:
+            self.cfg.save()
+        except OSError as e:
+            self.calib.message += f"   Not saved: {e}"
 
 
     def snap(self):
@@ -301,6 +326,10 @@ class Engine:
         message["crc"] = self.lidar.crc_errors
         message["blobs"] = len(self.blobs)
         message["game_dots"] = bool(self.cfg.game_dots)     # P in the game window changes it
+
+        if self.calib_rev:      # sent every time, so a lost packet does not matter
+            message["calib_rev"] = self.calib_rev
+            message["calib_values"] = {k: getattr(self.cfg, k) for k in CHANGED}
 
         if scan is not None and self.new_scan:
             self.new_scan = False
@@ -410,6 +439,7 @@ def run_window(engine, setup=True, run_time=None, shot=None):
     hint_until = time.time() + 8
     fullscreen = False
     setup_proc = open_setup(cfg) if setup else None
+    cal = engine.calib
 
 
     def draw_dots():
@@ -422,7 +452,8 @@ def run_window(engine, setup=True, run_time=None, shot=None):
         sx = (w / 2 + (engine.x - view.x) * z).astype(np.int32)
         sy = (h / 2 - (engine.y - view.y) * z).astype(np.int32)
         ok = (sx >= 0) & (sx < w - 3) & (sy >= 0) & (sy < h - 3)
-        feet = engine.mask if engine.mask is not None else np.zeros(len(sx), bool)
+        feet = engine.loose if cal.active and engine.loose is not None else engine.mask
+        feet = feet if feet is not None else np.zeros(len(sx), bool)
 
         for px, py in zip(sx[ok & ~feet].tolist(), sy[ok & ~feet].tolist()):
             screen.fill((40, 75, 125), (px, py, 2, 2))
@@ -450,6 +481,45 @@ def run_window(engine, setup=True, run_time=None, shot=None):
         return engine.calibrate(progress)
 
 
+    def open_calibration(message=""):
+
+        nonlocal auto_view
+
+        auto_view = True            # the points must be where the floor shows them
+        engine.loose = None
+        cal.start(message)
+
+
+    def calibration_key(key):
+        """Keys of the calibration mode. Returns True when it used the key."""
+
+        nonlocal auto_view
+
+        if key in (pygame.K_k, pygame.K_ESCAPE):
+            cal.stop()
+
+        elif key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_c):
+            if cal.apply(shift_only=key == pygame.K_c):
+                engine.calibration_changed()
+                auto_view = True
+
+        elif key == pygame.K_a:
+            cal.auto()
+
+        elif key == pygame.K_u:
+            if cal.undo():
+                engine.calibration_changed()
+                auto_view = True
+
+        elif key == pygame.K_r:
+            cal.reset_points()
+
+        else:
+            return False
+
+        return True
+
+
     try:
         if not calibrate():
             return
@@ -468,7 +538,16 @@ def run_window(engine, setup=True, run_time=None, shot=None):
 
                 elif event.type == pygame.KEYDOWN:
 
-                    if event.key == pygame.K_ESCAPE:
+                    if cal.active and calibration_key(event.key):
+                        pass
+
+                    elif event.key == pygame.K_k:
+                        open_calibration()
+
+                    elif event.key == pygame.K_c:
+                        open_calibration("Put an object on any point, then press C again.")
+
+                    elif event.key == pygame.K_ESCAPE:
                         if fullscreen:
                             fullscreen = False
                             screen = pygame.display.set_mode((GAME_SIZE, GAME_SIZE), pygame.RESIZABLE)
@@ -507,7 +586,12 @@ def run_window(engine, setup=True, run_time=None, shot=None):
                     view.zoom_at(1.15 ** event.y, pygame.mouse.get_pos())
 
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
-                    pan = (event.pos, view.x, view.y)
+                    if not (cal.active and (cal.grab(view, event.pos) if event.button == 1
+                                            else cal.clear(view, event.pos))):
+                        pan = (event.pos, view.x, view.y)
+
+                elif event.type == pygame.MOUSEMOTION and cal.drag is not None:
+                    cal.move(view, event.pos)
 
                 elif event.type == pygame.MOUSEMOTION and pan is not None:
                     (sx, sy), vx, vy = pan
@@ -519,6 +603,8 @@ def run_window(engine, setup=True, run_time=None, shot=None):
 
                 elif event.type == pygame.MOUSEBUTTONUP and event.button in (1, 3):
                     pan = None
+                    if cal.drag is not None and event.button == 1:
+                        cal.release(view)
 
             if engine.rescan:
                 engine.rescan = False
@@ -526,6 +612,7 @@ def run_window(engine, setup=True, run_time=None, shot=None):
                     break
 
             engine.tick(0.001)
+            cal.sync()
 
             # the circle with its paddles fills the window
             w, h = screen.get_size()
@@ -536,14 +623,17 @@ def run_window(engine, setup=True, run_time=None, shot=None):
 
             screen.fill(BACK)
 
-            if cfg.game_dots:
+            if cfg.game_dots or cal.active:
                 draw_dots()
 
             draw_arena(screen, view, cfg, engine.snap(), label_font)
             draw_chips(screen, font, engine.snap(), 10, 6)
 
+            if cal.active:
+                draw_calibration(screen, view, cal, font, big)
+
             if time.time() < hint_until:
-                hint = "drag move   wheel zoom   V fit   P lidar dots   F fullscreen   S setup   H help"
+                hint = "drag move   wheel zoom   V fit   P lidar dots   F fullscreen   S setup   K calibrate   H help"
                 screen.blit(font.render(hint, True, (70, 74, 86)), (10, h - 26))
 
             pygame.display.flip()

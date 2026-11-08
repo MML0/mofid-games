@@ -234,7 +234,7 @@ def make_blobs(scan, x, y, mask, cfg):
         if width > cfg.max_width:
             continue
 
-        dist = float(np.median(scan.dist[idx[g]]))
+        dist = float(np.median(scan.dist[idx[g]])) * getattr(cfg, "lidar_scale", 1.0)
 
         # beams a min_width object covers at this distance (fingers far away
         # are hit by only 1-2 beams)

@@ -39,6 +39,11 @@ def feet_at(angle, r, spread=150, noise=8, lift=None):
     return out
 
 
+def blob_at(angle, r):
+    a = math.radians(angle)
+    return (math.cos(a) * r, math.sin(a) * r, 20, 120)
+
+
 def run(cfg, frames):
     """frames: list of blob lists, one per scan at 10 Hz. Returns per-scan (players, paddles)."""
     g = Game(cfg)
@@ -147,12 +152,58 @@ frames = [[(random.uniform(-2500, 2500), random.uniform(-2500, 2500), 3, 40)] if
 g, h = run(cfg, frames)
 check("random single-scan noise: no player", not any(any(p[0] for p in x[0]) for x in h))
 
-# 11. reacquire: P1 lost, then player re-appears 60 deg away -> paddle glides (no jump)
+# 11. reacquire: P1 lost, then player re-appears 60 deg away -> paddle teleports there
 frames = [feet_at(150, 2000) for _ in range(20)] + [[] for _ in range(15)] + [feet_at(210, 2000) for _ in range(30)]
 g, h = run(cfg, frames)
-steps = [angdiff(h[i][1][0], h[i - 1][1][0]) for i in range(36, 65)]
-check("reacquire: glides, max step per scan <= speed limit", max(steps) <= math.degrees(cfg.paddle_speed / cfg.radius) * 0.1 + 0.01, f"{max(steps):.2f}")
+first = next(i for i in range(35, 65) if h[i][0][0][0])          # first scan the player is back
+check("reacquire far: paddle at the new spot within 0.2 s", angdiff(h[first + 1][1][0], 210) < 2, f"{h[first + 1][1][0]:.1f}")
 check("reacquire: ends at new spot", angdiff(h[-1][1][0], 210) < 1, f"{h[-1][1][0]:.1f}")
+cfg.jump_distance = 0                                            # teleport off: the old glide
+g, h = run(cfg, frames)
+steps = [angdiff(h[i][1][0], h[i - 1][1][0]) for i in range(36, 65)]
+check("teleport off: glides, max step per scan <= speed limit", max(steps) <= math.degrees(cfg.paddle_speed / cfg.radius) * 0.1 + 0.01, f"{max(steps):.2f}")
+cfg.jump_distance = 800
+
+# 11b. jump to another spot (1.4 m away, 0.2 s in the air): no waiting for "Hold when airborne"
+frames = [feet_at(150, 2000) for _ in range(20)] + [[] for _ in range(2)] + [feet_at(190, 2000) for _ in range(20)]
+g, h = run(cfg, frames)
+check("jump away: paddle there 0.2 s after landing (hold is 1 s)", angdiff(h[23][1][0], 190) < 2, f"{h[23][1][0]:.1f}")
+check("jump away: no step back toward the old spot", all(angdiff(h[i][1][0], 190) < 2 for i in range(23, 42)))
+g, h = run(cfg, [feet_at(150, 2000) for _ in range(20)] + [feet_at(190, 2000) for _ in range(20)])
+check("hop without airtime: paddle there within 0.2 s", angdiff(h[21][1][0], 190) < 2, f"{h[21][1][0]:.1f}")
+
+# 11b2. someone already stands in P1's sector; P1's feet vanish for a scan -> P1 must not jump to them
+frames = [feet_at(200, 2000) + feet_at(140, 2050) for _ in range(20)]
+frames += [feet_at(140, 2050)] * 2 + [feet_at(200, 2000) + feet_at(140, 2050) for _ in range(10)]
+g, h = run(cfg, frames)
+check("feet blink, other person standing: P1 stays (no jump)", all(angdiff(x[1][0], 200) < 2 for x in h[15:]),
+      f"{min(x[1][0] for x in h[15:]):.1f}..{max(x[1][0] for x in h[15:]):.1f}")
+
+# 11b3. a still object in P1's sector blinks out and back while P1's feet are hidden -> no jump to it
+frames = [feet_at(200, 2000) + [blob_at(140, 2050)] for _ in range(20)]
+frames += [[] for _ in range(6)]                                # object and player both unseen 0.6 s
+frames += [[blob_at(140, 2050)]] * 3 + [feet_at(200, 2000) + [blob_at(140, 2050)] for _ in range(5)]   # < hold_time
+g, h = run(cfg, frames)
+check("still object blinks back: P1 doesn't jump to it", all(angdiff(x[1][0], 200) < 2 for x in h[15:]),
+      f"{min(x[1][0] for x in h[15:]):.1f}..{max(x[1][0] for x in h[15:]):.1f}")
+
+# 11b4. hopping A -> B -> A -> B, 0.6 s on each spot: every hop teleports
+spots = [150, 190, 150, 190]
+frames = [feet_at(150, 2000) for _ in range(15)]
+for a in spots[1:]:
+    frames += [[]] + [feet_at(a, 2000) for _ in range(6)]
+g, h = run(cfg, frames)
+late = [angdiff(h[15 + 7 * k + 3][1][0], a) for k, a in enumerate(spots[1:])]   # 0.2 s after each landing
+check("hop back and forth: paddle on each spot 0.2 s after landing", max(late) < 2, str([round(x, 1) for x in late]))
+
+# 11c. running 3 m/s: every step is a new foot 0.9 m ahead; the old spot must not hold it back
+frames, truth = walk_frames(3000, n=15, start=110, period=0.6, swing=0.3)   # stays in P1's sector
+g, h = run(cfg, frames)
+signed = [(x[1][0] - truth[i] + 180) % 360 - 180 for i, x in enumerate(h) if i > 5]
+# the feet land up to 0.9 m ahead of the body here, so the paddle may be ahead, never far behind
+check("run 3000 mm/s: never trails behind (> -3 deg)", min(signed) > -3, f"min {min(signed):.2f}")
+check("run 3000 mm/s: within one stride (< 26 deg = 900 mm)", max(map(abs, signed)) < 26, f"max {max(map(abs, signed)):.2f}")
+check("run 3000 mm/s: player never lost", all(x[0][0][0] for x in h[3:]))
 
 # 12. sector handover hysteresis: foot straddling the line jitters +-2 deg -> no owner flicker
 frames = [feet_at(90 + random.uniform(-2, 2), 2000, spread=30) for _ in range(40)]
@@ -161,10 +212,6 @@ owners = [x[0][0][0] for x in h[5:]]
 check("border jitter: one owner only (no flicker)", len(set(owners)) == 1)
 
 # 12b. object appears next to a standing player (one foot missed for a scan): no ID steal
-def blob_at(angle, r):
-    a = math.radians(angle)
-    return (math.cos(a) * r, math.sin(a) * r, 20, 120)
-
 g = Game(cfg); t = 100.0
 for i in range(30):
     g.update_scan(feet_at(180, 2000, noise=3), t); g.step(t); t += 0.1
