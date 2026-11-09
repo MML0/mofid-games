@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.5-00B8A0" alt="Download v1.0.5"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.6-00B8A0" alt="Download v1.0.6"></a>
   <img src="https://img.shields.io/badge/tests-850%2B-00B8A0" alt="850+ tests">
   <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
   <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
