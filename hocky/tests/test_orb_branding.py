@@ -15,7 +15,7 @@ from market_hockey.render.renderer import Renderer
 
 BRANDED = {"expand": "بالکر بزرگ", "speed_up": "زیاد شدن سرعت", "double_ball": "دو توپ", "shrink": "بالکر حریف کوچک",
            "trajectory_reveal": "تحلیل مسیر"}
-OWN_COLOR = {"expand": "#3D97C9", "speed_up": "#D4B96F", "double_ball": "#3D9BFF", "shrink": "#FF3B45",
+OWN_COLOR = {"expand": "#3CAA5C", "speed_up": "#D4B96F", "double_ball": "#3D9BFF", "shrink": "#FF3B45",
              "trajectory_reveal": "#A35BFF"}
 
 

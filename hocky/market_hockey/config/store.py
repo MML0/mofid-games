@@ -209,6 +209,11 @@ V14_DEFAULT_CHANGES = {
     "text.toast_radius": (0.52, 0.66),
 }
 
+V15_DEFAULT_CHANGES = {
+    "powerups.max_active_orbs": (5, 4),
+    "powerups.types.expand.glow_color": ("#3D97C9", "#3CAA5C"),
+}
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
                               4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
@@ -218,7 +223,8 @@ MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: 
                               10: _changes(V11_DEFAULT_CHANGES),
                               11: _changes(V12_DEFAULT_CHANGES),
                               12: _changes(V13_DEFAULT_CHANGES),
-                              13: _changes(V14_DEFAULT_CHANGES)}
+                              13: _changes(V14_DEFAULT_CHANGES),
+                              14: _changes(V15_DEFAULT_CHANGES)}
 
 
 class Config:

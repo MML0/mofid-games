@@ -16,6 +16,7 @@ class Shrink(PowerUpType):
     float_text = "بالکر حریف کوچک"
     glow = "#FF3B45"  # red
     toast_o = "پدلت کوچک شد!"
+    max_per_match = 2  # a shrunken paddle is no fun more than twice a game
 
     def extra_schema(self, sb, p):
         sb.f(f"{p}.multiplier", 0.6, 0.2, 0.95, 0.05, "×", "Size multiplier")

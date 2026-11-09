@@ -61,6 +61,7 @@ class Engine:
         self.next_spawn = 2.0
         self.last_type: str | None = None
         self.type_cd: dict[str, float] = {}
+        self.spawn_counts: dict[str, int] = {}  # orbs of each type spawned this game (powerups.types.*.max_per_match)
         self.match_count = 0
         self.last_first_serve = 1
         self.last_receiver: int | None = None
@@ -211,6 +212,7 @@ class Engine:
         self.goal_info = None
         self.next_spawn = cfg["powerups.spawn_interval_min_s"] * 0.5
         self.type_cd.clear()
+        self.spawn_counts.clear()
         self.last_type = None
         self.stats = _new_stats()
         self.match_count += 1
@@ -229,6 +231,7 @@ class Engine:
         self.golden = False
         self.winner = None
         self.pending_spawns.clear()
+        self.spawn_counts.clear()
         self._clear_used_names()  # back to the waiting screen: wait for the next players' names
         self.pending_demo_serve = (self.rng.choice((0, 1)), self.time + 1.0)
         self._set_state(ATTRACT)
@@ -842,6 +845,11 @@ class Engine:
         if phase in (0, 4):
             return
         self.next_spawn -= dt
+        floor = min(cfg["powerups.min_active_orbs"], cfg["powerups.max_active_orbs"])
+        if len(self._active_orbs()) < floor:
+            # too few on the field: one more right now, bending the cooldown / conflict rules if that is the only way
+            if self._spawn_orb(phase=phase) or self._spawn_orb(phase=phase, relaxed=True):
+                return
         if self.next_spawn > 0:
             return
         lo, hi = cfg["powerups.spawn_interval_min_s"], cfg["powerups.spawn_interval_max_s"]
@@ -852,9 +860,14 @@ class Engine:
     def _type_class(self, tid: str) -> str:
         return self.cfg[f"powerups.types.{tid}.class"]
 
-    def _spawn_orb(self, phase: int = 3, forced_type: str | None = None) -> Orb | None:
+    def _active_orbs(self) -> list[Orb]:
+        return [o for o in self.orbs if o.state in ("spawning", "idle")]
+
+    def _spawn_orb(self, phase: int = 3, forced_type: str | None = None, relaxed: bool = False) -> Orb | None:
+        """Spawn one orb. `relaxed` ignores the re-spawn cooldowns, the conflict rule and no-repeat (used to keep
+        the minimum on the field); uniqueness, the per-game limits and the red-orb cap always hold."""
         cfg = self.cfg
-        active = [o for o in self.orbs if o.state in ("spawning", "idle")]
+        active = self._active_orbs()
         if forced_type is None and len(active) >= cfg["powerups.max_active_orbs"]:
             return None
         g = self.geom
@@ -877,6 +890,7 @@ class Engine:
             tid = forced_type
         else:
             bad_active = sum(1 for o in active if o.cls == "bad")
+            on_field = {o.type_id for o in active}
             cands = []
             for tid, t in self.types.items():
                 pre = f"powerups.types.{tid}"
@@ -884,16 +898,21 @@ class Engine:
                     continue
                 if cfg[f"{pre}.unlock_phase"] > max(1, phase):
                     continue
-                if self.time < self.type_cd.get(tid, -1):
+                if cfg["powerups.unique_orbs"] and tid in on_field:
+                    continue
+                cap = cfg[f"{pre}.max_per_match"]
+                if cap and self.spawn_counts.get(tid, 0) >= cap:
+                    continue
+                if self.time < self.type_cd.get(tid, -1) and not relaxed:
                     continue
                 if self._type_class(tid) == "bad" and bad_active >= cfg["powerups.max_bad_orbs"]:
                     continue
-                if cfg["powerups.avoid_conflicting_spawns"] and t.group:
+                if cfg["powerups.avoid_conflicting_spawns"] and t.group and not relaxed:
                     if self.effects.group_active(t.group) or any(
                             self.types[o.type_id].group == t.group for o in active):
                         continue
                 cands.append((tid, cfg[f"{pre}.weight"]))
-            if cfg["powerups.no_repeat"] and len(cands) > 1:
+            if cfg["powerups.no_repeat"] and len(cands) > 1 and not relaxed:
                 cands = [c for c in cands if c[0] != self.last_type] or cands
             if not cands:
                 return None
@@ -924,6 +943,7 @@ class Engine:
         self._next_orb_id += 1
         self.orbs.append(orb)
         self.last_type = tid
+        self.spawn_counts[tid] = self.spawn_counts.get(tid, 0) + 1
         self.emit("orb_spawned", orb_id=orb.id, type_id=tid, cls=orb.cls, x=x, y=y)
         return orb
 

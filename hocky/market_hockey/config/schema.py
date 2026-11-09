@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 
 TABS = [
     "Display & Projection",
@@ -374,7 +374,11 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("powerups.enabled", True, "Power-ups enabled")
     sb.f("powerups.spawn_interval_min_s", 1.5, 0.5, 30, 0.5, "s", "Spawn interval min")
     sb.f("powerups.spawn_interval_max_s", 3.0, 0.5, 60, 0.5, "s", "Spawn interval max")
-    sb.i("powerups.max_active_orbs", 5, 0, 8, 1, "", "Max orbs at once")
+    sb.i("powerups.min_active_orbs", 2, 0, 8, 1, "", "Min orbs at once",
+         "When fewer are on the field, a new one spawns right away (cooldowns and the conflict rule are relaxed "
+         "if needed). No orbs spawn in the warm-up and final phases.")
+    sb.i("powerups.max_active_orbs", 4, 0, 8, 1, "", "Max orbs at once")
+    sb.b("powerups.unique_orbs", True, "Unique orbs", "Never two orbs of the same power-up on the field at once.")
     sb.i("powerups.max_bad_orbs", 1, 0, 8, 1, "", "Max red orbs at once")
     sb.i("powerups.orb_radius", 60, 10, 90, 1, "px", "Orb radius")
     sb.f("powerups.hitbox_scale", 1.35, 0.5, 3.0, 0.05, "× orb", "Orb hitbox size", "Collection radius relative to the drawn orb.")

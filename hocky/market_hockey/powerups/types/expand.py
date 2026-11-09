@@ -13,7 +13,7 @@ class Expand(PowerUpType):
     unlock_phase = 1
     toast_c = "پدلت بزرگ شد!"
     float_text = "بالکر بزرگ"
-    glow = "#3D97C9"  # the blue of its طرح حامی icon
+    glow = "#3CAA5C"  # the green of its طرح حامی face
 
     def extra_schema(self, sb, p):
         sb.f(f"{p}.multiplier", 1.5, 1.05, 3.0, 0.05, "×", "Size multiplier")

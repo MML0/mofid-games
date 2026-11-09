@@ -255,7 +255,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.enabled` | True | bool | live | Power-ups enabled |
 | `powerups.spawn_interval_min_s` | 1.5 | 0.5 … 30 s | live | Spawn interval min |
 | `powerups.spawn_interval_max_s` | 3.0 | 0.5 … 60 s | live | Spawn interval max |
-| `powerups.max_active_orbs` | 5 | 0 … 8 | live | Max orbs at once |
+| `powerups.min_active_orbs` | 2 | 0 … 8 | live | Min orbs at once — When fewer are on the field, a new one spawns right away (cooldowns and the conflict rule are relaxed if needed). No orbs spawn in the warm-up and final phases. |
+| `powerups.max_active_orbs` | 4 | 0 … 8 | live | Max orbs at once |
+| `powerups.unique_orbs` | True | bool | live | Unique orbs — Never two orbs of the same power-up on the field at once. |
 | `powerups.max_bad_orbs` | 1 | 0 … 8 | live | Max red orbs at once |
 | `powerups.orb_radius` | 60 | 10 … 90 px | live | Orb radius |
 | `powerups.hitbox_scale` | 1.35 | 0.5 … 3.0 × orb | live | Orb hitbox size — Collection radius relative to the drawn orb. |
@@ -291,11 +293,12 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.expand.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.expand.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.expand.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.expand.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.expand.toast_collector` | پدلت بزرگ شد! | str | live | Message (collector side) |
 | `powerups.types.expand.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.expand.float_text` | بالکر بزرگ | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
 | `powerups.types.expand.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
-| `powerups.types.expand.glow_color` | #3D97C9 | color | live | Glow and splash color |
+| `powerups.types.expand.glow_color` | #3CAA5C | color | live | Glow and splash color |
 | `powerups.types.expand.multiplier` | 1.5 | 1.05 … 3.0 × | live | Size multiplier |
 | `powerups.types.shrink.enabled` | True | bool | live | Enabled |
 | `powerups.types.shrink.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
@@ -305,6 +308,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.shrink.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.shrink.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.shrink.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.shrink.max_per_match` | 2 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.shrink.toast_collector` | پدل حریف کوچک شد! | str | live | Message (collector side) |
 | `powerups.types.shrink.toast_opponent` | پدلت کوچک شد! | str | live | Message (opponent side) |
 | `powerups.types.shrink.float_text` | بالکر حریف کوچک | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -319,6 +323,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.speed_up.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.speed_up.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.speed_up.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.speed_up.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.speed_up.toast_collector` | نوسان بازار افزایش یافت! | str | live | Message (collector side) |
 | `powerups.types.speed_up.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.speed_up.float_text` | زیاد شدن سرعت | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -334,6 +339,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.chaos.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.chaos.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.chaos.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.chaos.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.chaos.toast_collector` |  | str | live | Message (collector side) |
 | `powerups.types.chaos.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.chaos.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -365,6 +371,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.double_ball.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.double_ball.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.double_ball.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.double_ball.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.double_ball.toast_collector` | حجم معاملات افزایش یافت! | str | live | Message (collector side) |
 | `powerups.types.double_ball.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.double_ball.float_text` | دو توپ | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -386,6 +393,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.trajectory_reveal.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.trajectory_reveal.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.trajectory_reveal.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.trajectory_reveal.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.trajectory_reveal.toast_collector` | مسیر حرکت را تحلیل کن! | str | live | Message (collector side) |
 | `powerups.types.trajectory_reveal.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.trajectory_reveal.float_text` | تحلیل مسیر | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -400,6 +408,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.slow_down.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.slow_down.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.slow_down.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.slow_down.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.slow_down.toast_collector` | بازار وارد دوره‌ی آرام شد. | str | live | Message (collector side) |
 | `powerups.types.slow_down.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.slow_down.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -415,6 +424,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.dim_ball.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.dim_ball.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.dim_ball.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.dim_ball.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.dim_ball.toast_collector` | بازار در مسیر اصلاح قرار گرفت. | str | live | Message (collector side) |
 | `powerups.types.dim_ball.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.dim_ball.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -430,6 +440,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.shield.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.shield.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.shield.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.shield.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.shield.toast_collector` | حد نوسان فعال شد! | str | live | Message (collector side) |
 | `powerups.types.shield.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.shield.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
@@ -445,6 +456,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.bull_market.stacking` | refresh | refresh, extend, stack, ignore | live | If collected again |
 | `powerups.types.bull_market.max_stack` | 3 | 1 … 5 | live | Max stack |
 | `powerups.types.bull_market.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
+| `powerups.types.bull_market.max_per_match` | 0 | 0 … 50 | live | Max spawns per game — How many of its orbs may appear in one game. 0 = no limit. |
 | `powerups.types.bull_market.toast_collector` | بازار صعودی! گل بعدی دو امتیازی | str | live | Message (collector side) |
 | `powerups.types.bull_market.toast_opponent` |  | str | live | Message (opponent side) |
 | `powerups.types.bull_market.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |

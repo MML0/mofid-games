@@ -28,6 +28,7 @@ class PowerUpType:
     banner = False  # also show the collector message as a central banner
     glow = ""  # "#RRGGBB": its own glow and splash color; empty = the color of its class
     float_text = ""  # pops up at the orb when collected; empty = the collector message
+    max_per_match = 0  # how many of its orbs may spawn in one game; 0 = no limit
 
     # ---- schema ---------------------------------------------------------------
     def add_schema(self, sb) -> None:
@@ -43,6 +44,8 @@ class PowerUpType:
         sb.e(f"{p}.stacking", self.stacking, ("refresh", "extend", "stack", "ignore"), "If collected again")
         sb.i(f"{p}.max_stack", 3, 1, 5, 1, "", "Max stack")
         sb.f(f"{p}.cooldown_s", 3.0, 0, 60, 0.5, "s", "Re-spawn cooldown")
+        sb.i(f"{p}.max_per_match", self.max_per_match, 0, 50, 1, "", "Max spawns per game",
+             "How many of its orbs may appear in one game. 0 = no limit.")
         sb.s(f"{p}.toast_collector", self.toast_c, "Message (collector side)", rtl=True)
         sb.s(f"{p}.toast_opponent", self.toast_o, "Message (opponent side)", rtl=True)
         sb.s(f"{p}.float_text", self.float_text, "Floating text",
