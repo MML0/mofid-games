@@ -3,8 +3,8 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.4-00B8A0" alt="Download v1.0.4"></a>
-  <img src="https://img.shields.io/badge/tests-790%2B-00B8A0" alt="790+ tests">
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.5-00B8A0" alt="Download v1.0.5"></a>
+  <img src="https://img.shields.io/badge/tests-850%2B-00B8A0" alt="850+ tests">
   <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
   <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
 </p>
@@ -33,7 +33,7 @@
 - ✍️ **Persian done properly.** Letters join through HarfBuzz, mixed text stays in the right order, zero-width non-joiners work, and digits stay Latin.
 - 📱 **A supervisor page on any phone.** Type the players' names, press start, follow the score, and keep a leaderboard and CSV of everyone who played. It needs no install and no internet.
 - 📡 **Played with your feet.** A floor LiDAR tracks each player's feet and moves their paddle, and the game starts and stops the tracker itself. The game only ever sees "player position along the rim", so keyboard, AI, replay and the LiDAR are interchangeable. [See how](#lidar-playing-with-your-feet).
-- 🛡️ **Built not to break mid-show.** 790+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
+- 🛡️ **Built not to break mid-show.** 850+ automated tests drag every setting to both extremes, feed the tracker garbage, and corrupt the config file. A bad packet, a broken sensor or a damaged file can't stop the game. [See the tests](#tests).
 
 <p align="center"><img src="docs/media/supervisor.png" width="280" alt="The supervisor page on a phone"><br><sub>The supervisor page on a phone (sample names).</sub></p>
 
@@ -351,7 +351,7 @@ LIdar/         the LiDAR foot tracker as delivered (docs/INTEGRATION.md); lidar_
   render/      renderer.py, text.py (Persian), icons.py, glow.py, particles.py, overlays.py
   audio/       synth.py (placeholder sounds), audio.py
   ui/          settings_window.py, widgets.py, preview.py, theme.py
-tests/         790+ tests, see "Tests" above
+tests/         850+ tests, see "Tests" above
 ```
 
 ## Troubleshooting

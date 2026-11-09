@@ -39,9 +39,9 @@ jobs:
         working-directory: ${{ matrix.folder }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -97,7 +97,7 @@ jobs:
         run: Compress-Archive -Path "dist/${{ matrix.app }}" -DestinationPath "dist/${{ matrix.app }}-windows.zip" -Force
 
       - name: Upload build (Artifacts)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.app }}-windows
           path: ${{ matrix.folder }}/dist/${{ matrix.app }}
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload screenshots from the Windows build
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.app }}-screenshots
           path: ${{ runner.temp }}/shots
@@ -114,6 +114,6 @@ jobs:
 
       - name: Publish Release (tags only)
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ matrix.folder }}/dist/${{ matrix.app }}-windows.zip

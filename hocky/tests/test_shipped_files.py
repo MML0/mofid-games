@@ -133,6 +133,12 @@ def test_persian_defaults_use_latin_digits():
     for p in get_schema().values():
         if p.kind == "str":
             assert not re.search(r"[۰-۹٠-٩]", p.default), p.path
+            assert not re.search("[\u064a\u0643]", p.default), p.path  # Persian ی / ک, not the Arabic letters
+
+
+def test_shipped_settings_use_persian_letters():
+    for f in (ROOT / "config").rglob("*.json"):
+        assert not re.search("[\u064a\u0643]", f.read_text(encoding="utf-8")), f.name
 
 
 def test_setting_labels_are_unique_within_their_group():

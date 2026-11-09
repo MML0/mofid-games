@@ -16,6 +16,7 @@ def _pg():
 
 def test_latin_digits():
     assert latin_digits("۱۲۳ و ٤٥") == "123 و 45"
+    assert latin_digits("طرح حامي \u0643") == "طرح حامی \u06a9"  # Arabic yeh / kaf typed in the panel: Persian on screen
 
 
 def test_bidi_runs():

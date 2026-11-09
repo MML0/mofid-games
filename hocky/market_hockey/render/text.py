@@ -19,7 +19,8 @@ from ..paths import FONTS_DIR
 
 log = logging.getLogger(__name__)
 
-_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+# Latin digits, and the Persian ی / ک for the Arabic ي / ك that an Arabic keyboard types (ي shows two dots at a word's end)
+_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩\u064a\u0643", "01234567890123456789\u06cc\u06a9")
 _MIRROR = str.maketrans("()[]{}<>«»", ")(][}{><»«")
 _JOINERS = set(".,:/%×+-")
 

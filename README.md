@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.4-00B8A0" alt="Download v1.0.4"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.5-00B8A0" alt="Download v1.0.5"></a>
 </p>
 
 <p align="center"><b>The floor is the game.</b> Interactive projection-floor games for the<br>Mofid Securities (کارگزاری مفید) exhibition: walk up, step on the light and play.</p>
@@ -39,7 +39,7 @@
 
 - 🖥️ **Everything an operator needs, no developer required.** Every game ships as a ready-to-run Windows folder. Settings change live from a control panel, and players' names come from a phone.
 - 📡 **Any sensor can drive a game.** Games read player positions through a small input contract, so a keyboard and the floor LiDAR that tracks players' feet are the same thing to the game.
-- 🛡️ **Tested like it has to survive a crowd.** Every pull request and push to `main` runs the test suite on Windows and Linux. Market Hockey alone has 790+ tests at 95% coverage, and they throw corrupt files, broken sensors and every extreme setting at it.
+- 🛡️ **Tested like it has to survive a crowd.** Every pull request and push to `main` runs the test suite on Windows and Linux. Market Hockey alone has 850+ tests at 95% coverage, and they throw corrupt files, broken sensors and every extreme setting at it.
 - 🚀 **One tag, one release.** Push a version tag and GitHub Actions tests, builds, smoke-tests the real `.exe` and publishes it to [Releases](https://github.com/MML0/mofid-games/releases).
 
 ## Getting the Windows version
