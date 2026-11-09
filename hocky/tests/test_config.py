@@ -136,5 +136,5 @@ def test_v1_settings_migrate_but_keep_custom_values(tmp_path):
     assert c["ball.radius"] == 15  # untouched custom value
     assert c["powerups.magnet.strength"] == V2_DEFAULT_CHANGES["powerups.magnet.strength"][1]  # old default -> new
     assert c["powerups.magnet.radius"] == 333  # customized: kept
-    assert c["powerups.max_active_orbs"] == 3
+    assert c["powerups.max_active_orbs"] == 5  # old default at every step: 2 -> 3 (v2) -> 5 (v14)
     assert c["powerups.types.trajectory_reveal.class"] == "good"

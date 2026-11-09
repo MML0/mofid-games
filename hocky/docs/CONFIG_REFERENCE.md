@@ -88,10 +88,10 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `fonts.persian_title` | Pinar-Black.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Title font |
 | `fonts.digits` | SF-Compact-Display-Heavy.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Digits font — Timer, scores and countdown (always Latin digits). |
 | `fonts.latin` | SF-Compact-Display-Bold.ttf | IRANSansX-Black.ttf, IRANSansX-Bold.ttf, IRANSansX-DemiBold.ttf, IRANSansX-ExtraBold.ttf, IRANSansX-Light.ttf, IRANSansX-Medium.ttf, IRANSansX-Regular.ttf, Pinar-Black.ttf … | live | Latin text font |
-| `text.toast_size` | 34 | 14 … 120 px | live | Message size |
-| `text.banner_size` | 56 | 20 … 200 px | live | Banner size |
+| `text.toast_size` | 26 | 14 … 120 px | live | Message size |
+| `text.banner_size` | 46 | 20 … 200 px | live | Banner size |
 | `text.toast_duration` | 1.8 | 0.3 … 6 s | live | Message duration |
-| `text.toast_radius` | 0.52 | 0.1 … 0.9 ×R | live | Message distance from center |
+| `text.toast_radius` | 0.66 | 0.1 … 0.9 ×R | live | Message distance from center |
 | `text.title` | هاکی بازار | str | live | Title |
 | `text.subtitle` | MARKET HOCKEY | str | live | Subtitle |
 | `text.attract_prompt` | برای شروع، روبه‌روی هم بایستید | str | live | Attract prompt |
@@ -117,7 +117,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `match.duration_s` | 60 | 10 … 900 s | live | Match duration — Applies from the next match. |
 | `match.score_limit_enabled` | True | bool | live | Score limit enabled |
 | `match.score_limit` | 7 | 1 … 50 goals | live | Score limit |
-| `match.tie_rule` | draw | draw, golden_goal | live | When time runs out tied |
+| `match.tie_rule` | draw | draw, golden_goal | live | When time runs out tied — golden_goal: the clock stops and play goes on until someone scores, so the game always has a winner. draw: the match ends level. |
 | `match.start_mode` | operator_key | operator_key, auto_when_both_present, auto_loop | live | Start trigger — operator_key = Space/Enter or the panel; auto modes start by themselves. |
 | `match.auto_loop_delay_s` | 8.0 | 1 … 60 s | live | Auto-loop idle time |
 | `match.attract_demo` | True | bool | live | Attract demo (AI vs AI) |
@@ -253,11 +253,11 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
 | `powerups.enabled` | True | bool | live | Power-ups enabled |
-| `powerups.spawn_interval_min_s` | 2.5 | 0.5 … 30 s | live | Spawn interval min |
-| `powerups.spawn_interval_max_s` | 5.0 | 0.5 … 60 s | live | Spawn interval max |
-| `powerups.max_active_orbs` | 3 | 0 … 8 | live | Max orbs at once |
+| `powerups.spawn_interval_min_s` | 1.5 | 0.5 … 30 s | live | Spawn interval min |
+| `powerups.spawn_interval_max_s` | 3.0 | 0.5 … 60 s | live | Spawn interval max |
+| `powerups.max_active_orbs` | 5 | 0 … 8 | live | Max orbs at once |
 | `powerups.max_bad_orbs` | 1 | 0 … 8 | live | Max red orbs at once |
-| `powerups.orb_radius` | 30 | 10 … 90 px | live | Orb radius |
+| `powerups.orb_radius` | 60 | 10 … 90 px | live | Orb radius |
 | `powerups.hitbox_scale` | 1.35 | 0.5 … 3.0 × orb | live | Orb hitbox size — Collection radius relative to the drawn orb. |
 | `powerups.orb_lifetime_s` | 9.0 | 1 … 60 s | live | Orb lifetime |
 | `powerups.spawn_anim_s` | 0.35 | 0.05 … 2 s | live | Spawn animation |
@@ -268,6 +268,11 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.no_repeat` | True | bool | live | No same type twice in a row |
 | `powerups.icon_scale` | 0.62 | 0.3 … 1 × orb | live | Icon size |
 | `powerups.bob_px` | 4.0 | 0 … 20 px | live | Idle bob |
+| `powerups.float_text.enabled` | True | bool | live | Floating text enabled |
+| `powerups.float_text.duration_s` | 0.8 | 0.1 … 3 s | live | Duration — From the pop to fully faded out. |
+| `powerups.float_text.hide_collector_message` | True | bool | live | Hide the collector's side message — The floating text already says it. The opponent's message still shows. |
+| `powerups.float_text.size` | 30 | 14 … 120 px | live | Text size |
+| `powerups.float_text.rise_px` | 120 | 0 … 500 px | live | Float distance |
 | `powerups.magnet.enabled` | True | bool | live | Magnet enabled |
 | `powerups.magnet.strength` | 2200.0 | 0 … 10000 px/s² | live | Pull strength |
 | `powerups.magnet.radius` | 260 | 0 … 700 px | live | Pull radius |
@@ -288,6 +293,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.expand.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.expand.toast_collector` | پدلت بزرگ شد! | str | live | Message (collector side) |
 | `powerups.types.expand.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.expand.float_text` | بالکر بزرگ | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.expand.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.expand.glow_color` | #3D97C9 | color | live | Glow and splash color |
 | `powerups.types.expand.multiplier` | 1.5 | 1.05 … 3.0 × | live | Size multiplier |
 | `powerups.types.shrink.enabled` | True | bool | live | Enabled |
 | `powerups.types.shrink.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
@@ -299,6 +307,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.shrink.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.shrink.toast_collector` | پدل حریف کوچک شد! | str | live | Message (collector side) |
 | `powerups.types.shrink.toast_opponent` | پدلت کوچک شد! | str | live | Message (opponent side) |
+| `powerups.types.shrink.float_text` | بالکر حریف کوچک | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.shrink.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.shrink.glow_color` | #FF3B45 | color | live | Glow and splash color |
 | `powerups.types.shrink.multiplier` | 0.6 | 0.2 … 0.95 × | live | Size multiplier |
 | `powerups.types.speed_up.enabled` | True | bool | live | Enabled |
 | `powerups.types.speed_up.class` | good | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
@@ -310,6 +321,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.speed_up.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.speed_up.toast_collector` | نوسان بازار افزایش یافت! | str | live | Message (collector side) |
 | `powerups.types.speed_up.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.speed_up.float_text` | زیاد شدن سرعت | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.speed_up.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.speed_up.glow_color` | #D4B96F | color | live | Glow and splash color |
 | `powerups.types.speed_up.multiplier` | 1.4 | 1.05 … 3.0 × | live | Speed multiplier |
 | `powerups.types.speed_up.scope` | this_ball | this_ball, all_balls | live | Affects |
 | `powerups.types.chaos.enabled` | True | bool | live | Enabled |
@@ -322,6 +336,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.chaos.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.chaos.toast_collector` |  | str | live | Message (collector side) |
 | `powerups.types.chaos.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.chaos.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.chaos.custom_color` | False | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.chaos.glow_color` | #FFFFFF | color | live | Glow and splash color |
 | `powerups.types.chaos.mode` | sequence | sequence, instant, wobble | live | Mode — sequence = pause, announce, spin and fire (twice); wobble uses Duration as its length. |
 | `powerups.types.chaos.title` | نوسان ناگهانی بازار! | str | live | Announcement title |
 | `powerups.types.chaos.subtitle` | مسیر توپ به‌صورت تصادفی تغییر می‌کند | str | live | Announcement subtitle |
@@ -350,6 +367,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.double_ball.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.double_ball.toast_collector` | حجم معاملات افزایش یافت! | str | live | Message (collector side) |
 | `powerups.types.double_ball.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.double_ball.float_text` | دو توپ | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.double_ball.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.double_ball.glow_color` | #3D9BFF | color | live | Glow and splash color |
 | `powerups.types.double_ball.mode` | delayed | delayed, instant | live | Mode — instant = the old immediate split. |
 | `powerups.types.double_ball.extra_balls` | 1 | 1 … 3 | live | Extra balls |
 | `powerups.types.double_ball.spawn_delay_s` | 0.5 | 0 … 3 s | live | Spawn delay |
@@ -368,6 +388,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.trajectory_reveal.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.trajectory_reveal.toast_collector` | مسیر حرکت را تحلیل کن! | str | live | Message (collector side) |
 | `powerups.types.trajectory_reveal.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.trajectory_reveal.float_text` | تحلیل مسیر | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.trajectory_reveal.custom_color` | True | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.trajectory_reveal.glow_color` | #A35BFF | color | live | Glow and splash color |
 | `powerups.types.trajectory_reveal.beneficiary` | collector | collector, opponent | live | Who sees the path |
 | `powerups.types.slow_down.enabled` | False | bool | live | Enabled |
 | `powerups.types.slow_down.class` | bad | good, bad, neutral | live | Color class — good = green (helps whoever collects it), bad = red (helps the opponent). |
@@ -379,6 +402,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.slow_down.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.slow_down.toast_collector` | بازار وارد دوره‌ی آرام شد. | str | live | Message (collector side) |
 | `powerups.types.slow_down.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.slow_down.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.slow_down.custom_color` | False | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.slow_down.glow_color` | #FFFFFF | color | live | Glow and splash color |
 | `powerups.types.slow_down.multiplier` | 0.7 | 0.2 … 0.95 × | live | Speed multiplier |
 | `powerups.types.slow_down.scope` | this_ball | this_ball, all_balls | live | Affects |
 | `powerups.types.dim_ball.enabled` | False | bool | live | Enabled |
@@ -391,6 +417,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.dim_ball.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.dim_ball.toast_collector` | بازار در مسیر اصلاح قرار گرفت. | str | live | Message (collector side) |
 | `powerups.types.dim_ball.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.dim_ball.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.dim_ball.custom_color` | False | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.dim_ball.glow_color` | #FFFFFF | color | live | Glow and splash color |
 | `powerups.types.dim_ball.alpha` | 0.35 | 0.05 … 1 | live | Ball opacity |
 | `powerups.types.dim_ball.min_visibility` | 0.25 | 0.05 … 1 | live | Never below |
 | `powerups.types.shield.enabled` | False | bool | live | Enabled |
@@ -403,6 +432,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.shield.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.shield.toast_collector` | حد نوسان فعال شد! | str | live | Message (collector side) |
 | `powerups.types.shield.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.shield.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.shield.custom_color` | False | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.shield.glow_color` | #FFFFFF | color | live | Glow and splash color |
 | `powerups.types.shield.coverage_percent` | 100.0 | 20 … 100 % | live | Goal coverage |
 | `powerups.types.shield.charges` | 1 | 1 … 5 | live | Blocks |
 | `powerups.types.bull_market.enabled` | False | bool | live | Enabled |
@@ -415,6 +447,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `powerups.types.bull_market.cooldown_s` | 3.0 | 0 … 60 s | live | Re-spawn cooldown |
 | `powerups.types.bull_market.toast_collector` | بازار صعودی! گل بعدی دو امتیازی | str | live | Message (collector side) |
 | `powerups.types.bull_market.toast_opponent` |  | str | live | Message (opponent side) |
+| `powerups.types.bull_market.float_text` |  | str | live | Floating text — Pops up at the orb when it is collected. Empty: the collector message is used. |
+| `powerups.types.bull_market.custom_color` | False | bool | live | Use its own glow color — Off: it glows in its color class. |
+| `powerups.types.bull_market.glow_color` | #FFFFFF | color | live | Glow and splash color |
 | `powerups.types.bull_market.multiplier` | 2 | 2 … 5 × | live | Points multiplier |
 
 ## Trajectory
@@ -534,6 +569,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `motion.splash` | True | bool | live | Opening flood on launch |
 | `motion.waiting_loop` | True | bool | live | Loop on the waiting screen — A 46 second show of every object, one after another. |
 | `motion.on_goal` | True | bool | live | Burst on goals |
+| `motion.planes` | True | bool | live | Paper planes — Off: no paper planes anywhere, in play or on any other screen. |
 | `motion.in_play` | True | bool | live | Paper planes during play — They cross under the ball at the Level during play below. |
 | `motion.plane_every_s` | 14.0 | 4 … 60 s | live | Plane interval during play |
 | `motion.logo_waiting` | True | bool | live | Logo on the waiting screen — Always there in the background. |

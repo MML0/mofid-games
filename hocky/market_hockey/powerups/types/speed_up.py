@@ -14,6 +14,8 @@ class SpeedUp(PowerUpType):
     unlock_phase = 1
     group = "ball_speed"
     toast_c = "نوسان بازار افزایش یافت!"
+    float_text = "زیاد شدن سرعت"
+    glow = "#D4B96F"  # the gold of its صندوق عیار icon
     banner = True
 
     def extra_schema(self, sb, p):

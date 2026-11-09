@@ -1052,6 +1052,8 @@ class BrandMotion:
 
     # ------------------------------------------------------------------ cues
     def add(self, *actors) -> None:
+        if not self.cfg["motion.planes"]:
+            actors = [a for a in actors if not isinstance(a, Plane)]
         self.actors.extend(actors)
 
     def clear(self) -> None:
@@ -1280,6 +1282,10 @@ class BrandMotion:
         elif self.state == "RESULT" and self.time >= self._next_cheer:
             self._next_cheer = self.time + CHEER_EVERY_S
             self._cheer()
+        if not cfg["motion.planes"]:  # unticked while the game runs: those already in the air fade out
+            for a in self.actors:
+                if isinstance(a, Plane):
+                    a.leave()
         self.actors = [a for a in self.actors if a.step(dt)]
         target = min((a.type_limit() for a in self.actors), default=1.0)
         self.type_dim += (target - self.type_dim) * (1 - math.exp(-5 * dt))

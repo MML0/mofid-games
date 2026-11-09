@@ -909,13 +909,17 @@ class Engine:
         x, y = g.slots[slot]
         if cfg["center_zone.layout"] == "random":
             zr = cfg["center_zone.zone_radius"]
-            for _ in range(12):
+            for _ in range(40):
                 a = self.rng.uniform(0, math.tau)
                 rr = zr * math.sqrt(self.rng.random())
                 cx, cy = rr * math.cos(a), rr * math.sin(a)
-                if all(math.hypot(cx - o.x, cy - o.y) > 2.4 * orb_r for o in active):
+                off_ball = forced_type or all(math.hypot(b.x - cx, b.y - cy) >= min_d for b in live)
+                if off_ball and all(math.hypot(cx - o.x, cy - o.y) > 2.4 * orb_r for o in active):
                     x, y = cx, cy
                     break
+            else:
+                if forced_type is None:
+                    return None  # no clear spot right now: better no orb than one on top of another
         orb = Orb(self._next_orb_id, tid, self._type_class(tid), slot, x, y, cfg["powerups.orb_lifetime_s"])
         self._next_orb_id += 1
         self.orbs.append(orb)
@@ -1026,7 +1030,7 @@ class Engine:
         self.emit("powerup_collected", orb_id=o.id, type_id=o.type_id, cls=o.cls, collector=collector,
                   ball_id=b.id, x=o.x, y=o.y, affects=info.get("affects"),
                   toast_c=cfg[f"{pre}.toast_collector"], toast_o=cfg[f"{pre}.toast_opponent"],
-                  banner=getattr(t, "banner", False))
+                  float_text=cfg[f"{pre}.float_text"], banner=getattr(t, "banner", False))
 
     def add_effect(self, ptype, eff: Effect):
         cfg = self.cfg

@@ -1,6 +1,11 @@
 import math
+import random
+
+import pytest
 
 from conftest import add_ball, playing, run
+from market_hockey.config import Config
+from market_hockey.core.engine import Engine
 
 
 def _shoot_at_goal(engine, goal_idx, angle_offset=40.0):
@@ -87,6 +92,26 @@ def test_timer_ends_match_and_golden_goal(engine):
     engine.time_left = 0.05
     run(engine, 0.2)
     assert engine.golden and engine.state == "PLAYING"
+
+
+@pytest.mark.parametrize("present", (True, False))
+def test_golden_goal_never_lets_a_match_end_level(present):
+    def play(rule, seed):
+        cfg = Config({"match.tie_rule": rule, "match.duration_s": 10, "match.score_limit_enabled": False})
+        e = Engine(cfg, random.Random(seed))
+        e.start_match()
+        for _ in range(120 * 120):
+            e.step(1 / 120, {}, [present, present])
+            e.drain_events()
+            if e.state == "FINAL":
+                break
+        return e
+
+    tied = [seed for seed in range(12) if play("draw", seed).winner is None]  # the clock runs out on a level score
+    assert tied
+    for seed in tied:
+        e = play("golden_goal", seed)
+        assert e.state == "FINAL" and e.golden and e.winner is not None and e.scores[0] != e.scores[1]
 
 
 def test_full_match_flow_reaches_result(engine):

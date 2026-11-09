@@ -13,6 +13,8 @@ class Shrink(PowerUpType):
     duration = 8.0
     unlock_phase = 1
     toast_c = "پدل حریف کوچک شد!"
+    float_text = "بالکر حریف کوچک"
+    glow = "#FF3B45"  # red
     toast_o = "پدلت کوچک شد!"
 
     def extra_schema(self, sb, p):

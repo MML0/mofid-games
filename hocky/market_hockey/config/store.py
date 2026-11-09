@@ -198,6 +198,17 @@ V13_DEFAULT_CHANGES = {
     "colors.neutral": ("#9B6BFF", "#DEF1EE"),
 }
 
+V14_DEFAULT_CHANGES = {
+    "powerups.orb_radius": (30, 60),
+    "powerups.spawn_interval_min_s": (2.5, 1.5),
+    "powerups.spawn_interval_max_s": (5.0, 3.0),
+    "powerups.max_active_orbs": (3, 5),
+    "powerups.float_text.size": (40, 30),
+    "text.toast_size": (34, 26),
+    "text.banner_size": (56, 46),
+    "text.toast_radius": (0.52, 0.66),
+}
+
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
                               4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
@@ -206,7 +217,8 @@ MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: 
                               9: _changes(V10_DEFAULT_CHANGES),
                               10: _changes(V11_DEFAULT_CHANGES),
                               11: _changes(V12_DEFAULT_CHANGES),
-                              12: _changes(V13_DEFAULT_CHANGES)}
+                              12: _changes(V13_DEFAULT_CHANGES),
+                              13: _changes(V14_DEFAULT_CHANGES)}
 
 
 class Config:

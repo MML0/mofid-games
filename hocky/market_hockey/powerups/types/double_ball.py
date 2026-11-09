@@ -17,6 +17,8 @@ class DoubleBall(PowerUpType):
     has_duration = False
     unlock_phase = 2
     toast_c = "حجم معاملات افزایش یافت!"
+    float_text = "دو توپ"
+    glow = "#3D9BFF"  # blue
     banner = True
 
     def extra_schema(self, sb, p):
