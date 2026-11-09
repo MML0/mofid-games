@@ -147,3 +147,26 @@ def test_the_real_tracker_drives_the_paddles_from_its_recording(cfg, engine):
         tracker = a.tracker
         a.stop()
     assert tracker.poll() is not None  # stopping the game's input stops the tracker
+
+def test_a_lidar_paddle_follows_at_once_but_others_keep_the_slide_limit(lidar, engine, cfg):
+    """The tracker already smooths and teleports on a jump, so the game adds no speed limit of its own (a switch)."""
+    from market_hockey.inputs.base import PlayerSample
+
+    playing(engine)
+    dt = 1 / 60
+    p = engine.paddles[0]
+
+    def go(u, instant):
+        engine.step(dt, {0: PlayerSample(True, u, 1.0, 0.0, None, "test", instant)})
+        return p.theta
+
+    go(0.05, True)
+    lo, hi = engine.geom.paddle_range(0, engine.paddle_width(0))
+    assert go(0.95, True) == pytest.approx(lo + (hi - lo) * 0.95)  # the whole arc in one frame
+    limit = cfg["paddles.p1.max_speed_deg_s"] * dt
+    before = p.theta
+    assert abs(go(0.05, False) - before) <= limit + 1e-9  # keyboard, AI, ...: still slide
+    lidar.feed(paddle(1, 180.0), 1.0)
+    assert lidar.sample(0, 1.0, dt, engine).instant
+    cfg.set("input.lidar.instant_paddle", False)
+    assert not lidar.sample(0, 1.0, dt, engine).instant  # switched off: the old slide

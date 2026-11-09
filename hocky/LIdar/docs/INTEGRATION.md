@@ -39,6 +39,7 @@ STL27L lidar --USB serial--> floor_game.py (engine, owns the COM port)
 | `floor_game.py` | **Entry point.** Lidar engine, game preview window, OSC sender, record / replay. |
 | `lidar_setup.py` | Setup window: live lidar view, arena editor (drag the circle / lines), all settings. Opened by `floor_game.py`. |
 | `feet_tracker.py` | The algorithm: foot IDs, sector ownership, player filter, paddle on the circle. Pure logic, no I/O. |
+| `calibration.py` | 4-point calibration (key `K` in the game window): works out rotation, lidar scale, center and mirror. |
 | `game_settings.py` | Every setting (default, range, help) plus the arena geometry. Saved to `game_settings.json`. |
 | `game_settings.json` | The calibration in use. **Written by the setup window; read by the engine.** |
 | `game_view.py` | Drawing shared by both windows. |
@@ -46,7 +47,7 @@ STL27L lidar --USB serial--> floor_game.py (engine, owns the COM port)
 | `lib.py` | STL27L serial driver: reader thread, full 360° scans, CRC check. |
 | `use_lib.py` | Background model and blob detector (shared with the older touch / ball program). |
 | `settings.py`, `settings_ui.py` | Settings framework and the slider panel. |
-| `tests/` | `test_tracker.py` (29 scenario tests), `test_replay.py` (full pipeline on a recording). |
+| `tests/` | `test_tracker.py` (scenario tests), `test_replay.py` (full pipeline on a recording), `test_calibration.py` (scale, 4-point calibration, number controls). |
 | `tools/osc_monitor.py` | Prints the OSC the engine sends. Use it to check an integration. |
 | `samples/` | A real 95 s recording (2 players' worth of walking) and the settings it was tuned with. |
 
@@ -166,9 +167,10 @@ edge to set the diameter, and a round handle to turn the dividing lines. Every c
 3. **Lidar tab:** *Rotate map* and *Mirror X / Y* until the map matches the room (the red line is
    the lidar's 0°). If white points show on the empty floor, raise *Background gap* or *Smallest foot*.
    Press *Scan background* after moving anything.
-4. **Arena tab:** put a person on 3–4 points of the painted / projected circle and drag the circle
-   (cross and edge) until it goes through their feet. Set *Track inside / outside* to how far from the
-   line players really stand.
+4. **Arena:** with the game window on the floor display, press `K`, put an object on each of the 4
+   points, press `A` (or drag each point onto its object's dot), then `Enter`. This sets rotation,
+   lidar scale, center and mirror; the circle's *Diameter* is not changed. Set *Track inside / outside*
+   to how far from the line players really stand. If the lidar is bumped later: one object on a point, `C`.
 5. **Players tab:** number of players, *Line rotation* so the dividing lines match the game's
    goals, *Border limit*.
 6. **Track / Paddle tabs:** only if it feels laggy or jumpy (see the table below).
@@ -194,10 +196,17 @@ The `game_settings.json` in this folder is the calibration of the test room (rot
 5. **Player:** at most *Feet per player* feet (the ones on the floor now, then the ones seen longest),
    within *Player radius* of the player. Position = mean of the feet, with a lifted foot's last spot still
    counting while walking. An alpha-beta filter predicts walking speed, so the paddle doesn't trail behind.
-   With no foot seen (jump), the position is held and predicted for *Hold when airborne*. A lost player
-   is reacquired gently.
+   With no foot seen (jump in place), the position is held and predicted for *Hold when airborne*.
+   **Teleport:** when the player's old spot is empty and new feet land elsewhere in the sector (a jump
+   or a run to another place), the player moves there at once, without waiting for the hold time. Feet
+   that were already standing there (another person, an object, also one that blinks out and back)
+   are not taken. Feet that land more than *Teleport from* away from the estimate also snap. While
+   running, a foot that just landed is used on the same scan, before it is confirmed, and a lifted
+   foot left far behind (more than *Player radius* from the standing feet) stops counting.
 6. **Paddle:** the player's angle around the arena center, clamped by the border limit, smoothed
    (strongly when standing, lightly when moving), speed limited, and placed exactly on the circle.
+   When the paddle is more than *Teleport from* behind the player (or the player teleported), it jumps
+   there in one frame instead of gliding. *Teleport from* = 0 restores the old glide everywhere.
 
 ### Settings reference
 
@@ -208,6 +217,7 @@ All of these are in the setup window, saved to `game_settings.json`.
 | Setting | Key | Default | Range | What it does |
 |---|---|---|---|---|
 | Rotate map | `rotation` | 0.0° | -180..180 ° | Turn all lidar points so the map matches the room. |
+| Lidar scale | `lidar_scale` | 1.000 | 0.5..2 | Makes the whole lidar map bigger or smaller around the lidar, without changing the arena circle. Set by the 4-point calibration. |
 | Mirror X | `flip_x` | false |  | Swap left and right (lidar mounted upside down). |
 | Mirror Y | `flip_y` | false |  | Swap down and up. |
 | Min distance | `min_distance` | 100 mm | 0..1000 mm | Ignore everything closer than this to the lidar (its cover, cables). |
@@ -257,6 +267,7 @@ All of these are in the setup window, saved to `game_settings.json`.
 
 | Setting | Key | Default | Range | What it does |
 |---|---|---|---|---|
+| Teleport from | `jump_distance` | 800 mm | 0..3000 mm | When the feet show up this far from where the player was (a jump, a fast run, a new player), the player and the paddle go there at once instead of gliding. Feet outside the Player radius while the old spot is empty always teleport. Keep it above half a running stride (~700 mm) or the paddle hops each step. 0 = always glide (old behaviour). |
 | Correction speed | `correction_time` | 0.12 s | 0..2 s | How fast the player position follows the feet. Lower = faster, higher = smoother. |
 | Reacquire speed | `reacquire_time` | 0.40 s | 0..3 s | After the feet were lost, how gently the position moves to the new feet (no jump). |
 | Lifted foot weight | `lifted_weight` | 1.00 | 0..1 | How much a lifted foot's last spot still counts when only one foot is on the floor (walking). 1 = the player is between both feet, 0 = follow the standing foot only. |

@@ -8,6 +8,8 @@ import math
 
 import pygame
 
+from calibration import describe
+
 
 PLAYER_COLORS = [
     (255, 92, 92), (70, 170, 255), (255, 200, 60), (90, 220, 140),
@@ -204,6 +206,66 @@ def draw_arena(screen, view, cfg, snap, label_font, small=None, setup=False):
             text = label_font.render(str(i + 1), True, dark(color, 0.7))
 
         screen.blit(text, text.get_rect(center=pos))
+
+
+CAL_HOME = (255, 210, 40)
+CAL_MOVED = (60, 230, 255)
+CAL_OBJECT = (90, 255, 130)
+
+CAL_HELP = ("1  Put an object on each yellow point",
+            "2  Drag each point onto its object's dot, or press A",
+            "3  Press Enter",
+            "C  fix position only     U  undo     R  points back     K  close")
+
+
+def draw_calibration(screen, view, cal, font, big):
+    """The 4 calibration points, the objects the lidar sees, and the instructions."""
+
+    w, h = screen.get_size()
+    lines = [(big, "Calibration", CAL_HOME)] + [(font, line, TEXT) for line in CAL_HELP]
+
+    preview = cal.preview()
+
+    if preview is not None:
+        lines.append((font, "Enter will do:  " + describe(preview), CAL_MOVED))
+
+    if cal.message:
+        lines.append((font, cal.message, CAL_OBJECT))
+
+    if not cal.stable():
+        lines.append((font, "No objects seen yet. Objects must go on the floor after the empty-floor scan (B).", DIM))
+
+    y = h // 2 - sum(f.get_height() + 4 for f, _, _ in lines) // 2
+
+    for f, line, color in lines:
+        text = f.render(line, True, color)
+        rect = text.get_rect(midtop=(w // 2, y))
+        pygame.draw.rect(screen, BACK, rect.inflate(12, 2))
+        screen.blit(text, rect)
+        y += f.get_height() + 4
+
+    # on top of the text: a dot can land in the middle of the floor
+    for o in cal.stable():
+        pygame.draw.circle(screen, CAL_OBJECT, view.to_screen(o.x, o.y), 11, 2)
+
+    for i, (p, home) in enumerate(zip(cal.points, cal.homes)):
+
+        hx, hy = view.to_screen(*home)
+
+        pygame.draw.circle(screen, CAL_HOME, (hx, hy), 22, 3)
+        pygame.draw.line(screen, CAL_HOME, (hx - 30, hy), (hx + 30, hy), 2)
+        pygame.draw.line(screen, CAL_HOME, (hx, hy - 30), (hx, hy + 30), 2)
+
+        label = big.render(str(i + 1), True, CAL_HOME)
+        screen.blit(label, label.get_rect(center=(hx + 40, hy - 32)))
+
+        if p.moved:
+            px, py = view.to_screen(p.x, p.y)
+            pygame.draw.line(screen, CAL_MOVED, (hx, hy), (px, py), 2)
+            pygame.draw.circle(screen, CAL_MOVED, (px, py), 12, 3)
+            pygame.draw.circle(screen, CAL_MOVED, (px, py), 3)
+            label = font.render(str(i + 1), True, CAL_MOVED)
+            screen.blit(label, (px + 16, py - 22))
 
 
 def draw_chips(screen, font, snap, x, y):

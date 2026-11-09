@@ -647,7 +647,8 @@
       "mirror_x": false,
       "mirror_y": false,
       "swap_players": false,
-      "timeout_s": 0.5
+      "timeout_s": 0.5,
+      "instant_paddle": true
     },
     "filters": {
       "min_confidence": 0.4,

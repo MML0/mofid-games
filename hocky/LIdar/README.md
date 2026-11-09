@@ -51,9 +51,29 @@ Two windows open:
 - **Game window** (`floor_game.py`): only the game. The circle and its paddles fill the window
   edge to edge (*Output > Game window edge*). Drag to move the map, wheel to zoom, `V` fit
   again, `P` show / hide the live lidar dots, `F` fullscreen, `S` reopen the setup window,
-  `B` scan the empty floor, `H` show the key hint, `Esc` quit.
+  `B` scan the empty floor, `H` show the key hint, `K` 4-point calibration, `C` fix the position
+  after the lidar got bumped, `Esc` quit.
 - **Setup window** (`lidar_setup.py`): the live lidar view with the game on top, and every
   setting. Changes go live to the game and are saved to `game_settings.json`.
+
+**Changing a number precisely.** `-` and `+` move one step (hold to repeat). Click the number to
+type over it: `Enter` ok, `Esc` cancel, `Up` / `Down` one step, `Tab` next number. Hold `Shift`
+for a slow slider, or for 10 steps with `-`, `+` and the wheel.
+
+**4-point calibration** (Floor game window on the LED floor, circle filling it):
+
+1. Press `B` with the floor empty.
+2. Press `K`. Four numbered yellow points appear on the floor. Put one object on each.
+3. Press `A` to match them automatically (needs all 4), or drag each point onto its object's dot;
+   a point dropped near a green ring sits exactly on it. Right click a point to stop using it.
+4. Press `Enter`. *Rotate map*, *Lidar scale*, *Center X / Y* and, if needed, *Mirror X* are set and
+   saved, and the sliders follow. The objects should now sit on the points. `U` undoes it.
+
+If the objects block each other from the lidar, change *Arena > Calib. points turn*. Thin, straight
+objects are the most exact, because the lidar sees only the side facing it.
+
+**The lidar got bumped:** put an object on any point and press `C` (`K` first shows the points).
+Only the position changes. Press `B` first if the floor is empty and the walls show as white dots.
 
 Work through the setup tabs in order:
 
@@ -79,8 +99,11 @@ from a tracked player (*Player radius*) are someone else and are ignored. A play
 *Feet per player* (2) feet, the ones on the floor now and seen longest, and a foot that stands
 still keeps its ID only for objects right at it (~15 cm), so a bag or another foot put down next
 to a player cannot steal a foot. Things that do not move at all for *Ignore still objects*
-(15 s) are ignored until they move. When a lost player is
-found again, the paddle glides there (*Reacquire speed*, *Paddle max speed*). The paddle is
+(15 s) are ignored until they move. When the player jumps or runs to another spot (their old
+spot is empty and new feet land elsewhere in the sector), the player and the paddle teleport
+there at once; feet that were already standing there are someone else and are not taken. A gap
+of more than *Teleport from* (800 mm) also snaps instead of gliding; 0 = always glide. While
+running, a foot that just landed is used at once. The paddle is
 smoothed strongly while the player stands still and lightly while they move.
 
 **OSC** to `127.0.0.1:7000`, every frame (60 Hz):

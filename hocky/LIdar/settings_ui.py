@@ -6,9 +6,11 @@ Settings side panel for the pygame window. It starts closed and slides in from t
                            drag in from the window's right edge, or swipe sideways with two
                            fingers on a touchpad
     click a tab            show that group of settings
-    drag a slider          change a value
-    mouse wheel on a row   fine tune, one step per tick
-    click a number         type a value, Enter = ok, Esc = cancel
+    drag a slider          change a value (hold Shift for a slow, precise drag)
+    - and +                one step per click, hold to repeat (Shift = 10 steps)
+    mouse wheel on a row   fine tune, one step per tick (Shift = 10 steps)
+    click a number         type a value over it, Enter = ok, Esc = cancel,
+                           Up / Down = one step, Tab = next number
 """
 
 import time
@@ -18,13 +20,19 @@ import pygame
 
 
 PAD = 16
-ROW_HEIGHT = {"number": 56, "bool": 40, "choice": 66}
+ROW_HEIGHT = {"number": 50, "bool": 40, "choice": 66}
 
 SLIDE_SPEED = 16        # 1/s, how fast the panel slides in and out (eases out)
 TAB_SIZE = (28, 120)    # the side tab on the panel's left edge
 EDGE = 16               # px at the window's right edge where a swipe in can start
 WHEEL_SWIPE = 0.1       # share of the panel per touchpad side swipe step
 FLICK = 300             # px/s, a faster swipe opens / closes in its direction
+FINE_DRAG = 0.05        # slider speed while Shift is held
+BIG_STEP = 10           # steps per click / tick while Shift is held
+HOLD_DELAY = 0.35       # s a - or + is held before it repeats
+HOLD_REPEAT = 0.05      # s between repeats
+HOLD_FAST = 1.5         # s held, then it repeats with big steps
+DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩٫,", "01234567890123456789..")    # Persian / Arabic keyboards
 
 BACK = (22, 24, 30)
 ROW_HOVER = (30, 33, 42)
@@ -38,8 +46,9 @@ BUTTON_HOVER = (58, 64, 80)
 ON = (60, 190, 110)
 SAVED = (90, 210, 130)
 
-DEFAULT_HINT = ("Drag a slider, use the mouse wheel on a row to fine tune, "
-                "or click a number to type it. Changes are saved automatically.")
+DEFAULT_HINT = ("- and + change one step (hold to repeat). Click a number to type it, "
+                "Up / Down nudges it, Tab goes to the next. Hold Shift for a slow slider "
+                "or 10 steps. Changes are saved automatically.")
 
 
 
@@ -94,6 +103,10 @@ class SettingsPanel:
         self.drag = None            # field whose slider is held
         self.edit = None            # field whose number is being typed
         self.text = ""
+        self.fresh = False          # the typed text is the old value: the next key replaces it
+        self.edit_start = None      # value when typing started (Esc goes back to it)
+        self.fine = None            # (mouse x, value) where the slow Shift drag started
+        self.hold = None            # [field, direction, next repeat, start] while - or + is held
         self.commit_at = None       # wheel ticks are saved a moment after the last one
 
         self.status = ""
@@ -144,6 +157,8 @@ class SettingsPanel:
 
             if self.edit is not None:
                 self._commit_edit()
+
+            self.hold = None
 
             if self.drag is not None or self.commit_at is not None:
                 self.drag = None
@@ -279,8 +294,10 @@ class SettingsPanel:
             parts = {}
 
             if field.kind == "number":
-                parts["value"] = pygame.Rect(row.right - 112, row.y + 4, 112, 24)
-                parts["track"] = pygame.Rect(row.x + 9, row.y + 40, row.width - 18, 6)
+                parts["plus"] = pygame.Rect(row.right - 26, row.y + 3, 26, 26)
+                parts["value"] = pygame.Rect(row.right - 130, row.y + 4, 100, 24)
+                parts["minus"] = pygame.Rect(row.right - 160, row.y + 3, 26, 26)
+                parts["track"] = pygame.Rect(row.x + 9, row.y + 37, row.width - 18, 6)
 
             elif field.kind == "bool":
                 parts["switch"] = pygame.Rect(row.right - 48, row.y + 8, 48, 24)
@@ -338,11 +355,23 @@ class SettingsPanel:
             if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 self._commit_edit()
             elif event.key == pygame.K_ESCAPE:
-                self.edit = None
+                self._cancel_edit()
+            elif event.key == pygame.K_TAB:
+                self._next_edit(-1 if event.mod & pygame.KMOD_SHIFT else 1)
+            elif event.key in (pygame.K_UP, pygame.K_DOWN):
+                self._step(self.edit, 1 if event.key == pygame.K_UP else -1)
+                self._fill_edit()
             elif event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            elif event.unicode and event.unicode in "0123456789.-" and len(self.text) < 10:
-                self.text += event.unicode
+                self.text = "" if self.fresh else self.text[:-1]
+                self.fresh = False
+            else:
+                char = event.unicode.translate(DIGITS) if event.unicode else ""
+                if char and char in "0123456789.-":
+                    if self.fresh:
+                        self.text = ""
+                        self.fresh = False
+                    if len(self.text) < 10:
+                        self.text += char
 
             return True
 
@@ -363,8 +392,13 @@ class SettingsPanel:
             self._slide(event.pos[0])
             return True
 
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.hold is not None:
+            self.hold = None
+            return True
+
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.drag is not None:
             self.drag = None
+            self.fine = None
             self.on_change(True)
             return True
 
@@ -378,10 +412,7 @@ class SettingsPanel:
             hit = self._row_at(pos)
 
             if hit is not None and hit[0].kind == "number":
-                field = hit[0]
-                self.cfg.set(field.key, getattr(self.cfg, field.key) + event.y * field.step)
-                self.on_change(False)
-                self.commit_at = time.time() + 0.5
+                self._step(hit[0], event.y)
 
             return True
 
@@ -413,12 +444,20 @@ class SettingsPanel:
 
         if field.kind == "number":
 
-            if parts["value"].collidepoint(pos):
-                self.edit = field
-                self.text = ""
+            for name, direction in (("minus", -1), ("plus", 1)):
+                if parts[name].collidepoint(pos):
+                    self._step(field, direction)
+                    now = time.time()
+                    self.hold = [field, direction, now + HOLD_DELAY, now]
+                    return
 
-            elif pos[1] >= row.y + 28:
+            if parts["value"].collidepoint(pos):
+                if self.edit is not field:
+                    self._open_edit(field)
+
+            elif pos[1] >= row.y + 30:
                 self.drag = field
+                self.fine = None
                 self._slide(pos[0])
 
         elif field.kind == "bool":
@@ -441,10 +480,70 @@ class SettingsPanel:
             return
 
         track = parts["track"]
-        f = min(max((mouse_x - track.x) / track.width, 0.0), 1.0)
 
-        self.cfg.set(field.key, field.low + f * (field.high - field.low))
+        if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+
+            # slow drag: moves from where the value is now, a click does not jump
+            if self.fine is None:
+                self.fine = (mouse_x, getattr(self.cfg, field.key))
+
+            x0, v0 = self.fine
+            value = v0 + (mouse_x - x0) / track.width * (field.high - field.low) * FINE_DRAG
+
+        else:
+            self.fine = None
+            f = min(max((mouse_x - track.x) / track.width, 0.0), 1.0)
+            value = field.low + f * (field.high - field.low)
+
+        self.cfg.set(field.key, value)
         self.on_change(False)
+
+
+    def _step(self, field, count, big=None):
+        """Move a number by whole steps; saved a moment after the last one."""
+
+        if big is None:
+            big = pygame.key.get_mods() & pygame.KMOD_SHIFT
+
+        self.cfg.set(field.key, getattr(self.cfg, field.key) + count * field.step * (BIG_STEP if big else 1))
+        self.on_change(False)
+        self.commit_at = time.time() + 0.5
+
+
+    def _fill_edit(self):
+        """The typing box shows the current value, ready to be typed over."""
+
+        value = getattr(self.cfg, self.edit.key)
+        self.text = f"{value:.{self.edit.decimals}f}"
+        self.fresh = True
+
+
+    def _open_edit(self, field):
+
+        self.edit = field
+        self.edit_start = getattr(self.cfg, field.key)
+        self._fill_edit()
+
+
+    def _cancel_edit(self):
+
+        field = self.edit
+        self.edit = None
+
+        if getattr(self.cfg, field.key) != self.edit_start:     # Up / Down already changed it
+            self.cfg.set(field.key, self.edit_start)
+            self.commit_at = None
+            self.on_change(True)
+
+
+    def _next_edit(self, direction):
+
+        numbers = [f for f, _, _ in self.rows if f.kind == "number"]
+        field = self.edit
+        self._commit_edit()
+
+        if field in numbers:
+            self._open_edit(numbers[(numbers.index(field) + direction) % len(numbers)])
 
 
     def _commit_edit(self):
@@ -452,12 +551,16 @@ class SettingsPanel:
         field = self.edit
         self.edit = None
 
+        if self.fresh:          # nothing typed: the value is already right
+            return
+
         try:
             value = float(self.text)
         except ValueError:
             return
 
         self.cfg.set(field.key, value)
+        self.commit_at = None
         self.on_change(True)
 
 
@@ -478,6 +581,15 @@ class SettingsPanel:
         """Call once per frame."""
 
         self._animate()
+
+        if self.hold is not None:
+
+            field, direction, next_at, start = self.hold
+            now = time.time()
+
+            if now >= next_at:
+                self._step(field, direction, big=now - start >= HOLD_FAST or None)
+                self.hold[2] = now + HOLD_REPEAT
 
         if self.commit_at is not None and time.time() >= self.commit_at:
             self.commit_at = None
@@ -615,11 +727,26 @@ class SettingsPanel:
         box = parts["value"]
         track = parts["track"]
 
+        for name, sign in (("minus", "-"), ("plus", "+")):
+            r = parts[name]
+            held = self.hold is not None and self.hold[0] is field and (self.hold[1] < 0) == (name == "minus")
+            color = ACCENT if held else (BUTTON_HOVER if r.collidepoint(mouse) else BUTTON)
+            pygame.draw.rect(screen, color, r, border_radius=5)
+            label = self.title_font.render(sign, True, TEXT)
+            screen.blit(label, label.get_rect(center=(r.centerx, r.centery - 1)))
+
         if field is self.edit:
             pygame.draw.rect(screen, (15, 17, 22), box, border_radius=4)
             pygame.draw.rect(screen, ACCENT, box, 1, border_radius=4)
-            cursor = "|" if int(time.time() * 2) % 2 == 0 else " "
-            text = self.font.render(self.text + cursor, True, TEXT)
+
+            if self.fresh:      # selected: the next key replaces it
+                text = self.font.render(self.text, True, TEXT)
+                sel = text.get_rect(right=box.right - 8, y=box.y + 2).inflate(4, 0)
+                pygame.draw.rect(screen, (45, 95, 160), sel)
+            else:
+                cursor = "|" if int(time.time() * 2) % 2 == 0 else " "
+                text = self.font.render(self.text + cursor, True, TEXT)
+
             screen.blit(text, (box.right - 8 - text.get_width(), box.y + 2))
 
         else:

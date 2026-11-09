@@ -14,6 +14,7 @@ class PlayerSample:
     timestamp: float = 0.0
     xy: tuple | None = None  # optional normalized arena point (-1..1, rim = 1) for future 2D control
     source: str = ""
+    instant: bool = False  # the source already limits and smooths its motion: the paddle goes to u at once
 
 
 class InputAdapter:

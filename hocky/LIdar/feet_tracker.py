@@ -27,6 +27,7 @@ MAX_SPEED = 4000    # mm/s: fastest a player's body is believed to move
 STATIC_MOVE = 40    # mm: an object that moves less than this is "still"
 GATE_STILL = 150    # mm: a still foot keeps its ID only for objects this close
 LIFT_GROWTH = 800   # mm/s: how fast that distance grows while a foot is not seen
+GONE_KEEP = 2.0     # s: a blob back at the spot of a non-player foot lost this recently is that thing again
 
 
 def wrap180(a):
@@ -55,6 +56,7 @@ class Foot:
         self.owner = None           # player index
         self.anchor = (x, y, t)     # where and since when it stands still
         self.static = False         # an object that never moves (not a player)
+        self.used = False           # has been one of a player's feet
 
 
     def predict(self, t):
@@ -72,6 +74,7 @@ class FootTracker:
         self.cfg = cfg
         self.feet = []
         self.next_id = 1
+        self.gone = []              # (x, y, first, anchor, t): where confirmed feet vanished lately
 
 
     def update(self, blobs, t):
@@ -146,6 +149,12 @@ class FootTracker:
                 foot.vx = foot.vy = 0.0         # lifted: stays where it was put down
                 alive.append(foot)
 
+            elif not foot.used:
+                # not a player's foot (an object, a spectator): remember the spot
+                self.gone.append((foot.x, foot.y, foot.first, foot.anchor, t))
+
+        self.gone = [g for g in self.gone if t - g[4] <= GONE_KEEP]
+
         for bi, (bx, by, _, _) in enumerate(blobs):
 
             if bi in used_blobs:
@@ -157,6 +166,14 @@ class FootTracker:
             foot = Foot(self.next_id, bx, by, t)
             self.next_id += 1
             foot.confirmed = cfg.foot_confirm <= 1
+
+            # back where a foot vanished a moment ago (a blinking object, a
+            # foot set down on the same spot): it is not new, keep its age
+            for g in self.gone:
+                if math.hypot(bx - g[0], by - g[1]) < MERGE:
+                    foot.first, foot.anchor = g[2], g[3]
+                    break
+
             alive.append(foot)
 
         self.feet = alive
@@ -167,6 +184,7 @@ class FootTracker:
     def clear(self):
 
         self.feet = []
+        self.gone = []
 
 
 
@@ -188,6 +206,7 @@ class Player:
         self.feet = []              # feet used last scan
         self.paddle_rel = None      # paddle angle inside its sector (deg from the sector start)
         self.paddle_t = None
+        self.snap = False           # the paddle jumps to the player on the next frame
 
 
     @property
@@ -197,18 +216,41 @@ class Player:
         return self.active and self.last_fresh == self.last_t
 
 
-    def update_scan(self, feet, t, cfg):
-        """feet: confirmed feet in this player's sector."""
+    def update_scan(self, feet, t, cfg, new=()):
+        """feet: confirmed feet in this player's sector. new: feet that appeared
+        this scan and are not confirmed yet (used only to follow a running player)."""
 
         dt = 0.1 if self.last_t is None else min(max(t - self.last_t, 1e-3), 0.5)
         self.last_t = t
+        jumped = False
+        radius = cfg.player_radius
 
         # which feet are this player's
         if self.active:
             fade = math.exp(-dt / cfg.predict_time) if cfg.predict_time > 0 else 0.0
             px = self.x + self.vx * fade * dt
             py = self.y + self.vy * fade * dt
-            mine = [f for f in feet if math.hypot(f.x - px, f.y - py) <= cfg.player_radius]
+            mine = [f for f in feet if math.hypot(f.x - px, f.y - py) <= radius]
+
+            if not any(f.last_seen == t for f in mine):
+                # nothing of the player is on the floor near the old spot. Feet
+                # that landed elsewhere since then are the player (a jump, a
+                # run); feet that were already standing there are someone else.
+                landed = self.last_fresh - 0.15
+                away = [f for f in feet if f.last_seen == t and f not in mine and f.first > landed]
+
+                if away and cfg.jump_distance > 0:
+                    # the only player of this sector stands somewhere else now
+                    # (jumped / ran there): take those feet at once, drop the old spot
+                    seed = max(away, key=lambda f: f.hits)
+                    mine = [f for f in feet if f.last_seen == t
+                            and math.hypot(f.x - seed.x, f.y - seed.y) <= radius]
+                    jumped = True
+
+                else:
+                    # running: a foot that just landed ahead is used now,
+                    # without waiting for its confirmation
+                    mine += [f for f in new if math.hypot(f.x - px, f.y - py) <= radius]
 
         else:
             fresh = [f for f in feet if f.last_seen == t]
@@ -226,7 +268,15 @@ class Player:
         mine = mine[:cfg.feet_per_player]
 
         fresh = [f for f in mine if f.last_seen == t]
+
+        # a lifted foot far behind the standing ones is an old spot (the
+        # player ran or jumped away from it): it no longer counts
+        mine = [f for f in mine if f.last_seen == t or not fresh or
+                min(math.hypot(f.x - g.x, f.y - g.y) for g in fresh) <= radius]
         self.feet = mine
+
+        for f in mine:
+            f.used = True
 
         if fresh:
 
@@ -246,14 +296,25 @@ class Player:
                 sy += w * f.y
 
             mx, my = sx / sw, sy / sw
+            far = (cfg.jump_distance > 0 and self.active and
+                   math.hypot(mx - self.x - self.vx * dt, my - self.y - self.vy * dt) > cfg.jump_distance)
 
             if not self.active:
                 # new player: the estimate starts at the feet, the paddle
-                # glides there (paddle smoothing and max speed)
+                # glides there, or jumps there when it is far (step_paddle)
                 self.active = True
                 self.x, self.y = mx, my
                 self.vx = self.vy = 0.0
                 self.conf = 0.0
+
+            elif jumped or far:
+                # teleport: the feet are far from the estimate, so gliding
+                # would only lag. A jump to a new spot also forgets the old speed.
+                self.x, self.y = mx, my
+                if jumped:
+                    self.vx = self.vy = 0.0
+                self.conf = max(self.conf, 0.5)
+                self.snap = True
 
             else:
                 # alpha-beta filter: predict with the walking speed, then
@@ -331,6 +392,14 @@ class Player:
 
         target = min(max(target, lo), hi)
 
+        # teleport: the player jumped, or the paddle is far behind the player
+        gap_mm = math.radians(abs(target - self.paddle_rel)) * cfg.radius
+        snap, self.snap = self.snap, False
+
+        if self.active and (snap or (cfg.jump_distance > 0 and gap_mm > cfg.jump_distance)):
+            self.paddle_rel = target
+            return (start + self.paddle_rel) % 360
+
         # standing still = strong smoothing (no jitter), walking = light (no lag)
         speed = math.hypot(self.vx, self.vy) if self.active else 0.0
         w = min(1.0, speed / max(cfg.moving_speed, 1.0))
@@ -400,6 +469,7 @@ class Game:
         feet = self.tracker.update(blobs, t)
 
         owned = [[] for _ in self.players]
+        new = [[] for _ in self.players]
 
         for foot in feet:
             if foot.confirmed and not foot.static:
@@ -407,9 +477,11 @@ class Game:
                 owned[foot.owner].append(foot)
             else:
                 foot.owner = None
+                if not foot.static and foot.last_seen == t:
+                    new[self._owner(foot, sectors)].append(foot)
 
-        for player, mine in zip(self.players, owned):
-            player.update_scan(mine, t, self.cfg)
+        for player, mine, fresh in zip(self.players, owned, new):
+            player.update_scan(mine, t, self.cfg, fresh)
 
 
     def step(self, t):

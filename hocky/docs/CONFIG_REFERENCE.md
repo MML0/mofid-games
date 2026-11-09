@@ -645,6 +645,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `input.lidar.mirror_y` | False | bool | live | Mirror up / down |
 | `input.lidar.swap_players` | False | bool | live | Swap players — Tracker player 1 drives game player 2, and the other way. |
 | `input.lidar.timeout_s` | 0.5 | 0.05 … 5 s | live | Message timeout — No message for this long: the player is absent. |
+| `input.lidar.instant_paddle` | True | bool | live | Paddle follows at once — On: a LiDAR paddle goes straight to the tracker's spot, and the paddle's Max slide speed doesn't slow it. The tracker already smooths it and teleports it when the player jumps. Off: Max slide speed applies. |
 | `input.filters.min_confidence` | 0.4 | 0 … 1 | live | Min confidence |
 | `input.filters.dead_zone` | 0.002 | 0 … 0.05 range | live | Dead zone |
 | `input.filters.max_jump_per_s` | 6.0 | 0.5 … 50 range/s | live | Spike rejection |

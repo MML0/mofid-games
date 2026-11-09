@@ -642,6 +642,9 @@ def _core(sb: SchemaBuilder) -> None:
     sb.b("input.lidar.mirror_y", False, "Mirror up / down")
     sb.b("input.lidar.swap_players", False, "Swap players", "Tracker player 1 drives game player 2, and the other way.")
     sb.f("input.lidar.timeout_s", 0.5, 0.05, 5, 0.05, "s", "Message timeout", "No message for this long: the player is absent.")
+    sb.b("input.lidar.instant_paddle", True, "Paddle follows at once",
+         "On: a LiDAR paddle goes straight to the tracker's spot, and the paddle's Max slide speed doesn't slow it. "
+         "The tracker already smooths it and teleports it when the player jumps. Off: Max slide speed applies.")
     sb.section("Inputs", "Filters & presence")
     sb.f("input.filters.min_confidence", 0.4, 0, 1, 0.01, "", "Min confidence")
     sb.f("input.filters.dead_zone", 0.002, 0, 0.05, 0.001, "range", "Dead zone")

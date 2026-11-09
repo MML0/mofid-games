@@ -70,7 +70,7 @@ class PlayerFilter:
                 u = self.last_u
             self.last_u = u
             self.last_seen = now
-            return PlayerSample(True, u, s.confidence, now, s.xy, s.source)
+            return PlayerSample(True, u, s.confidence, now, s.xy, s.source, s.instant)
         if now - self.last_seen <= cfg["input.filters.absent_timeout_s"]:
             return PlayerSample(True, None, 0.0, now, None, s.source)  # briefly lost: hold
         self.euro.reset()
