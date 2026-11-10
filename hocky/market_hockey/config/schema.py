@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 TABS = [
     "Display & Projection",
@@ -226,11 +226,15 @@ def _core(sb: SchemaBuilder) -> None:
         ("paused", "توقف", "Paused"),
         ("step_in", "وارد زمین شوید", "Player absent"),
         ("smart_hit", f"واکنش به{ZWNJ}موقع!", "Smart hit"),
-        ("player_1", "بازیکن 1", "Player 1 label"),
-        ("player_2", "بازیکن 2", "Player 2 label"),
+        ("player_1", "بازیکن آبی", "Player 1 name (when none is entered)"),
+        ("player_2", "بازیکن قرمز", "Player 2 name (when none is entered)"),
+        ("result_win", "{winner} برنده شد و {win} امتیاز کسب کرد - {loser} {loss} امتیاز کسب کرد",
+         "Result sentence: a winner", "{winner} and {loser} are the names, {win} and {loss} their points."),
+        ("result_draw", "مساوی شدید و هر کدام {draw_words} امتیاز کسب کردید", "Result sentence: a draw",
+         "{draw_words} writes the points in Persian words (دو), {draw} as a number."),
     ]
-    for key, val, label in strings:
-        sb.s(f"text.{key}", val, label, rtl=True)
+    for key, val, label, *help_ in strings:
+        sb.s(f"text.{key}", val, label, help=help_[0] if help_ else "", rtl=True)
 
     # ------------------------------------------------------------------ match
     sb.section("Match & Scoring", "End conditions")
@@ -241,6 +245,10 @@ def _core(sb: SchemaBuilder) -> None:
     sb.e("match.tie_rule", "draw", ("draw", "golden_goal"), "When time runs out tied",
          "golden_goal: the clock stops and play goes on until someone scores, so the game always has a winner. "
          "draw: the match ends level.")
+    sb.i("match.points_win", 4, 0, 99, 1, "pts", "Leaderboard points: winner",
+         "Shown on the result screen as +4 for an outside leaderboard. The game does not add them up.")
+    sb.i("match.points_loss", 1, 0, 99, 1, "pts", "Leaderboard points: loser")
+    sb.i("match.points_draw", 2, 0, 99, 1, "pts", "Leaderboard points: each player on a draw")
     sb.section("Match & Scoring", "Flow")
     sb.e("match.start_mode", "operator_key", ("operator_key", "auto_when_both_present", "auto_loop"), "Start trigger",
          "operator_key = Space/Enter or the panel; auto modes start by themselves.")
@@ -266,7 +274,7 @@ def _core(sb: SchemaBuilder) -> None:
          "end_rally: any goal clears all balls and re-serves. continue: other balls keep playing.")
     sb.section("Match & Scoring", "Phases (from the concept timeline)")
     sb.b("phases.enabled", True, "Use phases", "Power-ups unlock progressively during the match.")
-    sb.f("phases.warmup_end", 0.167, 0, 1, 0.001, "of match", "Warm-up ends", "No power-ups before this point.")
+    sb.f("phases.warmup_end", 0.167, 0, 1, 0.001, "of match", "Warm-up ends", "Only a few slow orbs before this point (Power-ups → Warm-up).")
     sb.f("phases.early_end", 0.417, 0, 1, 0.001, "of match", "Early phase ends")
     sb.f("phases.mid_end", 0.75, 0, 1, 0.001, "of match", "Mid phase ends")
     sb.f("phases.peak_end", 0.917, 0, 1, 0.001, "of match", "Peak phase ends", "No new spawns after this point.")
@@ -312,6 +320,21 @@ def _core(sb: SchemaBuilder) -> None:
     sb.section("Paddles", "General")
     sb.b("paddles.link_players", True, "Same settings for both players", "When on, Player 2 uses Player 1's paddle values.")
     sb.e("paddles.size_stacking", "multiply", ("multiply", "replace"), "Size effect stacking")
+    sb.section("Paddles", "Catch assist (paddle drawn toward the ball)")
+    sb.b("paddles.assist.enabled", True, "Catch assist",
+         "A player who is already close to where the ball will arrive has their paddle drift slowly toward it, "
+         "and it stays there until the ball is hit. A player who is far off gets no help and concedes.")
+    sb.f("paddles.assist.strength", 0.6, 0, 1, 0.05, "", "Strength",
+         "Share of the gap the assist closes. 0 = off, 1 = all the way to the ball. It never goes past the ball.")
+    sb.i("paddles.assist.reach_px", 170, 0, 600, 5, "px", "Helps within",
+         "How far (along the paddle's track) the player may be from the ball's arrival point and still get help. "
+         "Full help up to 60 % of this, fading to none at this distance. The paddle is about 150 px wide.")
+    sb.f("paddles.assist.speed_px_s", 160, 0, 2000, 10, "px/s", "Drift speed",
+         "How fast the paddle drifts toward the ball and back. Lower is subtler.")
+    sb.f("paddles.assist.dead_zone", 0.3, 0, 1, 0.05, "× half width", "Already covered",
+         "No help while the ball will land within this share of the paddle's half width from its middle.")
+    sb.i("paddles.assist.ball_range_px", 450, 50, 1500, 10, "px", "Starts when the ball is within",
+         "The ball's distance from the paddle when the help starts building up.")
     for pid, name in (("p1", "Player 1"), ("p2", "Player 2")):
         p = f"paddles.{pid}"
         sb.section("Paddles", f"{name} — shape & track")
@@ -372,12 +395,17 @@ def _core(sb: SchemaBuilder) -> None:
     # ------------------------------------------------------------------ power-ups (global)
     sb.section("Power-ups", "Spawning")
     sb.b("powerups.enabled", True, "Power-ups enabled")
-    sb.f("powerups.spawn_interval_min_s", 1.5, 0.5, 30, 0.5, "s", "Spawn interval min")
-    sb.f("powerups.spawn_interval_max_s", 3.0, 0.5, 60, 0.5, "s", "Spawn interval max")
-    sb.i("powerups.min_active_orbs", 2, 0, 8, 1, "", "Min orbs at once",
+    sb.f("powerups.spawn_interval_min_s", 3.5, 0.5, 30, 0.5, "s", "Spawn interval min")
+    sb.f("powerups.spawn_interval_max_s", 6.0, 0.5, 60, 0.5, "s", "Spawn interval max")
+    sb.i("powerups.min_active_orbs", 1, 0, 8, 1, "", "Min orbs at once",
          "When fewer are on the field, a new one spawns right away (cooldowns and the conflict rule are relaxed "
-         "if needed). No orbs spawn in the warm-up and final phases.")
+         "if needed). Not in the warm-up, and no orbs spawn in the final phase.")
     sb.i("powerups.max_active_orbs", 4, 0, 8, 1, "", "Max orbs at once")
+    sb.i("powerups.warmup_max_orbs", 2, 0, 8, 1, "", "Warm-up: max orbs at once",
+         "The warm-up is for learning the paddle. 0 keeps it orb-free.")
+    sb.f("powerups.warmup_first_s", 3.0, 0, 30, 0.5, "s", "Warm-up: first orb after")
+    sb.f("powerups.warmup_interval_min_s", 5.0, 0.5, 60, 0.5, "s", "Warm-up: spawn interval min")
+    sb.f("powerups.warmup_interval_max_s", 8.0, 0.5, 60, 0.5, "s", "Warm-up: spawn interval max")
     sb.b("powerups.unique_orbs", True, "Unique orbs", "Never two orbs of the same power-up on the field at once.")
     sb.i("powerups.max_bad_orbs", 1, 0, 8, 1, "", "Max red orbs at once")
     sb.i("powerups.orb_radius", 60, 10, 90, 1, "px", "Orb radius")
@@ -540,7 +568,7 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("motion.logo_size", 0.32, 0.1, 0.7, 0.01, "×D", "Waiting width")
     sb.f("motion.logo_result_size", 0.24, 0.08, 0.5, 0.01, "×D", "Result screen width")
     sb.b("motion.logo_play", True, "Logo in the middle during the match", "Faint, under the game, like a mark on the ice.")
-    sb.f("motion.logo_play_opacity", 0.14, 0.02, 0.6, 0.01, "", "Match opacity")
+    sb.f("motion.logo_play_opacity", 0.4, 0.02, 1, 0.01, "", "Match opacity")
     sb.f("motion.logo_play_size", 0.36, 0.1, 0.8, 0.01, "×D", "Match width")
     sb.section("Brand Motion", "Sizes (share of the arena's diameter)")
     sb.f("motion.plane_size", 0.15, 0.04, 0.4, 0.005, "×D", "Paper plane")

@@ -31,7 +31,7 @@ class Ball:
 
 class Paddle:
     __slots__ = ("idx", "theta", "prev_theta", "omega", "omega_s", "size_mult", "present", "last_seen", "target",
-                 "u", "rise_t", "prev_speed", "last_smart", "width", "hold_until")
+                 "u", "rise_t", "prev_speed", "last_smart", "width", "hold_until", "assist_off")
 
     def __init__(self, idx: int):
         self.idx = idx
@@ -49,6 +49,7 @@ class Paddle:
         self.last_smart = -10.0
         self.width = 130.0
         self.hold_until = 0.0
+        self.assist_off = 0.0  # deg the catch assist adds to the player's own position
 
 
 class Orb:

@@ -150,15 +150,22 @@ class TextRenderer:
             f = self.font("digits" if text.strip().replace(":", "").replace("+", "").isdigit() else
                           ("latin" if key == "persian" else key), size, False)
             return f.render(text, True, color)
-        parts = [self._render_run(chunk, rtl, key, size, color) for rtl, chunk in split_runs(text)]
+        runs = split_runs(text)
+        parts = [self._render_run(chunk, rtl, key, size, color) for rtl, chunk in runs]
+        # the Persian font's space is narrow; a number between words gets a little more room on a side with a space
+        pads = [(0, 0) if rtl else (int(size * 0.1) if k + 1 < len(runs) and runs[k + 1][1][:1] == " " else 0,
+                                    int(size * 0.1) if k > 0 and runs[k - 1][1][-1:] == " " else 0)
+                for k, (rtl, _) in enumerate(runs)]
         parts.reverse()  # visual order for an RTL paragraph
-        w = sum(p.get_width() for p in parts)
+        pads.reverse()
+        w = sum(p.get_width() + a + b for p, (a, b) in zip(parts, pads))
         h = max(p.get_height() for p in parts)
         out = pygame.Surface((max(1, w), max(1, h)), pygame.SRCALPHA)
         x = 0
-        for p in parts:
+        for p, (a, b) in zip(parts, pads):
+            x += a
             out.blit(p, (x, (h - p.get_height()) // 2))
-            x += p.get_width()
+            x += p.get_width() + b
         return out
 
     @staticmethod

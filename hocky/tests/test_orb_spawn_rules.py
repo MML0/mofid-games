@@ -1,4 +1,5 @@
-"""Orbs on the field are unique, there are always 2 to 4 of them, and the red shrink orb comes at most twice a game."""
+"""Orbs on the field are unique, there are 1 to 4 of them (a few slow ones in the warm-up), and the red shrink orb
+comes at most twice a game."""
 
 import json
 import random
@@ -24,9 +25,11 @@ def _types_on_field(engine):
     return [o.type_id for o in engine._active_orbs()]
 
 
-def test_defaults_keep_two_to_four_unique_orbs():
+def test_defaults_keep_one_to_four_unique_orbs():
     cfg = Config()
-    assert (cfg["powerups.min_active_orbs"], cfg["powerups.max_active_orbs"]) == (2, 4)
+    assert (cfg["powerups.min_active_orbs"], cfg["powerups.max_active_orbs"]) == (1, 4)
+    assert (cfg["powerups.spawn_interval_min_s"], cfg["powerups.spawn_interval_max_s"]) == (3.5, 6.0)
+    assert cfg["powerups.warmup_max_orbs"] == 2
     assert cfg["powerups.unique_orbs"] is True
     assert cfg["powerups.types.shrink.max_per_match"] == 2
     assert all(cfg[f"powerups.types.{tid}.max_per_match"] == 0 for tid in ("expand", "speed_up", "double_ball"))
@@ -34,7 +37,8 @@ def test_defaults_keep_two_to_four_unique_orbs():
 
 def test_shipped_settings_use_the_new_rules():
     shipped = Config.load(ROOT / "config" / "settings.json")
-    assert (shipped["powerups.min_active_orbs"], shipped["powerups.max_active_orbs"]) == (2, 4)
+    assert (shipped["powerups.min_active_orbs"], shipped["powerups.max_active_orbs"]) == (1, 4)
+    assert shipped["powerups.warmup_max_orbs"] == 2 and shipped["powerups.spawn_interval_min_s"] == 3.5
     assert shipped["powerups.unique_orbs"] and shipped["powerups.types.shrink.max_per_match"] == 2
     assert shipped["powerups.types.expand.glow_color"] == "#3CAA5C"
 
@@ -63,7 +67,7 @@ def test_unique_orbs_can_be_switched_off():
 
 
 def test_the_minimum_is_filled_at_once_without_waiting_for_the_timer():
-    engine = _engine()
+    engine = _engine(**{"powerups.min_active_orbs": 2})
     engine.next_spawn = 99.0
     for _ in range(3):
         engine._update_spawner(1 / 60, demo=False)
@@ -74,7 +78,7 @@ def test_the_minimum_is_filled_at_once_without_waiting_for_the_timer():
 
 
 def test_the_minimum_bends_cooldowns_but_never_uniqueness():
-    engine = _engine()
+    engine = _engine(**{"powerups.min_active_orbs": 2})
     engine.play_elapsed = 15.0  # early phase: only expand, shrink and speed_up are unlocked
     assert engine.phase_index() == 1
     engine.cfg.set("powerups.types.shrink.enabled", False)
@@ -109,10 +113,11 @@ def test_shrink_spawns_at_most_twice_per_game():
     assert engine.spawn_counts == {}
 
 
-def test_the_floor_keeps_two_orbs_through_a_whole_game_and_rules_hold():
-    engine = Engine(Config({"match.duration_s": 60}), random.Random(11))
+def test_a_whole_game_keeps_one_to_four_orbs_without_crowding():
+    engine = Engine(Config({"match.duration_s": 60, "match.score_limit_enabled": False}), random.Random(11))
     engine.start_match()
-    low = total = 0
+    low = full = total = 0
+    warm = []
     shrinks = set()
     for _ in range(60 * 90):
         engine.step(1 / 60)
@@ -123,12 +128,41 @@ def test_the_floor_keeps_two_orbs_through_a_whole_game_and_rules_hold():
         for o in engine.orbs:
             if o.type_id == "shrink":
                 shrinks.add(o.id)
+        if engine.state == "PLAYING" and engine.phase_index() == 0:
+            warm.append(len(types))
         if engine.state == "PLAYING" and engine.phase_index() in (1, 2, 3):
             total += 1
-            low += len(types) < 2
+            low += len(types) < 1
+            full += len(types) == 4
     assert total > 60 * 15
     assert low / total < 0.02  # only the odd frame where no clear spot was free
-    assert len(shrinks) <= 2
+    assert full / total < 0.25  # not four in the middle all the time
+    assert max(warm) <= 2 and len(shrinks) <= 2
+
+
+def test_the_warm_up_spawns_one_or_two_orbs_slowly():
+    engine = _engine()
+    engine.play_elapsed = 0.0
+    assert engine.phase_index() == 0
+    engine.next_spawn = engine.cfg["powerups.warmup_first_s"]
+    spawned = []
+    for k in range(60 * 20):  # 20 s of warm-up (the phase is held, the timer does not move here)
+        before = len(engine._active_orbs())
+        engine._update_spawner(1 / 60, demo=False)
+        if len(engine._active_orbs()) > before:
+            spawned.append(k / 60)
+        assert len(engine._active_orbs()) <= 2
+    assert spawned and spawned[0] >= engine.cfg["powerups.warmup_first_s"] - 0.05
+    assert all(b - a >= 5.0 - 0.05 for a, b in zip(spawned, spawned[1:]))
+    assert len(engine._active_orbs()) == 2
+
+
+def test_the_warm_up_can_stay_empty():
+    engine = _engine(**{"powerups.warmup_max_orbs": 0})
+    engine.play_elapsed = 0.0
+    for _ in range(60 * 10):
+        engine._update_spawner(1 / 60, demo=False)
+    assert engine._active_orbs() == []
 
 
 def test_old_settings_move_to_four_orbs_and_the_green_glow(tmp_path):

@@ -28,6 +28,24 @@ STATIC_PREFIXES = ("display.canvas", "display.supersample", "arena.", "walls.", 
 MASK_PREFIXES = ("display.canvas", "arena.mask", "arena.center")
 
 
+FA_NUMBER_WORDS = ("صفر", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه", "ده")
+
+
+def result_sentence(cfg, engine) -> str:
+    """«آبی برنده شد و 4 امتیاز کسب کرد - قرمز 1 امتیاز کسب کرد», or the draw sentence, from the text settings."""
+    pts = engine.match_points()
+    w = engine.winner
+    if w is None:
+        words = FA_NUMBER_WORDS[pts[0]] if 0 <= pts[0] < len(FA_NUMBER_WORDS) else str(pts[0])
+        return cfg["text.result_draw"].replace("{draw_words}", words).replace("{draw}", str(pts[0]))
+    subs = {"{winner}": engine.display_name(w), "{loser}": engine.display_name(1 - w),
+            "{win}": str(pts[w]), "{loss}": str(pts[1 - w])}
+    out = cfg["text.result_win"]
+    for k, v in subs.items():
+        out = out.replace(k, v)
+    return out
+
+
 def ease_out_back(t: float) -> float:
     t = max(0.0, min(1.0, t))
     c1, c3 = 1.70158, 2.70158
@@ -819,7 +837,7 @@ class Renderer:
             k = 1.0 + (0.5 * math.sin(math.pi * t / 0.6) if 0 <= t < 0.6 else 0)
             self._text_at(str(engine.scores[i]), cfg["hud.score_size"], c["teamb"][i], *g.score_pos[i],
                           key="digits", alpha=ha, scale_k=k, glow=hg, reserve=True)
-            name = engine.names[i] if cfg["hud.show_names"] else ""
+            name = engine.display_name(i) if cfg["hud.show_names"] else ""
             if name or cfg["hud.show_player_labels"]:
                 x, y = g.score_pos[i]
                 ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
@@ -1546,17 +1564,25 @@ class Renderer:
         else:
             self._text_at(cfg["text.draw"], int(cfg["text.banner_size"] * 1.3), (255, 255, 255), 0, R * 0.18,
                           key="persian_title", outline=3, glow=0.4)
+        dx, dy = math.cos(math.radians(270 + g.rot)), math.sin(math.radians(270 + g.rot))
+        pts = engine.match_points()
         for i in (0, 1):
             gx, gy = g.goal_dir[i]
-            dx, dy = math.cos(math.radians(270 + g.rot)), math.sin(math.radians(270 + g.rot))
-            self._text_at(str(engine.scores[i]), int(cfg["hud.score_size"] * 1.5), c["teamb"][i],
-                          gx * R * 0.5 + dx * R * 0.06, gy * R * 0.5 + dy * R * 0.06, key="digits", outline=3,
-                          glow=cfg["hud.glow"])
-            if engine.names[i]:
-                self._name_at(engine.names[i], int(cfg["text.banner_size"] * 0.75), i,
-                              gx * R * 0.5 - dx * R * 0.16, gy * R * 0.5 - dy * R * 0.16)
-        self._text_at(cfg["text.slogan"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255), 0, -R * 0.55,
-                      alpha=min(1.0, st_t / 0.8))
+            cx, cy = gx * R * 0.5, gy * R * 0.5
+            self._name_at(engine.display_name(i), int(cfg["text.banner_size"] * 0.75), i,
+                          cx - dx * R * 0.16, cy - dy * R * 0.16)
+            # the game's score, small; the leaderboard points it earned, big and bold
+            self._text_at(str(engine.scores[i]), int(cfg["hud.score_size"] * 0.7), c["teamb"][i],
+                          cx - dx * R * 0.02, cy - dy * R * 0.02, key="digits", outline=3, glow=cfg["hud.glow"] * 0.5,
+                          ink_center=True)
+            self._text_at(f"+{pts[i]}", int(cfg["hud.score_size"] * 1.35), mix(c["teamb"][i], (255, 255, 255), 0.25),
+                          cx + dx * R * 0.15, cy + dy * R * 0.15, key="digits", outline=3, glow=cfg["hud.glow"],
+                          ink_center=True)
+        fade = min(1.0, st_t / 0.8)
+        self._text_at(result_sentence(cfg, engine), int(cfg["text.toast_size"] * 1.05), (255, 255, 255),
+                      0, -R * 0.4, key="persian", outline=3, alpha=fade)
+        self._text_at(cfg["text.slogan"], int(cfg["text.toast_size"] * 0.85), (255, 255, 255), 0, -R * 0.58,
+                      alpha=fade)
         if cfg["motion.logo_result"]:
             self.motion.draw_result_logo(self.canvas, min(1.0, st_t / 1.2))
 

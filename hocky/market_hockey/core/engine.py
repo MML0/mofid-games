@@ -20,6 +20,11 @@ from .geometry import Arc, Geometry, clamp, pp
 
 log = logging.getLogger(__name__)
 
+
+def smoothstep(x: float) -> float:
+    x = clamp(x, 0.0, 1.0)
+    return x * x * (3 - 2 * x)
+
 ATTRACT, INTRO, COUNTDOWN, SERVE, PLAYING, GOAL, FINAL, RESULT = (
     "ATTRACT", "INTRO", "COUNTDOWN", "SERVE", "PLAYING", "GOAL", "FINAL", "RESULT")
 LIVE_STATES = (SERVE, PLAYING)
@@ -210,7 +215,7 @@ class Engine:
         self.golden = False
         self.winner = None
         self.goal_info = None
-        self.next_spawn = cfg["powerups.spawn_interval_min_s"] * 0.5
+        self.next_spawn = cfg["powerups.warmup_first_s"]
         self.type_cd.clear()
         self.spawn_counts.clear()
         self.last_type = None
@@ -252,6 +257,15 @@ class Engine:
 
     def display_name(self, idx: int) -> str:
         return self.names[idx] or self.cfg[f"text.player_{idx + 1}"]
+
+    def match_points(self) -> list[int]:
+        """Leaderboard points for the finished game (the leaderboard itself is outside the game)."""
+        cfg = self.cfg
+        if self.winner is None:
+            return [cfg["match.points_draw"]] * 2
+        pts = [cfg["match.points_loss"]] * 2
+        pts[self.winner] = cfg["match.points_win"]
+        return pts
 
     def toggle_pause(self) -> None:
         self.paused = not self.paused
@@ -422,7 +436,8 @@ class Engine:
         self.predictions.clear()
         self._set_state(FINAL)
         self.emit("match_end", scores=list(self.scores), winner=self.winner, stats=self.stats,
-                  duration=self.play_elapsed, golden=self.golden, names=list(self.names))
+                  duration=self.play_elapsed, golden=self.golden, names=list(self.names),
+                  points=self.match_points())
         self.names_used = True
 
     # ---------------------------------------------------------------- serve
@@ -521,25 +536,85 @@ class Engine:
                 if self.time - p.last_seen > cfg["input.filters.lost_hold_s"]:
                     p.target = (lo + hi) / 2
             p.target = clamp(p.target, lo, hi)
+            want = self._catch_assist(i, p, w) if self.state in LIVE_STATES else 0.0
+            # a slow, steady drift (never a jump), toward the help or back to the player
+            step = math.degrees(max(0.0, cfg["paddles.assist.speed_px_s"]) * dt / self.geom.paddle_back_radius(i))
+            assist_move = clamp(want - p.assist_off, -step, step)
+            p.assist_off += assist_move
+            aim = clamp(p.target + p.assist_off, lo, hi)
             p.prev_theta = p.theta
             maxd = pp(cfg, i, "max_speed_deg_s") * dt
             if s is not None and s.present and s.u is not None and getattr(s, "instant", False):
                 # the source already smooths, limits and teleports: following it adds only lag
                 p.omega_s = 0.0
-                delta = p.target - p.theta
+                delta = aim - p.theta
             elif pp(cfg, i, "follow_mode") == "spring":
                 k = pp(cfg, i, "follow_stiffness")
-                p.omega_s += (k * k * (p.target - p.theta) - 2 * k * p.omega_s) * dt
+                p.omega_s += (k * k * (aim - p.theta) - 2 * k * p.omega_s) * dt
                 delta = clamp(p.omega_s * dt, -maxd, maxd)
             else:
-                delta = clamp(p.target - p.theta, -maxd, maxd)
+                delta = clamp(aim - p.theta, -maxd, maxd)
             p.theta = clamp(p.theta + delta, lo, hi)
-            p.omega = (p.theta - p.prev_theta) / dt if dt > 0 else 0.0
+            # the bounce only feels the player's own swing: the assist's drift never throws the ball sideways
+            p.omega = (p.theta - p.prev_theta - assist_move) / dt if dt > 0 else 0.0
             p.u = (p.theta - lo) / (hi - lo) if hi > lo else 0.5
             speed = abs(math.radians(p.omega)) * self.geom.paddle_back_radius(i)
             if speed >= thr > p.prev_speed:
                 p.rise_t = self.time
             p.prev_speed = speed
+
+    def _catch_assist(self, i: int, p: Paddle, width: float) -> float:
+        """Degrees to add to where player i stands, so the paddle drifts toward where the coming ball meets it.
+
+        Only a player who is already close gets help: if the ball arrives further than `paddles.assist.reach_px`
+        from them, they get nothing and concede. A player already covering the ball gets nothing either (it would
+        only look odd). The help lasts until the ball is hit or gone, so the paddle never pulls away at contact,
+        and it is always a share of the gap toward the ball, so it can never push the paddle past or away from it."""
+        cfg = self.cfg
+        strength = clamp(cfg["paddles.assist.strength"], 0.0, 1.0)
+        if not cfg["paddles.assist.enabled"] or strength <= 0:
+            return 0.0
+        g = self.geom
+        rb = g.paddle_back_radius(i)
+        hw = width / 2
+        reach = max(1.0, float(cfg["paddles.assist.reach_px"]))
+        rng = max(1.0, float(cfg["paddles.assist.ball_range_px"]))
+        face = rb - max(1.0, hw * clamp(pp(cfg, i, "shape_ratio"), 0.05, 1.0))  # the dome's tip
+        best = None
+        for b in self.live_balls():
+            if b.held or self.chaos_paused(b):
+                continue
+            bv = b.x * b.vx + b.y * b.vy
+            vv = b.vx * b.vx + b.vy * b.vy
+            if bv <= 0 or vv < 1e-6:
+                continue  # heading back toward the center: hit already, or not coming
+            r = face - b.r  # the ball's center when it touches the paddle's face
+            c = b.x * b.x + b.y * b.y - r * r
+            if c >= 0:
+                hx, hy, d = b.x, b.y, 0.0  # it is at the paddle now: keep helping until it is hit or scores
+            else:
+                t = (-bv + math.sqrt(bv * bv - vv * c)) / vv
+                hx, hy, d = b.x + b.vx * t, b.y + b.vy * t, math.sqrt(vv) * t
+            ang = math.degrees(math.atan2(hy, hx))
+            if g.goal_of(ang) != i or d > rng:
+                continue  # going to a wall or the other goal, or still far off
+            if best is None or d < best[0]:
+                best = (d, ang)
+        if best is None:
+            return 0.0
+        d, ang = best
+        aim = g.u_to_theta(i, g.angle_to_u(i, ang, width), width)
+        gap_deg = aim - p.target
+        gap = abs(math.radians(gap_deg)) * rb  # px along the track between the player and the ball's arrival
+        if gap >= reach:
+            return 0.0  # too far: no help
+        covered = hw * clamp(cfg["paddles.assist.dead_zone"], 0.0, 1.0)
+        if gap <= covered:
+            return 0.0  # the paddle already covers it
+        k = 1.0 - smoothstep((gap - reach * 0.6) / (reach * 0.4))  # full help up to 60 % of the reach, then fading
+        near = clamp((rng - d) / (rng * 0.5), 0.0, 1.0)  # builds up as the ball comes closer
+        share = (gap - covered) / gap * strength * k * near  # never more than the uncovered part of the gap
+        return gap_deg * share
 
     def _paddle_velocity(self, i: int, theta: float) -> tuple[float, float]:
         """Tangential paddle velocity used by the bounce, capped to a human-like speed (keyboard paddles are fast)."""
@@ -842,7 +917,10 @@ class Engine:
         if not cfg["powerups.enabled"]:
             return
         phase = 2 if demo else self.phase_index()
-        if phase in (0, 4):
+        if phase == 4:
+            return
+        if phase == 0:
+            self._warmup_spawner(dt)
             return
         self.next_spawn -= dt
         floor = min(cfg["powerups.min_active_orbs"], cfg["powerups.max_active_orbs"])
@@ -856,6 +934,19 @@ class Engine:
         mult = cfg["phases.peak_spawn_mult"] if phase == 3 else 1.0
         self.next_spawn = self.rng.uniform(min(lo, hi), max(lo, hi)) * mult
         self._spawn_orb(phase=phase)
+
+    def _warmup_spawner(self, dt: float) -> None:
+        """The warm-up is for learning the paddle: only a few orbs, slowly, and none kept on the field by force."""
+        cfg = self.cfg
+        cap = min(cfg["powerups.warmup_max_orbs"], cfg["powerups.max_active_orbs"])
+        if cap <= 0:
+            return
+        self.next_spawn -= dt
+        if self.next_spawn > 0 or len(self._active_orbs()) >= cap:
+            return
+        lo, hi = cfg["powerups.warmup_interval_min_s"], cfg["powerups.warmup_interval_max_s"]
+        self.next_spawn = self.rng.uniform(min(lo, hi), max(lo, hi))
+        self._spawn_orb(phase=0)
 
     def _type_class(self, tid: str) -> str:
         return self.cfg[f"powerups.types.{tid}.class"]

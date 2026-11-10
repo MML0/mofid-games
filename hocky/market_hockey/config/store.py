@@ -215,6 +215,22 @@ V15_DEFAULT_CHANGES = {
 }
 
 # Migrations: {from_version: function(flat_dict) -> flat_dict}
+V16_DEFAULT_CHANGES = {
+    "powerups.min_active_orbs": (2, 1),
+    "powerups.spawn_interval_min_s": (1.5, 3.5),
+    "powerups.spawn_interval_max_s": (3.0, 6.0),
+    "motion.logo_play_opacity": (0.14, 0.4),
+    "text.player_1": ("بازیکن 1", "بازیکن آبی"),
+    "text.player_2": ("بازیکن 2", "بازیکن قرمز"),
+}
+
+
+def _v15_to_v16(flat: dict) -> dict:
+    flat = _changes(V16_DEFAULT_CHANGES)(flat)
+    flat["match.tie_rule"] = "draw"  # golden goal is off for now: a tied game is a draw (2 points each)
+    return flat
+
+
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
                               4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
                               6: _changes(V7_DEFAULT_CHANGES), 7: _changes(V8_DEFAULT_CHANGES),
@@ -224,7 +240,7 @@ MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: 
                               11: _changes(V12_DEFAULT_CHANGES),
                               12: _changes(V13_DEFAULT_CHANGES),
                               13: _changes(V14_DEFAULT_CHANGES),
-                              14: _changes(V15_DEFAULT_CHANGES)}
+                              14: _changes(V15_DEFAULT_CHANGES), 15: _v15_to_v16}
 
 
 class Config:

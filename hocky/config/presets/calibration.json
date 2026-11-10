@@ -96,8 +96,10 @@
     "paused": "توقف",
     "step_in": "وارد زمین شوید",
     "smart_hit": "واکنش به‌موقع!",
-    "player_1": "بازیکن 1",
-    "player_2": "بازیکن 2"
+    "player_1": "بازیکن آبی",
+    "player_2": "بازیکن قرمز",
+    "result_win": "{winner} برنده شد و {win} امتیاز کسب کرد - {loser} {loss} امتیاز کسب کرد",
+    "result_draw": "مساوی شدید و هر کدام {draw_words} امتیاز کسب کردید"
   },
   "fonts": {
     "persian": "Pinar-Bold.ttf",
@@ -111,6 +113,9 @@
     "score_limit_enabled": true,
     "score_limit": 7,
     "tie_rule": "draw",
+    "points_win": 4,
+    "points_loss": 1,
+    "points_draw": 2,
     "start_mode": "operator_key",
     "auto_loop_delay_s": 8.0,
     "attract_demo": false,
@@ -175,6 +180,14 @@
   "paddles": {
     "link_players": true,
     "size_stacking": "multiply",
+    "assist": {
+      "enabled": true,
+      "strength": 0.6,
+      "reach_px": 170,
+      "speed_px_s": 160.0,
+      "dead_zone": 0.3,
+      "ball_range_px": 450
+    },
     "p1": {
       "width": 130,
       "shape_ratio": 1.0,
@@ -241,10 +254,14 @@
   },
   "powerups": {
     "enabled": false,
-    "spawn_interval_min_s": 1.5,
-    "spawn_interval_max_s": 3.0,
-    "min_active_orbs": 2,
+    "spawn_interval_min_s": 3.5,
+    "spawn_interval_max_s": 6.0,
+    "min_active_orbs": 1,
     "max_active_orbs": 4,
+    "warmup_max_orbs": 2,
+    "warmup_first_s": 3.0,
+    "warmup_interval_min_s": 5.0,
+    "warmup_interval_max_s": 8.0,
     "unique_orbs": true,
     "max_bad_orbs": 1,
     "orb_radius": 60,
@@ -592,7 +609,7 @@
     "logo_size": 0.32,
     "logo_result_size": 0.24,
     "logo_play": true,
-    "logo_play_opacity": 0.14,
+    "logo_play_opacity": 0.4,
     "logo_play_size": 0.36,
     "plane_size": 0.15,
     "coin_size": 0.072,
@@ -733,8 +750,8 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 15,
-    "saved_at": "2026-11-09 21:13:38",
+    "schema_version": 16,
+    "saved_at": "2026-11-10 14:50:04",
     "app": "Market Hockey"
   }
 }

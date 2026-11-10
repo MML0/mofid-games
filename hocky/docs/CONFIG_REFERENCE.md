@@ -106,8 +106,10 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `text.paused` | توقف | str | live | Paused |
 | `text.step_in` | وارد زمین شوید | str | live | Player absent |
 | `text.smart_hit` | واکنش به‌موقع! | str | live | Smart hit |
-| `text.player_1` | بازیکن 1 | str | live | Player 1 label |
-| `text.player_2` | بازیکن 2 | str | live | Player 2 label |
+| `text.player_1` | بازیکن آبی | str | live | Player 1 name (when none is entered) |
+| `text.player_2` | بازیکن قرمز | str | live | Player 2 name (when none is entered) |
+| `text.result_win` | {winner} برنده شد و {win} امتیاز کسب کرد - {loser} {loss} امتیاز کسب کرد | str | live | Result sentence: a winner — {winner} and {loser} are the names, {win} and {loss} their points. |
+| `text.result_draw` | مساوی شدید و هر کدام {draw_words} امتیاز کسب کردید | str | live | Result sentence: a draw — {draw_words} writes the points in Persian words (دو), {draw} as a number. |
 
 ## Match & Scoring
 
@@ -118,6 +120,9 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `match.score_limit_enabled` | True | bool | live | Score limit enabled |
 | `match.score_limit` | 7 | 1 … 50 goals | live | Score limit |
 | `match.tie_rule` | draw | draw, golden_goal | live | When time runs out tied — golden_goal: the clock stops and play goes on until someone scores, so the game always has a winner. draw: the match ends level. |
+| `match.points_win` | 4 | 0 … 99 pts | live | Leaderboard points: winner — Shown on the result screen as +4 for an outside leaderboard. The game does not add them up. |
+| `match.points_loss` | 1 | 0 … 99 pts | live | Leaderboard points: loser |
+| `match.points_draw` | 2 | 0 … 99 pts | live | Leaderboard points: each player on a draw |
 | `match.start_mode` | operator_key | operator_key, auto_when_both_present, auto_loop | live | Start trigger — operator_key = Space/Enter or the panel; auto modes start by themselves. |
 | `match.auto_loop_delay_s` | 8.0 | 1 … 60 s | live | Auto-loop idle time |
 | `match.attract_demo` | True | bool | live | Attract demo (AI vs AI) |
@@ -136,7 +141,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `scoring.smart_hit_points` | 0 | 0 … 5 | live | Bonus points per smart hit |
 | `scoring.multiball_policy` | end_rally | end_rally, continue | live | Multi-ball goal policy — end_rally: any goal clears all balls and re-serves. continue: other balls keep playing. |
 | `phases.enabled` | True | bool | live | Use phases — Power-ups unlock progressively during the match. |
-| `phases.warmup_end` | 0.167 | 0 … 1 of match | live | Warm-up ends — No power-ups before this point. |
+| `phases.warmup_end` | 0.167 | 0 … 1 of match | live | Warm-up ends — Only a few slow orbs before this point (Power-ups → Warm-up). |
 | `phases.early_end` | 0.417 | 0 … 1 of match | live | Early phase ends |
 | `phases.mid_end` | 0.75 | 0 … 1 of match | live | Mid phase ends |
 | `phases.peak_end` | 0.917 | 0 … 1 of match | live | Peak phase ends — No new spawns after this point. |
@@ -185,6 +190,12 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 |---|---|---|---|---|
 | `paddles.link_players` | True | bool | live | Same settings for both players — When on, Player 2 uses Player 1's paddle values. |
 | `paddles.size_stacking` | multiply | multiply, replace | live | Size effect stacking |
+| `paddles.assist.enabled` | True | bool | live | Catch assist — A player who is already close to where the ball will arrive has their paddle drift slowly toward it, and it stays there until the ball is hit. A player who is far off gets no help and concedes. |
+| `paddles.assist.strength` | 0.6 | 0 … 1 | live | Strength — Share of the gap the assist closes. 0 = off, 1 = all the way to the ball. It never goes past the ball. |
+| `paddles.assist.reach_px` | 170 | 0 … 600 px | live | Helps within — How far (along the paddle's track) the player may be from the ball's arrival point and still get help. Full help up to 60 % of this, fading to none at this distance. The paddle is about 150 px wide. |
+| `paddles.assist.speed_px_s` | 160.0 | 0 … 2000 px/s | live | Drift speed — How fast the paddle drifts toward the ball and back. Lower is subtler. |
+| `paddles.assist.dead_zone` | 0.3 | 0 … 1 × half width | live | Already covered — No help while the ball will land within this share of the paddle's half width from its middle. |
+| `paddles.assist.ball_range_px` | 450 | 50 … 1500 px | live | Starts when the ball is within — The ball's distance from the paddle when the help starts building up. |
 | `paddles.p1.width` | 130 | 40 … 400 px | live | Width |
 | `paddles.p1.shape_ratio` | 1.0 | 0.1 … 1.0 | live | Dome depth (curvature) — How curved the paddle is. The physical bounce turns by about 2× the surface tilt where the ball touches: 1.0 = semicircle (tip hits go very sideways), 0.25 = shallow (tip ≈ 40°), 0.1 = almost flat. |
 | `paddles.p1.rim_padding` | 36 | 0 … 220 px | live | Rim padding — Gap between the red goal line (rim) and the paddle's flat back edge. 52 px ≈ 10% of the rim radius. |
@@ -253,10 +264,14 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | Key | Default | Range / options | Live | Description |
 |---|---|---|---|---|
 | `powerups.enabled` | True | bool | live | Power-ups enabled |
-| `powerups.spawn_interval_min_s` | 1.5 | 0.5 … 30 s | live | Spawn interval min |
-| `powerups.spawn_interval_max_s` | 3.0 | 0.5 … 60 s | live | Spawn interval max |
-| `powerups.min_active_orbs` | 2 | 0 … 8 | live | Min orbs at once — When fewer are on the field, a new one spawns right away (cooldowns and the conflict rule are relaxed if needed). No orbs spawn in the warm-up and final phases. |
+| `powerups.spawn_interval_min_s` | 3.5 | 0.5 … 30 s | live | Spawn interval min |
+| `powerups.spawn_interval_max_s` | 6.0 | 0.5 … 60 s | live | Spawn interval max |
+| `powerups.min_active_orbs` | 1 | 0 … 8 | live | Min orbs at once — When fewer are on the field, a new one spawns right away (cooldowns and the conflict rule are relaxed if needed). Not in the warm-up, and no orbs spawn in the final phase. |
 | `powerups.max_active_orbs` | 4 | 0 … 8 | live | Max orbs at once |
+| `powerups.warmup_max_orbs` | 2 | 0 … 8 | live | Warm-up: max orbs at once — The warm-up is for learning the paddle. 0 keeps it orb-free. |
+| `powerups.warmup_first_s` | 3.0 | 0 … 30 s | live | Warm-up: first orb after |
+| `powerups.warmup_interval_min_s` | 5.0 | 0.5 … 60 s | live | Warm-up: spawn interval min |
+| `powerups.warmup_interval_max_s` | 8.0 | 0.5 … 60 s | live | Warm-up: spawn interval max |
 | `powerups.unique_orbs` | True | bool | live | Unique orbs — Never two orbs of the same power-up on the field at once. |
 | `powerups.max_bad_orbs` | 1 | 0 … 8 | live | Max red orbs at once |
 | `powerups.orb_radius` | 60 | 10 … 90 px | live | Orb radius |
@@ -591,7 +606,7 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `motion.logo_size` | 0.32 | 0.1 … 0.7 ×D | live | Waiting width |
 | `motion.logo_result_size` | 0.24 | 0.08 … 0.5 ×D | live | Result screen width |
 | `motion.logo_play` | True | bool | live | Logo in the middle during the match — Faint, under the game, like a mark on the ice. |
-| `motion.logo_play_opacity` | 0.14 | 0.02 … 0.6 | live | Match opacity |
+| `motion.logo_play_opacity` | 0.4 | 0.02 … 1 | live | Match opacity |
 | `motion.logo_play_size` | 0.36 | 0.1 … 0.8 ×D | live | Match width |
 | `motion.plane_size` | 0.15 | 0.04 … 0.4 ×D | live | Paper plane |
 | `motion.coin_size` | 0.072 | 0.03 … 0.2 ×D | live | Coin — The coins that fly and fill the wall. |
