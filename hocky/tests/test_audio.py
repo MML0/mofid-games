@@ -5,10 +5,10 @@ import wave
 import pygame
 import pytest
 
-from market_hockey.audio import audio as audio_mod
-from market_hockey.audio.audio import CATEGORY, Audio
-from market_hockey.audio.synth import SOUNDS, generate_all, seq, tone
-from market_hockey.paths import SOUNDS_DIR
+from land_hockey.audio import audio as audio_mod
+from land_hockey.audio.audio import CATEGORY, Audio
+from land_hockey.audio.synth import SOUNDS, generate_all, seq, tone
+from land_hockey.paths import SOUNDS_DIR
 
 
 @pytest.fixture

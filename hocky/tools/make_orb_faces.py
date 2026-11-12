@@ -21,7 +21,7 @@ import pygame  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from market_hockey.paths import ORBS_DIR  # noqa: E402
+from land_hockey.paths import ORBS_DIR  # noqa: E402
 
 SOURCE = ROOT / "گروه مالی مفید" / "icons"
 FACE = 512

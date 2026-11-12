@@ -9,15 +9,15 @@ from pathlib import Path
 
 import pytest
 
-import market_hockey
-from market_hockey import paths
-from market_hockey.config import SCHEMA_VERSION, Config, get_schema
-from market_hockey.config.generate_defaults import PRESETS, write_reference
-from market_hockey.powerups import registry
-from market_hockey.powerups.types import BUILTIN
+import land_hockey
+from land_hockey import paths
+from land_hockey.config import SCHEMA_VERSION, Config, get_schema
+from land_hockey.config.generate_defaults import PRESETS, write_reference
+from land_hockey.powerups import registry
+from land_hockey.powerups.types import BUILTIN
 
 ROOT = Path(__file__).resolve().parent.parent
-PKG = ROOT / "market_hockey"
+PKG = ROOT / "land_hockey"
 REPO = ROOT.parent
 
 
@@ -40,7 +40,7 @@ def test_shipped_settings_load_without_warnings():
 
 
 def test_defaults_file_matches_the_schema():
-    """If this fails: run `python -m market_hockey.config.generate_defaults`."""
+    """If this fails: run `python -m land_hockey.config.generate_defaults`."""
     raw = json.loads((ROOT / "config" / "defaults.json").read_text(encoding="utf-8"))
     c = Config.load(ROOT / "config" / "defaults.json")
     assert raw["_meta"]["schema_version"] == SCHEMA_VERSION
@@ -72,14 +72,14 @@ def test_config_reference_lists_every_setting(tmp_path):
 
 
 def test_committed_config_reference_is_up_to_date(tmp_path):
-    """If this fails: run `python -m market_hockey.config.generate_defaults`."""
+    """If this fails: run `python -m land_hockey.config.generate_defaults`."""
     out = tmp_path / "ref.md"
     write_reference(out)
     assert out.read_text(encoding="utf-8") == (ROOT / "docs" / "CONFIG_REFERENCE.md").read_text(encoding="utf-8")
 
 
 def test_generate_defaults_writes_everything(tmp_path, monkeypatch):
-    from market_hockey.config import generate_defaults as gd
+    from land_hockey.config import generate_defaults as gd
 
     monkeypatch.setattr(gd, "DEFAULTS_PATH", tmp_path / "defaults.json")
     monkeypatch.setattr(gd, "SETTINGS_PATH", tmp_path / "settings.json")
@@ -92,7 +92,7 @@ def test_generate_defaults_writes_everything(tmp_path, monkeypatch):
 
 
 def test_generate_defaults_never_overwrites_the_operators_settings(tmp_path, monkeypatch):
-    from market_hockey.config import generate_defaults as gd
+    from land_hockey.config import generate_defaults as gd
 
     keep = tmp_path / "settings.json"
     keep.write_text("mine", encoding="utf-8")
@@ -214,24 +214,24 @@ def test_every_module_imports_cleanly():
 
 # ---------------------------------------------------------------- packaging and release
 def test_version_is_set():
-    assert re.fullmatch(r"\d+\.\d+\.\d+", market_hockey.__version__)
+    assert re.fullmatch(r"\d+\.\d+\.\d+", land_hockey.__version__)
 
 
 def test_build_recipe_collects_every_module_and_the_assets():
-    spec = (ROOT / "packaging" / "MarketHockey.spec").read_text(encoding="utf-8")
+    spec = (ROOT / "packaging" / "LandHockey.spec").read_text(encoding="utf-8")
     assert 'rglob("*.py")' in spec  # dynamic imports (input sources, power-ups) survive packaging
     assert '"assets"' in spec and "settings_app.py" in spec and "main.py" in spec
 
 
 def test_test_tools_are_not_bundled():
-    spec = (ROOT / "packaging" / "MarketHockey.spec").read_text(encoding="utf-8")
+    spec = (ROOT / "packaging" / "LandHockey.spec").read_text(encoding="utf-8")
     assert '"pytest"' in spec
 
 
 def test_workflow_runs_the_tests_before_building():
     wf = (REPO / ".github" / "workflows" / "build-windows.yml").read_text(encoding="utf-8")
     assert wf.index("pytest") < wf.index("pyinstaller")
-    assert "MarketHockey" in wf
+    assert "LandHockey" in wf
 
 
 def test_every_game_in_the_workflow_has_its_folder_and_recipe():
@@ -244,13 +244,13 @@ def test_every_game_in_the_workflow_has_its_folder_and_recipe():
 
 
 def test_player_guide_ships():
-    pdf = ROOT / "docs" / "MarketHockey_Guide_FA.pdf"
+    pdf = ROOT / "docs" / "LandHockey_Guide_FA.pdf"
     assert pdf.exists() and pdf.read_bytes()[:4] == b"%PDF"
 
 
 def test_web_page_ships_and_is_self_contained():
     html = (paths.ASSETS_DIR / "web" / "index.html").read_text(encoding="utf-8")
-    assert "هاکی بازار" in html
+    assert "لند هاکی" in html
     assert not re.search(r'(src|href)="https?://', html)  # the exhibition may have no internet
 
 
@@ -295,7 +295,7 @@ def test_readme_numbers_are_true():
 def test_readme_download_badge_shows_this_version(readme):
     """A private repo can't use a live release badge: the public badge service answers "repo not found"."""
     text = readme.read_text(encoding="utf-8")
-    assert f"badge/download-v{market_hockey.__version__}-" in text and "shields.io/github/" not in text
+    assert f"badge/download-v{land_hockey.__version__}-" in text and "shields.io/github/" not in text
 
 
 def test_readme_test_table_names_real_files():
@@ -317,8 +317,8 @@ def test_frozen_paths_live_next_to_the_exe(tmp_path):
     code = (
         "import sys, json\n"
         f"sys.path.insert(0, {str(ROOT)!r})\n"
-        f"sys.frozen = True; sys.executable = {str(tmp_path / 'MarketHockey.exe')!r}; sys._MEIPASS = {str(tmp_path / '_internal')!r}\n"
-        "from market_hockey import paths\n"
+        f"sys.frozen = True; sys.executable = {str(tmp_path / 'LandHockey.exe')!r}; sys._MEIPASS = {str(tmp_path / '_internal')!r}\n"
+        "from land_hockey import paths\n"
         "print(json.dumps({'settings': str(paths.SETTINGS_PATH), 'bundle': str(paths.BUNDLE_DIR),\n"
         "                  'assets': str(paths.ASSETS_DIR), 'panel': paths.launch_command('panel'),\n"
         "                  'game': paths.launch_command('game')}))\n"
@@ -327,7 +327,7 @@ def test_frozen_paths_live_next_to_the_exe(tmp_path):
     assert Path(out["settings"]) == tmp_path.resolve() / "config" / "settings.json"
     assert Path(out["bundle"]) == tmp_path / "_internal"
     assert Path(out["assets"]) == tmp_path / "_internal" / "assets"  # no assets/ beside the exe: use the bundled copy
-    assert Path(out["panel"][0]).stem == "ControlPanel" and Path(out["game"][0]).stem == "MarketHockey"
+    assert Path(out["panel"][0]).stem == "ControlPanel" and Path(out["game"][0]).stem == "LandHockey"
     assert len(out["panel"]) == 1
 
 
@@ -393,6 +393,6 @@ def test_cli_help_mentions_every_tool():
 
 
 def test_settings_app_module_imports():
-    code = f"import sys; sys.path.insert(0, {str(ROOT)!r}); import market_hockey.ui.settings_window as s; print(s.main.__name__)"
+    code = f"import sys; sys.path.insert(0, {str(ROOT)!r}); import land_hockey.ui.settings_window as s; print(s.main.__name__)"
     r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert r.returncode == 0 and "main" in r.stdout

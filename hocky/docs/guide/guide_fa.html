@@ -2,211 +2,121 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>هاکی بازار — راهنمای بازیکن</title>
+<title>راهنمای لند هاکی</title>
 <style>
-  @font-face { font-family: "IRX"; src: url("../../assets/fonts/IRANSansX-Regular.ttf"); font-weight: 400; }
-  @font-face { font-family: "IRX"; src: url("../../assets/fonts/IRANSansX-Bold.ttf"); font-weight: 700; }
-  @font-face { font-family: "IRX"; src: url("../../assets/fonts/IRANSansX-Black.ttf"); font-weight: 900; }
-  :root { --tq: #00A796; --db: #004C6A; --pu: #832C73; --coral: #E5544F; --good: #1E9E4A; --ink: #13252E;
-          --muted: #5C7480; --line: #DCE7EB; --soft: #F2F8FA; }
-  @page { size: A4; margin: 12mm 13mm 12mm 13mm; }
-  * { box-sizing: border-box; }
-  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { font-family: "IRX", sans-serif; color: var(--ink); font-size: 10.6pt; line-height: 1.7; margin: 0; }
-  .page { height: 271mm; display: flex; flex-direction: column; gap: 3mm; break-after: page; overflow: hidden; }
-  .page:last-child { break-after: auto; }
-  .hero { border-radius: 5mm; padding: 3.5mm 7mm; color: #fff; display: flex; align-items: center; justify-content: space-between;
-          background: linear-gradient(120deg, #04384D, #00A796); }
-  .hero h1 { margin: 0; font-size: 26pt; font-weight: 900; line-height: 1.3; }
-  .hero .sub { font-size: 12pt; opacity: .92; }
-  .hero .en { direction: ltr; font-size: 10pt; letter-spacing: 1.6mm; opacity: .8; }
-  h2 { margin: 0 0 1.5mm; font-size: 15pt; font-weight: 900; color: var(--db); display: flex; align-items: center; gap: 2.5mm; }
-  h2 .n { width: 8.5mm; height: 8.5mm; border-radius: 50%; background: var(--tq); color: #fff; font-size: 11pt;
-          display: inline-flex; align-items: center; justify-content: center; }
-  p { margin: 0 0 1.5mm; }
-  .box { border: 1px solid var(--line); border-radius: 4.5mm; padding: 3.5mm 5mm; background: #fff; }
-  .soft { background: var(--soft); }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-  .goal-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin-top: 2mm; }
-  .chip { border-radius: 3.5mm; padding: 2.5mm 3mm; background: #fff; border: 1px solid var(--line); text-align: center; font-size: 10pt; line-height: 1.5; }
-  .chip b { display: block; font-size: 17pt; font-weight: 900; color: var(--tq); }
-  .player { border-radius: 4.5mm; padding: 4mm 5mm; color: #fff; }
-  .player.p1 { background: linear-gradient(135deg, #00A796, #036B5B); }
-  .player.p2 { background: linear-gradient(135deg, #9A3887, #5A1B4F); }
-  .player h3 { margin: 0; font-size: 13pt; }
-  .keys { direction: ltr; text-align: center; margin: 2.5mm 0 1.5mm; }
-  kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 12mm; height: 12mm; padding: 0 2mm;
-        border-radius: 2.5mm; background: linear-gradient(#fff, #E6EEF2); border: 1px solid #B9CBD3; box-shadow: 0 1.3mm 0 #9FB3BC;
-        font-family: "IRX"; font-weight: 900; font-size: 17pt; color: var(--ink); margin: 0 1.5mm; }
-  .player ul { margin: 0; padding-right: 5mm; font-size: 10.3pt; line-height: 1.65; }
-  .note { border-radius: 3.5mm; padding: 2.5mm 4mm; font-size: 10.3pt; line-height: 1.65; }
-  .note.tq { background: #E6F7F4; border: 1px solid #ABE2D9; }
-  .note.warn { background: #FFF1F0; border: 1px solid #F5C4C1; }
-  .orbs { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 4mm; }
-  .orb { display: flex; gap: 3.5mm; align-items: center; border: 1px solid var(--line); border-radius: 4mm; padding: 2mm 3.5mm; background: #fff; }
-  .orb img { width: 13mm; height: 13mm; border-radius: 50%; flex: 0 0 auto; }
-  .orb b { font-size: 11.5pt; color: var(--db); }
-  .orb div { font-size: 10pt; line-height: 1.6; }
-  .tips { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm 4mm; font-size: 10.3pt; line-height: 1.65; }
-  .tips div { background: var(--soft); border-radius: 3.5mm; padding: 2.5mm 3.5mm; border: 1px solid var(--line); }
-  .dot { display: inline-block; width: 3.4mm; height: 3.4mm; border-radius: 50%; vertical-align: middle; margin: 0 0.5mm; }
-  .start { display: flex; align-items: center; justify-content: center; gap: 4mm; border-radius: 4.5mm; padding: 3mm 5mm;
-           background: #FFF8E6; border: 1.5px solid #F2C45A; font-size: 13.5pt; font-weight: 900; color: #6B4A00; }
-  .start kbd.space { min-width: 34mm; font-size: 14pt; }
-  .journey { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; margin-top: 2mm; }
-  .journey div { background: #fff; border: 1px solid var(--line); border-radius: 3mm; padding: 1.8mm 2mm; text-align: center; font-size: 8.8pt; line-height: 1.5; }
-  .journey i { display: block; font-style: normal; font-weight: 900; color: var(--tq); font-size: 13pt; line-height: 1.2; }
-  .journey b { display: block; color: var(--db); font-size: 9.6pt; }
-  .foot { margin-top: auto; text-align: center; color: var(--muted); font-size: 9pt; line-height: 1.4; }
+@font-face { font-family: "IRANSansX"; src: url("../../assets/fonts/IRANSansX-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "IRANSansX"; src: url("../../assets/fonts/IRANSansX-Medium.ttf"); font-weight: 500; }
+@font-face { font-family: "IRANSansX"; src: url("../../assets/fonts/IRANSansX-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "IRANSansX"; src: url("../../assets/fonts/IRANSansX-ExtraBold.ttf"); font-weight: 800; }
+@font-face { font-family: "Pinar"; src: url("../../assets/fonts/Pinar-Bold.ttf"); font-weight: 700; }
+@font-face { font-family: "Pinar"; src: url("../../assets/fonts/Pinar-Black.ttf"); font-weight: 900; }
+
+:root {
+  --turquoise: #00a796;
+  --dark-blue: #004c6a;
+  --purple: #832c73;
+  --red: #e2002f;
+  --ink: #1d3340;
+  --muted: #5a6f7a;
+  --line: #d9e6ea;
+  --tint: #eef7f6;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; }
+body { font-family: "IRANSansX", sans-serif; color: var(--ink); font-size: 11pt; line-height: 1.8; }
+.page { width: 210mm; height: 297mm; padding: 12mm 16mm; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+
+.top { display: flex; align-items: center; justify-content: space-between; border-bottom: 1.2pt solid var(--line); padding-bottom: 3mm; }
+.logo { width: 38mm; display: block; }
+.label { text-align: left; font-size: 8.5pt; line-height: 1.6; color: var(--muted); }
+.label b { color: var(--turquoise); font-weight: 500; display: block; }
+
+h1, h2 { font-family: "Pinar", "IRANSansX", sans-serif; margin: 0; color: var(--dark-blue); }
+h1 { font-weight: 900; font-size: 40pt; line-height: 1.2; }
+.en { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .3em; font-size: 9pt; color: var(--turquoise); font-weight: 500; direction: ltr; text-align: right; }
+h2 { font-weight: 700; font-size: 17pt; line-height: 1.4; margin: 0 0 3.5mm; display: flex; align-items: center; gap: 3mm; }
+h2::before { content: ""; width: 3mm; height: 3mm; border-radius: 50%; background: var(--turquoise); flex: none; }
+.num { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+section.block { margin-top: 8mm; }
+
+.hero { display: grid; grid-template-columns: 1fr 58mm; gap: 10mm; align-items: center; margin-top: 7mm; }
+.lead { font-size: 12.5pt; line-height: 1.8; margin: 2mm 0 0; color: var(--muted); }
+.shot { width: 58mm; height: 58mm; border-radius: 50%; overflow: hidden; background: #062431; }
+.shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+.step { background: var(--tint); border-radius: 4mm; padding: 4mm 4mm 4.5mm; text-align: center; }
+.step .n { width: 9mm; height: 9mm; border-radius: 50%; background: var(--turquoise); color: #fff; margin: 0 auto 2mm;
+           font: 700 12pt/9mm "Helvetica Neue", Helvetica, sans-serif; }
+.step b { display: block; color: var(--dark-blue); font-size: 12.5pt; font-weight: 800; line-height: 1.5; }
+.step span { font-size: 10.5pt; line-height: 1.7; }
+
+.points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+.pt { border-radius: 4mm; padding: 3.5mm 3mm; text-align: center; color: #fff; display: flex; align-items: center; justify-content: center; gap: 4mm; }
+.pt .v { font: 800 28pt/1 "Helvetica Neue", Helvetica, sans-serif; direction: ltr; }
+.pt .k { font-weight: 700; font-size: 14pt; }
+.win { background: var(--turquoise); }
+.draw { background: var(--dark-blue); }
+.lose { background: var(--purple); }
+
+.sub { margin: -1.5mm 0 4mm; color: var(--muted); }
+.orbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4mm; text-align: center; }
+.orb img { width: 24mm; height: 24mm; display: block; margin: 0 auto 2mm; }
+.orb b { display: block; color: var(--dark-blue); font-size: 11.5pt; font-weight: 800; line-height: 1.5; }
+.orb span { font-size: 10pt; line-height: 1.5; color: var(--ink); }
+
+.foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 8.6pt; color: var(--muted); border-top: 1pt solid var(--line); padding-top: 2.5mm; }
+.foot .slogan { color: var(--turquoise); font-weight: 500; }
 </style>
 </head>
 <body>
-
-<!-- ============================== PAGE 1 ============================== -->
 <div class="page">
+  <div class="top">
+    <img class="logo" src="img/logo_blue.png" alt="گروه مالی مفید">
+    <div class="label"><b>راهنمای بازی</b>لند هاکی</div>
+  </div>
+
   <div class="hero">
     <div>
-      <h1>هاکی بازار</h1>
-      <div class="sub">راهنمای بازیکن: در یک دقیقه یاد بگیر!</div>
+      <div class="en">LAND HOCKEY</div>
+      <h1>لند هاکی</h1>
+      <p class="lead">توپ را به دروازه‌ی حریف بزن و از دروازه‌ی خودت دفاع کن.</p>
     </div>
-    <div class="en">MARKET HOCKEY</div>
+    <div class="shot"><img src="img/play.jpg" alt="تصویری از بازی"></div>
   </div>
 
-  <div class="start">▶ برای شروع، دکمه‌ی <kbd class="space">Space</kbd> را کلیک کنید</div>
-
-  <div class="box soft">
-    <h2><span class="n">1</span>هدف و مسیر بازی</h2>
-    <p>دو نفر روبه‌روی هم بازی می‌کنند و هر کدام یک <b>راکت</b> (سپر نیم‌دایره) دارد.
-      توپ نورانی را برگردان و آن را از <b style="color:var(--coral)">قوس قرمز حریف</b> رد کن. هر گل یک امتیاز است.</p>
-    <div class="journey">
-      <div><i>1</i><b>ثبت‌نام</b>ثبت‌نام در بازی؛ دو نفره</div>
-      <div><i>2</i><b>شمارش معکوس</b>بازی با شمارش معکوس شروع می‌شود</div>
-      <div><i>3</i><b>60 ثانیه بازی</b>یا تا وقتی کسی به 7 گل برسد</div>
-      <div><i>4</i><b>اگر مساوی شد</b>توپ ادامه پیدا می‌کند تا یک نفر گل بزند</div>
-      <div><i>5</i><b>پایان معاملات!</b>برنده و بازنده مشخص می‌شوند</div>
+  <section class="block">
+    <h2>چطور بازی کنیم؟</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><b>روبه‌روی هم بایستید</b><span>بعد از شمارش معکوس، بازی شروع می‌شود.</span></div>
+      <div class="step"><div class="n">2</div><b>با پاهایت حرکت کن</b><span>به چپ و راست قدم بردار؛ پدل با تو حرکت می‌کند.</span></div>
+      <div class="step"><div class="n">3</div><b>گل بزن</b><span>در <span class="num">60</span> ثانیه، هر کس گل بیشتری بزند برنده است.</span></div>
     </div>
-  </div>
+  </section>
 
-  <div class="row" style="align-items:center">
-    <svg viewBox="0 0 330 330" style="width:100%; max-height:64mm; height:auto" font-family="IRX">
-      <defs>
-        <radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#05202C"/><stop offset="1" stop-color="#0A3446"/></radialGradient>
-        <linearGradient id="trail" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#00A796" stop-opacity="0"/><stop offset="1" stop-color="#2EF2D9"/></linearGradient>
-      </defs>
-      <circle cx="165" cy="165" r="150" fill="url(#bg)"/>
-      <line x1="165" y1="30" x2="165" y2="300" stroke="#1F7A99" stroke-width="1.5" stroke-dasharray="6 5" opacity=".7"/>
-      <!-- goals: left (P1) and right (P2) -->
-      <path d="M 101 29.2 A 150 150 0 0 0 101 300.8" fill="none" stroke="#F3716D" stroke-width="6"/>
-      <path d="M 229 300.8 A 150 150 0 0 0 229 29.2" fill="none" stroke="#F3716D" stroke-width="6"/>
-      <!-- walls -->
-      <path d="M 229 29.2 A 150 150 0 0 0 101 29.2" fill="none" stroke="#A8F0FF" stroke-width="11" stroke-linecap="round"/>
-      <path d="M 101 300.8 A 150 150 0 0 0 229 300.8" fill="none" stroke="#A8F0FF" stroke-width="11" stroke-linecap="round"/>
-      <!-- paddles -->
-      <path d="M 33 137 A 28 28 0 0 1 33 193 Z" fill="#05574D" stroke="#2EF2D9" stroke-width="3"/>
-      <path d="M 297 193 A 28 28 0 0 1 297 137 Z" fill="#4A1840" stroke="#E06BCB" stroke-width="3"/>
-      <!-- orbs -->
-      <g fill="#0A2733" stroke="#39E46F" stroke-width="2.5">
-        <circle cx="165" cy="125" r="11"/><circle cx="203" cy="152" r="11"/><circle cx="189" cy="197" r="11"/>
-        <circle cx="141" cy="197" r="11"/><circle cx="127" cy="152" r="11"/>
-      </g>
-      <path d="M 90 205 L 143 178" stroke="url(#trail)" stroke-width="9" stroke-linecap="round"/>
-      <circle cx="147" cy="176" r="7" fill="#fff" stroke="#2EF2D9" stroke-width="3"/>
-      <text x="165" y="70" text-anchor="middle" font-size="24" font-weight="900" fill="#fff">60</text>
-      <text x="132" y="278" text-anchor="middle" font-size="26" font-weight="900" fill="#2EF2D9">3</text>
-      <text x="198" y="278" text-anchor="middle" font-size="26" font-weight="900" fill="#E06BCB">5</text>
-    </svg>
-    <div style="font-size:10.4pt; line-height:1.75">
-      <p><span class="dot" style="background:#F3716D"></span><b>قوس قرمز:</b> دروازه است. اگر توپ از قوس سمت تو بیرون برود، حریف امتیاز می‌گیرد.</p>
-      <p><span class="dot" style="background:#A8F0FF; border:1px solid #7FB9C8"></span><b>دیواره‌های نورانی بالا و پایین:</b> توپ به آن‌ها می‌خورد و برمی‌گردد. <b>امتیاز ندارند.</b></p>
-      <p><span class="dot" style="background:#00A796"></span><b>راکت فیروزه‌ای (چپ):</b> بازیکن 1<br>
-         <span class="dot" style="background:#832C73"></span><b>راکت بنفش (راست):</b> بازیکن 2</p>
-      <p><span class="dot" style="background:#39E46F"></span><b>دایره‌های وسط زمین:</b> گوی‌های جایزه (صفحه‌ی بعد را ببین).</p>
-      <p><b>بالای زمین:</b> زمان باقی‌مانده. <b>پایین زمین:</b> امتیازها (فیروزه‌ای چپ، بنفش راست).</p>
+  <section class="block">
+    <h2>امتیاز</h2>
+    <div class="points">
+      <div class="pt win"><span class="k">برد</span><span class="v">+4</span></div>
+      <div class="pt draw"><span class="k">مساوی</span><span class="v">+2</span></div>
+      <div class="pt lose"><span class="k">باخت</span><span class="v">+1</span></div>
     </div>
-  </div>
+  </section>
 
-  <div>
-    <h2><span class="n">2</span>چطور حرکت کنم؟</h2>
-    <div class="row">
-      <div class="player p2">
-        <h3>بازیکن 2 · بنفش · سمت راست</h3>
-        <div class="keys"><kbd>←</kbd><kbd>→</kbd></div>
-        <ul><li><b>←</b>: راکت به چپِ تو می‌رود</li><li><b>→</b>: راکت به راستِ تو می‌رود</li></ul>
-      </div>
-      <div class="player p1">
-        <h3>بازیکن 1 · فیروزه‌ای · سمت چپ</h3>
-        <div class="keys"><kbd>A</kbd><kbd>D</kbd></div>
-        <ul><li><b>A</b>: راکت به چپِ تو می‌رود</li><li><b>D</b>: راکت به راستِ تو می‌رود</li></ul>
-      </div>
-    </div>
-    <div class="note tq" style="margin-top:3mm">
-      👣 <b>روی زمین نمایشگاه:</b> پشت قوس قرمز خودت بایست و رو به وسط زمین باش. هر وقت <b>به چپ یا راست قدم برداری</b>،
-      راکتت هم همراهت روی لبه‌ی زمین جابه‌جا می‌شود. چپ و راست همیشه <b>از دید خود تو</b> است.
-    </div>
-  </div>
-
-  <div class="foot">هاکی بازار · کارگزاری مفید · صفحه‌ی 1 از 2</div>
-</div>
-
-<!-- ============================== PAGE 2 ============================== -->
-<div class="page">
-  <div class="row" style="align-items:stretch">
-    <div class="box">
-      <h2><span class="n">3</span>چطور ضربه بزنم؟</h2>
-      <svg viewBox="0 0 330 150" style="width:100%; height:auto; direction:ltr" font-family="IRX">
-        <path d="M 50 25 A 50 50 0 0 1 50 125 Z" fill="#05574D" stroke="#2EF2D9" stroke-width="4"/>
-        <g stroke-width="4" fill="none" stroke-linecap="round">
-          <path d="M 86 40 L 170 10" stroke="#E5544F"/><path d="M 101 75 L 205 75" stroke="#00A796"/><path d="M 86 110 L 170 140" stroke="#832C73"/>
-        </g>
-        <g fill="#13252E"><polygon points="170,10 157,10 162,22"/><polygon points="205,75 194,69 194,81"/><polygon points="170,140 162,128 157,140"/></g>
-        <g font-size="13" font-weight="700" fill="#13252E">
-          <text x="176" y="18">لبه‌ی چپ: به چپ</text>
-          <text x="211" y="80">وسط: مستقیم</text>
-          <text x="176" y="146">لبه‌ی راست: به راست</text>
-        </g>
-      </svg>
-      <p style="font-size:10.3pt; line-height:1.65">توپ را با <b>وسط</b> راکت بزن تا مستقیم برود؛ با <b>لبه‌ها</b> بزن تا کج برود و حریف را غافلگیر کند.</p>
-      <p style="font-size:10.3pt; line-height:1.65">⚡ <b>ضربه‌ی ویژه:</b> اگر درست لحظه‌ی برخورد سریع حرکت کنی، توپ طلایی و تندتر می‌شود و پیام «واکنش به‌موقع!» نمایش داده می‌شود.</p>
-    </div>
-    <div class="box">
-      <h2><span class="n">4</span>رنگ دنباله‌ی توپ</h2>
-      <p style="font-size:10.3pt; line-height:1.7">پشت توپ یک دنباله‌ی نورانی است. رنگش نشان می‌دهد <b>آخرین بار چه کسی به توپ زده</b>:</p>
-      <p style="font-size:10.3pt; line-height:1.9">
-        <span class="dot" style="background:#2EF2D9"></span><b>فیروزه‌ای:</b> بازیکن 1 زده<br>
-        <span class="dot" style="background:#E06BCB"></span><b>بنفش:</b> بازیکن 2 زده<br>
-        <span class="dot" style="background:#EEF6F8; border:1px solid #9DB3BC"></span><b>سفید:</b> هنوز کسی نزده</p>
-      <div class="note tq">گوی‌های وسط زمین به کسی می‌رسند که <b>رنگ توپ مال اوست</b>. توپ سفید هیچ گویی نمی‌گیرد.</div>
-      <p style="font-size:9.8pt; line-height:1.65; margin-top:2mm">👀 وقتی توپ به سمتت می‌آید، یک خط نقطه‌چینِ کم‌رنگ نشان می‌دهد تقریباً کجا می‌رسد.</p>
-    </div>
-  </div>
-
-  <div>
-    <h2><span class="n">5</span>دایره‌های وسط زمین: هر کدام یک مفهوم بازار سرمایه</h2>
-    <p style="font-size:10.4pt">در روند بازی تعدادی دایره برای هیجانی شدن ظاهر می‌شود. بعد از ضربه‌ی تو، اگر توپ از روی یک دایره رد شود،
-      <b>جایزه‌اش مال تو</b> می‌شود. رنگ <b style="color:var(--good)">سبز</b> یعنی به نفع خودت.</p>
+  <section class="block">
+    <h2>گوی‌ها</h2>
+    <p class="sub">توپی که زده‌ای از روی گوی رد شود، گوی مال توست.</p>
     <div class="orbs">
-      <div class="orb"><img src="img/icons/expand.png"><div><b>راکت بزرگ</b><br><b>افزایش سرمایه</b> و گرفتن راحت‌تر می‌شود.</div></div>
-      <div class="orb"><img src="img/icons/shrink.png"><div><b>راکت کوچک</b><br><b>کاهش نقدینگی</b> و دفاع سخت‌تر می‌شود.</div></div>
-      <div class="orb"><img src="img/icons/speed_up.png"><div><b>نوسان بازار</b><br><b>سرعت افزایش پیدا می‌کند</b> و حرکت به سمت حریف.</div></div>
-      <div class="orb"><img src="img/icons/chaos.png"><div><b>مسیر تصادفی</b><br><b>بازار رنجی</b> که وضعیت مشخص نیست به کدام سمت می‌رود.</div></div>
-      <div class="orb"><img src="img/icons/double_ball.png"><div><b>دو تا توپ</b><br>یعنی <b>تنوع سبد</b> که هرکدام می‌تواند به سود برسد.</div></div>
-      <div class="orb"><img src="img/icons/trajectory_reveal.png"><div><b>تحلیل مسیر</b><br>یعنی <b>تحلیل تکنیکال</b> که بهتر روند بازار را تشخیص می‌دهی.</div></div>
+      <div class="orb"><img src="../../assets/orbs/expand.png" alt=""><b>حامی</b><span>پدلت بزرگ می‌شود</span></div>
+      <div class="orb"><img src="../../assets/orbs/shrink.png" alt=""><b>سقوط شاخص بورس</b><span>پدل حریف کوچک می‌شود</span></div>
+      <div class="orb"><img src="../../assets/orbs/speed_up.png" alt=""><b>عیار</b><span>توپ تندتر می‌شود</span></div>
+      <div class="orb"><img src="../../assets/orbs/double_ball.png" alt=""><b>توان</b><span>یک توپ دیگر می‌آید</span></div>
+      <div class="orb"><img src="../../assets/orbs/trajectory_reveal.png" alt=""><b>بورس ویو</b><span>مسیر توپ را می‌بینی</span></div>
     </div>
-    <div class="note warn" style="margin-top:3mm">⭕ نقطه‌های دور هر گوی یکی‌یکی خاموش می‌شوند؛ وقتی همه خاموش شوند، گوی ناپدید می‌شود. اگر گوی <b style="color:var(--coral)">قرمز</b> دیدی، از آن دوری کن، چون به نفع حریف است.</div>
-  </div>
+  </section>
 
-  <div>
-    <h2><span class="n">6</span>نکته‌های طلایی</h2>
-    <div class="tips">
-      <div>🎯 <b>چشمت به توپ باشد</b> و قبل از رسیدنش، راکت را جلوی آن ببر.</div>
-      <div>🟢 بعد از هر ضربه، سعی کن توپ از روی <b>گوی‌های سبز</b> رد شود.</div>
-      <div>↗️ با <b>لبه‌ی راکت</b> بزن تا توپ از دیواره کمانه کند و حریف گیج شود.</div>
-      <div>🔄 اگر گل خوردی، آماده باش: <b>توپ بعدی به سمت تو</b> می‌آید.</div>
-    </div>
-  </div>
-
-  <div class="foot">«بازار همیشه در حرکته؛ آماده‌ی تغییر باش.» · صفحه‌ی 2 از 2</div>
+  <div class="foot"><span class="slogan">بازار همیشه در حرکته؛ آماده‌ی تغییر باش.</span><span>گروه مالی مفید</span></div>
 </div>
-
 </body>
 </html>

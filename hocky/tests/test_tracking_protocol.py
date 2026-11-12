@@ -1,4 +1,4 @@
-"""The UDP contract a tracker must speak (see market_hockey/inputs/network.py), tested end to end.
+"""The UDP contract a tracker must speak (see land_hockey/inputs/network.py), tested end to end.
 
 The scan simulator below stands in for a 360° LiDAR at the center of the floor: it produces polar returns from two
 pairs of feet, clusters them into one point per person, and sends them to the game the way a real tracker will.
@@ -16,9 +16,9 @@ from pathlib import Path
 import pytest
 
 from conftest import free_udp_port, playing
-from market_hockey.inputs.base import PlayerSample
-from market_hockey.inputs.manager import InputManager
-from market_hockey.inputs.network import NetworkAdapter
+from land_hockey.inputs.base import PlayerSample
+from land_hockey.inputs.manager import InputManager
+from land_hockey.inputs.network import NetworkAdapter
 
 
 @pytest.fixture
@@ -304,7 +304,7 @@ def test_a_flood_of_packets_cannot_stall_a_frame(net, engine, sender):
 
 
 def test_port_in_use_leaves_the_game_running(cfg, engine, monkeypatch):
-    import market_hockey.inputs.network as network
+    import land_hockey.inputs.network as network
 
     class NoBind(socket.socket):
         def bind(self, addr):

@@ -1,9 +1,9 @@
-# MARKET HOCKEY (هاکی بازار): Build Specification and Agent Prompt
+# LAND HOCKEY (لند هاکی): Build Specification and Agent Prompt
 
 > Paste this whole file to the coding agent, or tell it: "Read `MEGA_PROMPT.md` and build it."
 > It is the single source of truth. Where it conflicts with older notes or prompts, this file wins.
 >
-> **Status (2026-10-19):** v1 is implemented in this folder (`main.py`, `settings_app.py`, `market_hockey/`). See `README.md`.
+> **Status (2026-10-19):** v1 is implemented in this folder (`main.py`, `settings_app.py`, `land_hockey/`). See `README.md`.
 > Additions since the first draft: the orb **magnet** (§11.5b) and the verified Persian text approach (§14.3).
 > **Changed after playtesting:** *Trajectory reveal* now helps the **collector** and is **green**. When the ball comes back, it shows where the ball lands on *your* paddle. Also added:
 > - a faint always-on aim assist for the receiver
@@ -25,7 +25,7 @@
 
 ## 0. Your role and the job
 
-You are a senior Python game developer and real-time physics programmer who has built interactive projection-floor installations. Build **Market Hockey**: a complete, playable, two-player, air-hockey/pong game for a circular floor projection for **Mofid Securities (کارگزاری مفید)**. It has:
+You are a senior Python game developer and real-time physics programmer who has built interactive projection-floor installations. Build **Land Hockey**: a complete, playable, two-player, air-hockey/pong game for a circular floor projection for **Mofid Securities (کارگزاری مفید)**. It has:
 
 - a **Pygame** game window (fullscreen, projector output),
 - a separate **Tkinter control panel** window that edits **every** parameter with sliders and fields, **live while the game is running**, and saves everything to **JSON** with a Save button,
@@ -108,12 +108,12 @@ hocky/
 │   ├── sounds/                 # generated placeholders (tools/make_placeholder_sounds.py)
 │   ├── icons/                  # optional PNG overrides per power-up id (e.g. expand.png)
 │   └── images/                 # optional logo.png
-├── logs/                       # market_hockey.log (rotating), matches.csv
+├── logs/                       # land_hockey.log (rotating), matches.csv
 ├── tools/
 │   ├── make_placeholder_sounds.py   # stdlib synth -> WAV
 │   ├── send_fake_tracking.py        # simulates 2 tracked players over UDP (tests the LiDAR path)
 │   └── extract_logo.py              # optional: renders the logo from the brand book with PyMuPDF
-├── market_hockey/
+├── land_hockey/
 │   ├── app.py                  # pygame init, display, main loop, fixed timestep, hotkeys
 │   ├── events.py
 │   ├── config/   schema.py  loader.py  validation.py  migrations.py  live_link.py
@@ -307,7 +307,7 @@ For each substep: if `|p_prev| ≤ R` and `|p| > R`, intersect the segment with 
 `BOOT → ATTRACT → INTRO → COUNTDOWN → SERVE → PLAYING ⇄ GOAL → SERVE … → FINAL → RESULT → ATTRACT`, with `PAUSED` (overlay) and `CALIBRATION` (overlay) available from any state.
 
 - **Start trigger** (`match.start_mode`): `operator_key` (Space/Enter or the panel's Start button, the default), `auto_when_both_present` (both inputs present for 1.5 s, for LiDAR later), or `auto_loop` (demo).
-- **ATTRACT**: AI vs. AI demo play at 60% opacity, the title "هاکی بازار / MARKET HOCKEY", an optional logo, the prompt "برای شروع، روبه‌روی هم بایستید", and a gentle ambient background.
+- **ATTRACT**: AI vs. AI demo play at 60% opacity, the title "لند هاکی / LAND HOCKEY", an optional logo, the prompt "برای شروع، روبه‌روی هم بایستید", and a gentle ambient background.
 - **INTRO** (0.8 s): the rim draws itself on, sweeping from the top wall around both sides. The walls light up, the goal arcs glow red, and each paddle materializes in its team color.
 - **COUNTDOWN**: "آماده‌اید؟", then **3 → 2 → 1 → "شروع!"** (`countdown.beat_s` 0.8). Each number pops (scale 1.6 → 1.0 with an elastic ease) with a ring shockwave from the center and a **background flash** in alternating team colors (intensity ≤ `fx.flash_max_alpha` 0.35). Particles stream toward the center while the ball charges up (its glow grows). On "GO" there is a white flash (0.5 alpha, 120 ms) and the ball launches. A beep plays on each beat. **The timer does not run during the countdown.**
 - **SERVE**: the ball sits at the serve point for `serve.delay_s` (0.7) with a pulsing ring and **telegraph chevrons** pointing at the receiver, then launches at `ball.serve_speed`.
@@ -503,7 +503,7 @@ K("input.keyboard.p1_left", "a", ...)                     # key binding
 S("text.toast.expand_collector", "بالکرت بزرگ شد!", rtl=True, ...)
 L("center_zone.slots", [...], item=Vec2(...), ...)          # list editor
 ```
-Power-up types contribute their own entries. Nothing that affects gameplay, layout, visuals, audio, input or timing may be hardcoded outside the schema. `python -m market_hockey.config.generate_defaults` writes `config/defaults.json`.
+Power-up types contribute their own entries. Nothing that affects gameplay, layout, visuals, audio, input or timing may be hardcoded outside the schema. `python -m land_hockey.config.generate_defaults` writes `config/defaults.json`.
 
 ### 16.2 Files and safety
 
@@ -530,7 +530,7 @@ Power-up types contribute their own entries. Nothing that affects gameplay, layo
 
 ## 17. The Tkinter control panel (on its own window or monitor; make it look good)
 
-- The window title is "Market Hockey: Control Panel". It is 1280×820 and resizable, with a dark theme in brand colors (background `#0B1F2A`, cards `#11303F`, accent turquoise `#00A796`, warnings coral `#F3716D`). It works on macOS (Command-key shortcuts) and Windows.
+- The window title is "Land Hockey: Control Panel". It is 1280×820 and resizable, with a dark theme in brand colors (background `#0B1F2A`, cards `#11303F`, accent turquoise `#00A796`, warnings coral `#F3716D`). It works on macOS (Command-key shortcuts) and Windows.
 - **Top bar**: the live-link status pill ("● Connected to game" or "○ Offline: editing file"), then the buttons **Launch Game**, **Start Match**, **Pause/Resume**, **Reset Match**, **SAVE** (the primary turquoise button, ⌘/Ctrl+S), **Save as Preset…**, **Load Preset ▾**, **Revert to Saved**, and **Reset All to Defaults** (which asks for confirmation).
 - **Left sidebar**: a search box (⌘/Ctrl+F filters every setting by label or key) and these tabs:
   - Display & Projection
@@ -637,7 +637,7 @@ class InputAdapter(Protocol):
 - Target **≥ 60 fps at 1080×1080 on an M-series MacBook**, with physics at a steady 240 Hz and up to 3 balls. Profile with `cProfile` and record the numbers in the README.
 - Reuse surfaces: no per-frame allocation of full-screen alpha surfaces. Call `convert()`/`convert_alpha()` on everything. Particles come from a fixed pool, trails use bounded buffers, and caches are bounded too.
 - Nothing blocks the main loop: sockets are non-blocking and file saves happen in the panel.
-- Logging goes to `logs/market_hockey.log` (rotating). Exit gracefully on Ctrl+C or window close. Missing optional assets only produce warnings.
+- Logging goes to `logs/land_hockey.log` (rotating). Exit gracefully on Ctrl+C or window close. Missing optional assets only produce warnings.
 - **Soak test**: run AI against AI for 30 simulated minutes, accelerated and headless. Assert there are no exceptions, NaN values or stuck balls, that memory stays stable (`tracemalloc`), and that scores and the match flow keep cycling.
 
 ---
@@ -733,7 +733,7 @@ When you finish, report:
 
 | key | text |
 |---|---|
-| title | هاکی بازار |
+| title | لند هاکی |
 | attract_prompt | برای شروع، روبه‌روی هم بایستید |
 | ready | آماده‌اید؟ |
 | go | شروع! |

@@ -6,11 +6,11 @@ import numpy as np
 import pygame
 import pytest
 
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.render.brand_motion import (BRAND_DIR, BRANDS, GAME_ICONS, MARKS, WIN_ICONS, ZOOM_END, ZOOM_FADE, spring_step, Actor, BrandMotion,
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.render.brand_motion import (BRAND_DIR, BRANDS, GAME_ICONS, MARKS, WIN_ICONS, ZOOM_END, ZOOM_FADE, spring_step, Actor, BrandMotion,
                                                CoinWall, Flood, HeroCoin, Plane, RadialLayer)
-from market_hockey.render.renderer import Renderer
+from land_hockey.render.renderer import Renderer
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -188,7 +188,7 @@ def test_a_whole_match_runs_with_the_objects_on(reduce):
 
 
 def test_old_settings_move_to_the_smaller_letters_and_stronger_look():
-    from market_hockey.config.store import MIGRATIONS
+    from land_hockey.config.store import MIGRATIONS
     flat = {"kinetic.density": 35, "kinetic.opacity_moment": 0.22, "kinetic.opacity_waiting": 0.5}
     out = MIGRATIONS[8](dict(flat))
     assert out["kinetic.density"] == 55 and out["kinetic.opacity_moment"] == 0.75
@@ -532,7 +532,7 @@ def test_player_names_stand_on_a_backing_on_the_waiting_screen():
 
 
 def test_old_settings_get_the_longer_result_and_someones_own_values_stay():
-    from market_hockey.config.store import MIGRATIONS
+    from land_hockey.config.store import MIGRATIONS
     out = MIGRATIONS[10]({"match.result_s": 6.0, "match.intro_s": 0.9})
     assert out["match.result_s"] == 10.0 and MIGRATIONS[11](out)["match.intro_s"] == 2.8
     out = MIGRATIONS[10]({"match.result_s": 20.0, "match.intro_s": 0.5})

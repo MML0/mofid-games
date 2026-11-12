@@ -6,10 +6,10 @@ import random
 import pygame
 import pytest
 
-from market_hockey.config import Config, get_schema
-from market_hockey.core.engine import ATTRACT, RESULT, Engine
-from market_hockey.inputs.ai import AIAdapter
-from market_hockey.render.renderer import Renderer
+from land_hockey.config import Config, get_schema
+from land_hockey.core.engine import ATTRACT, RESULT, Engine
+from land_hockey.inputs.ai import AIAdapter
+from land_hockey.render.renderer import Renderer
 
 # Allocating 8K canvases hundreds of times only tests the machine's memory: these get their own test below.
 DISPLAY_SIZE = ("display.canvas_width", "display.canvas_height", "display.supersample")

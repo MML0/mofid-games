@@ -5,8 +5,8 @@ import urllib.request
 
 import pytest
 
-from market_hockey.web import history
-from market_hockey.web.server import SupervisorServer
+from land_hockey.web import history
+from land_hockey.web.server import SupervisorServer
 
 
 def _req(url, data=None, ctype="application/json"):
@@ -27,7 +27,7 @@ def server(tmp_path):
 
 def test_page_state_and_fonts(server):
     code, body = _req(server.url)
-    assert code == 200 and "هاکی بازار".encode() in body
+    assert code == 200 and "لند هاکی".encode() in body
     server.publish({"state": "ATTRACT", "scores": [1, 2]})
     code, body = _req(server.url + "api/state")
     assert json.loads(body)["scores"] == [1, 2]
@@ -66,7 +66,7 @@ def test_history_and_leaderboard(tmp_path, server):
 
 
 def test_game_applies_web_commands(tmp_path):
-    from market_hockey.app import GameApp
+    from land_hockey.app import GameApp
 
     app = GameApp(headless=True, seed=1)
     app.web = SupervisorServer("127.0.0.1", 0, history_path=tmp_path / "h.jsonl")
@@ -84,7 +84,7 @@ def test_game_applies_web_commands(tmp_path):
 
 
 def test_single_name_and_addresses(server):
-    from market_hockey.web.server import local_addresses
+    from land_hockey.web.server import local_addresses
 
     _req(server.url + "api/name", {"player": 1, "name": "آرش"})
     assert server.drain() == [("name", {"player": 1, "name": "آرش"})]
@@ -94,7 +94,7 @@ def test_single_name_and_addresses(server):
 
 
 def test_waiting_screen_text_never_overlaps(tmp_path):
-    from market_hockey.app import GameApp
+    from land_hockey.app import GameApp
 
     app = GameApp(headless=True, seed=4)
     app.cfg.set("input.p1.source", "ai")
@@ -115,7 +115,7 @@ def test_waiting_screen_text_never_overlaps(tmp_path):
 
 
 def test_demo_message_waits_when_the_waiting_screen_is_full():
-    from market_hockey.app import GameApp
+    from land_hockey.app import GameApp
 
     app = GameApp(headless=True, seed=4)
     app.engine.set_names("سارا احمدی", "Reza Karimi")

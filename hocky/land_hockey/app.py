@@ -27,7 +27,7 @@ from .render.renderer import Renderer
 from .web import history
 from .web.server import SupervisorServer
 
-log = logging.getLogger("market_hockey")
+log = logging.getLogger("land_hockey")
 
 
 def setup_logging() -> None:
@@ -37,7 +37,7 @@ def setup_logging() -> None:
         return
     root.setLevel(logging.INFO)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
-    fh = logging.handlers.RotatingFileHandler(LOGS_DIR / "market_hockey.log", maxBytes=2_000_000, backupCount=3,
+    fh = logging.handlers.RotatingFileHandler(LOGS_DIR / "land_hockey.log", maxBytes=2_000_000, backupCount=3,
                                               encoding="utf-8")
     fh.setFormatter(fmt)
     root.addHandler(fh)
@@ -129,7 +129,7 @@ class GameApp:
                 break
             except pygame.error as exc:
                 log.warning("set_mode %s failed: %s", attempt, exc)
-        pygame.display.set_caption("Market Hockey — هاکی بازار")
+        pygame.display.set_caption("Land Hockey — لند هاکی")
         pygame.mouse.set_visible(not (fs and cfg["display.hide_cursor"]))
 
     def _present(self, frame: pygame.Surface) -> None:
@@ -538,7 +538,7 @@ def selftest_text(out_dir) -> list:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     tests = ["واکنش به‌موقع!", "حجم معاملات افزایش یافت!", "بازار همیشه در حرکته؛ آماده‌ی تغییر باش.",
-             "بازیکن 1", "گل بعدی ×2", "پایان معاملات!", "MARKET HOCKEY 60"]
+             "بازیکن 1", "گل بعدی ×2", "پایان معاملات!", "LAND HOCKEY 60"]
     made = []
     for backend in ("harfbuzz", "reshaper"):
         cfg = Config()

@@ -28,8 +28,8 @@ jobs:
       matrix:
         include:
           - folder: hocky
-            app: MarketHockey
-            title: Market Hockey
+            app: LandHockey
+            title: Land Hockey
           # - folder: second-game          # ← the next game goes here
           #   app: SecondGame
           #   title: Second Game
@@ -71,7 +71,7 @@ jobs:
           if (Test-Path LIdar) { Copy-Item -Recurse -Force LIdar "$out/LIdar" }   # calibration, docs, sample recording
           New-Item -ItemType Directory -Force "$out/logs" | Out-Null
           Copy-Item README.md "$out/README.md"
-          if (Test-Path docs/MarketHockey_Guide_FA.pdf) { Copy-Item docs/MarketHockey_Guide_FA.pdf "$out/" }
+          if (Test-Path docs/LandHockey_Guide_FA.pdf) { Copy-Item docs/LandHockey_Guide_FA.pdf "$out/" }
 
       - name: Smoke test the built game (headless screenshots)
         env:

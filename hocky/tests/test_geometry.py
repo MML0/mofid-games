@@ -1,6 +1,6 @@
 import math
 
-from market_hockey.core.geometry import Arc, Geometry
+from land_hockey.core.geometry import Arc, Geometry
 
 
 def test_rim_segmentation_from_percentages(cfg):

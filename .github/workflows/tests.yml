@@ -47,8 +47,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y xvfb
-          xvfb-run -a python -m pytest -q -rs --cov=market_hockey --cov-report=term --cov-fail-under=90
+          xvfb-run -a python -m pytest -q -rs --cov=land_hockey --cov-report=term --cov-fail-under=90
 
       - name: Run tests
         if: runner.os != 'Linux'
-        run: python -m pytest -q -rs --cov=market_hockey --cov-report=term --cov-fail-under=90
+        run: python -m pytest -q -rs --cov=land_hockey --cov-report=term --cov-fail-under=90

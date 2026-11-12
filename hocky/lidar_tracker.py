@@ -44,7 +44,7 @@ def _shims() -> None:
     try:
         import pythonosc.udp_client  # noqa: F401
     except ImportError:
-        from market_hockey.inputs.osc import UDPClient
+        from land_hockey.inputs.osc import UDPClient
 
         pkg = types.ModuleType("pythonosc")
         client = types.ModuleType("pythonosc.udp_client")

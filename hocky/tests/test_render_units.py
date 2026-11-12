@@ -8,12 +8,12 @@ import pygame
 import pytest
 
 from conftest import add_ball, advance_to_playing, playing
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.powerups import registry
-from market_hockey.render import colors, glow, icons, overlays, text
-from market_hockey.render.particles import Particles
-from market_hockey.render.renderer import Renderer, ease_out_back, ease_out_cubic, ease_out_elastic
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.powerups import registry
+from land_hockey.render import colors, glow, icons, overlays, text
+from land_hockey.render.particles import Particles
+from land_hockey.render.renderer import Renderer, ease_out_back, ease_out_cubic, ease_out_elastic
 
 
 @pytest.fixture(scope="module", autouse=True)

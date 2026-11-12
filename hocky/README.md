@@ -1,9 +1,9 @@
-<p align="center"><img src="docs/media/banner.png" alt="Market Hockey · هاکی بازار"></p>
+<p align="center"><img src="docs/media/banner.png" alt="Land Hockey · لند هاکی"></p>
 
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.8-00B8A0" alt="Download v1.0.8"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.9-00B8A0" alt="Download v1.0.9"></a>
   <img src="https://img.shields.io/badge/tests-850%2B-00B8A0" alt="850+ tests">
   <img src="https://img.shields.io/badge/coverage-95%25-00B8A0" alt="95% coverage">
   <img src="https://img.shields.io/badge/متن-فارسی-B23AA8" alt="Persian text">
@@ -39,7 +39,7 @@
 
 ## Download
 
-**Windows:** get `MarketHockey-windows.zip` from the [latest release](https://github.com/MML0/mofid-games/releases/latest), unzip it to a writable folder and run `MarketHockey.exe`. Press **Space** to start. A/D and ←/→ move the paddles.
+**Windows:** get `LandHockey-windows.zip` from the [latest release](https://github.com/MML0/mofid-games/releases/latest), unzip it to a writable folder and run `LandHockey.exe`. Press **Space** to start. A/D and ←/→ move the paddles.
 
 ## Quick start
 
@@ -58,7 +58,7 @@ If `pygame-ce` has no wheel for your Python, create the venv with Python 3.12.
 
 ## User guide (Persian)
 
-`docs/MarketHockey_Guide_FA.pdf` (راهنمای بازیکن) is a 2-page guide for players covering the goal, the controls and the orbs. To edit it, change `docs/guide/guide_fa.html`, then rebuild the PDF with `.venv/bin/python tools/build_guide.py` (needs Chrome or Edge).
+`docs/LandHockey_Guide_FA.pdf` (راهنمای بازیکن) is a 2-page guide for players covering the goal, the controls and the orbs. To edit it, change `docs/guide/guide_fa.html`, then rebuild the PDF with `.venv/bin/python tools/build_guide.py` (needs Chrome or Edge).
 
 ## Design kit (Illustrator)
 
@@ -152,7 +152,7 @@ Results are saved in `logs/history.jsonl`. To keep the page on this computer onl
 - **Save** (⌘/Ctrl+S) writes `config/settings.json` atomically and keeps `config/settings.prev.json` as a backup. Live edits are *not* saved until you press Save.
 - Other tools: **Presets** (`config/presets/*.json`: default, kids_easy, pro, calibration), Revert, Reset to defaults, search (⌘/Ctrl+F) and undo (⌘/Ctrl+Z).
 - The right side shows a live layout preview with safe-area warnings, game telemetry, and test buttons (spawn orb, extra ball, debug, calibrate).
-- `docs/CONFIG_REFERENCE.md` lists every key with its default and range. Regenerate it with `.venv/bin/python -m market_hockey.config.generate_defaults`.
+- `docs/CONFIG_REFERENCE.md` lists every key with its default and range. Regenerate it with `.venv/bin/python -m land_hockey.config.generate_defaults`.
 
 ## Projector calibration
 
@@ -174,7 +174,7 @@ All in-game texts are editable in `HUD & Text → Messages` and in each power-up
 
 ## Adding or removing a power-up
 
-Create one file, `market_hockey/powerups/types/wide.py`:
+Create one file, `land_hockey/powerups/types/wide.py`:
 
 ```python
 from ..base import PowerUpType
@@ -260,7 +260,7 @@ There are two ways to connect it, and neither touches the engine:
 **B. Merge the driver into the game.** Add one file and one line (this is how `lidar.py` is built):
 
 ```python
-# market_hockey/inputs/depthcam.py
+# land_hockey/inputs/depthcam.py
 from .base import InputAdapter, PlayerSample
 
 class DepthCamAdapter(InputAdapter):
@@ -275,7 +275,7 @@ class DepthCamAdapter(InputAdapter):
 ```
 
 ```python
-# market_hockey/inputs/registry.py
+# land_hockey/inputs/registry.py
 ADAPTERS = {..., "depthcam": "depthcam:DepthCamAdapter"}
 ```
 
@@ -287,7 +287,7 @@ That's it. The source appears in the control panel's dropdown, and **`tests/test
 
 ```bash
 .venv/bin/python -m pytest -q                                     # everything, about two minutes
-.venv/bin/python -m pytest -q --cov=market_hockey                 # with coverage
+.venv/bin/python -m pytest -q --cov=land_hockey                 # with coverage
 .venv/bin/python -m pytest -q tests/test_tracking_protocol.py     # one area
 ```
 
@@ -313,17 +313,17 @@ Each pull request runs them on Windows and Linux, and the `.exe` is only built i
 
 ## Windows build (.exe)
 
-Tagged versions appear under [Releases](https://github.com/MML0/mofid-games/releases) as a zip. GitHub Actions also builds a ready-to-run Windows folder on every push to `main` that touches `hocky/`, after the tests pass. You can also start a build from **Actions → Build Windows → Run workflow**. Download **MarketHockey-windows** from the run's *Artifacts*, unzip it to a writable folder (not *Program Files*), and run `MarketHockey.exe` / `ControlPanel.exe`. Settings, presets and logs are stored next to the `.exe` files.
+Tagged versions appear under [Releases](https://github.com/MML0/mofid-games/releases) as a zip. GitHub Actions also builds a ready-to-run Windows folder on every push to `main` that touches `hocky/`, after the tests pass. You can also start a build from **Actions → Build Windows → Run workflow**. Download **LandHockey-windows** from the run's *Artifacts*, unzip it to a writable folder (not *Program Files*), and run `LandHockey.exe` / `ControlPanel.exe`. Settings, presets and logs are stored next to the `.exe` files.
 
 To build locally on Windows:
 
 ```bat
 py -3.12 -m venv .venv
 .venv\Scripts\pip install -r requirements-build.txt
-.venv\Scripts\pyinstaller --noconfirm packaging\MarketHockey.spec
+.venv\Scripts\pyinstaller --noconfirm packaging\LandHockey.spec
 ```
 
-Then copy the `config`, `assets`, `LIdar` and an empty `logs` folder into `dist\MarketHockey\`. The build also holds `LidarTracker.exe`, which the game starts when a player's input is *lidar*. The recipe is `packaging/MarketHockey.spec`. If a packaged run fails, look in `logs/game_crash.log` / `logs/control_panel_crash.log`.
+Then copy the `config`, `assets`, `LIdar` and an empty `logs` folder into `dist\LandHockey\`. The build also holds `LidarTracker.exe`, which the game starts when a player's input is *lidar*. The recipe is `packaging/LandHockey.spec`. If a packaged run fails, look in `logs/game_crash.log` / `logs/control_panel_crash.log`.
 
 ## Tools
 
@@ -334,13 +334,13 @@ Then copy the `config`, `assets`, `LIdar` and an empty `logs` folder into `dist\
 - `tools/make_readme_media.py`: regenerate every picture in the READMEs from the real game (needs `pip install pillow`, ffmpeg and Chrome)
 - `tools/send_fake_tracking.py [--blobs]`: pretend to be a LiDAR tracker
 - `logs/matches.csv`: one row per match (scores, power-ups, smart hits)
-- `logs/market_hockey.log`: the log
+- `logs/land_hockey.log`: the log
 
 ## Project layout
 
 ```
 main.py · settings_app.py · config/ (settings.json, defaults.json, presets/) · assets/ (fonts, sounds, icons)
-market_hockey/
+land_hockey/
   config/      schema.py (every setting), store.py (validation, atomic JSON), live_link.py
   core/        geometry.py, collisions.py, entities.py, engine.py   (pure Python, no pygame)
   powerups/    base.py, registry.py, effects.py, types/*.py         (one file per power-up)

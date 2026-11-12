@@ -2,7 +2,7 @@ import math
 
 from conftest import add_ball, playing, run
 
-from market_hockey.prediction.trajectory import predict
+from land_hockey.prediction.trajectory import predict
 
 
 def test_prediction_does_not_mutate(engine):

@@ -29,12 +29,12 @@ import numpy as np  # noqa: E402
 import pygame  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 
-from market_hockey.config import Config  # noqa: E402
-from market_hockey.core.engine import ATTRACT, PLAYING, RESULT, Engine  # noqa: E402
-from market_hockey.inputs.ai import AIAdapter  # noqa: E402
-from market_hockey.render.renderer import Renderer  # noqa: E402
-from market_hockey.render.text import TextRenderer  # noqa: E402
-from market_hockey.web.server import SupervisorServer  # noqa: E402
+from land_hockey.config import Config  # noqa: E402
+from land_hockey.core.engine import ATTRACT, PLAYING, RESULT, Engine  # noqa: E402
+from land_hockey.inputs.ai import AIAdapter  # noqa: E402
+from land_hockey.render.renderer import Renderer  # noqa: E402
+from land_hockey.render.text import TextRenderer  # noqa: E402
+from land_hockey.web.server import SupervisorServer  # noqa: E402
 
 OUT = HERE / "docs" / "media"
 REPO_OUT = HERE.parent / "media"
@@ -291,7 +291,7 @@ def main() -> int:
     stills()
     gif()
     phone_page()
-    banner(OUT / "banner.png", "هاکی بازار", "Market Hockey",
+    banner(OUT / "banner.png", "لند هاکی", "Land Hockey",
            "یک بازی دونفره روی کف نورانی، برای کارگزاری مفید",
            [(OUT / "rally.png", 1200, 470)])
     banner(REPO_OUT / "banner.png", "بازی‌های مفید", "Mofid Games",

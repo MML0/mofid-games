@@ -3,9 +3,9 @@ import math
 import pygame
 import pytest
 
-from market_hockey.inputs.base import PlayerSample
-from market_hockey.inputs.filters import PlayerFilter
-from market_hockey.inputs.network import NetworkAdapter
+from land_hockey.inputs.base import PlayerSample
+from land_hockey.inputs.filters import PlayerFilter
+from land_hockey.inputs.network import NetworkAdapter
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -15,7 +15,7 @@ def _pg():
 
 
 def test_keyboard_player_view_directions(cfg):
-    from market_hockey.inputs.keyboard import KeyboardAdapter
+    from land_hockey.inputs.keyboard import KeyboardAdapter
 
     kb = KeyboardAdapter(cfg)
     assert kb.direction(0, {pygame.K_d: 1}) == 1 and kb.direction(0, {pygame.K_a: 1}) == -1
@@ -27,7 +27,7 @@ def test_keyboard_player_view_directions(cfg):
 
 
 def test_keyboard_both_players_simultaneously(cfg):
-    from market_hockey.inputs.keyboard import KeyboardAdapter
+    from land_hockey.inputs.keyboard import KeyboardAdapter
 
     kb = KeyboardAdapter(cfg)
     for _ in range(60):
@@ -84,7 +84,7 @@ def test_filter_rejects_spikes(cfg):
 
 
 def test_engine_has_no_keyboard_code():
-    import market_hockey.core.engine as eng
+    import land_hockey.core.engine as eng
 
     src = open(eng.__file__, encoding="utf-8").read()
     assert "import pygame" not in src and "K_" not in src
@@ -95,7 +95,7 @@ def test_ai_motion_is_smooth(cfg, engine):
     import random
     from conftest import add_ball, playing
 
-    from market_hockey.inputs.ai import AIAdapter
+    from land_hockey.inputs.ai import AIAdapter
 
     playing(engine)
     add_ball(engine, 0, 0, -500, 60, owner=1)

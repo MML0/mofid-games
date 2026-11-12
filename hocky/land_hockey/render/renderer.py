@@ -1457,7 +1457,7 @@ class Renderer:
         bs = cfg["text.banner_size"]
         ux, uy = math.cos(math.radians(90 + g.rot)), math.sin(math.radians(90 + g.rot))
         rx, ry = -uy, ux  # "right" along the title row (screen-left for RTL reading comes first)
-        # title row: «هاکی بازار» | MARKET HOCKEY, side by side, high on the arena
+        # title row: «لند هاکی» | LAND HOCKEY, side by side, high on the arena
         ty = R * 0.34
         fa_size, en_size = int(bs * 1.3), int(bs * 0.62)
         en_col = mix(c["p1b"], (255, 255, 255), 0.6)  # the plain team color sinks into the turquoise behind it

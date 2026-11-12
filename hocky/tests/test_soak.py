@@ -1,9 +1,9 @@
 import math
 import random
 
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.inputs.ai import AIAdapter
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.inputs.ai import AIAdapter
 
 
 def test_ai_soak_three_minutes():

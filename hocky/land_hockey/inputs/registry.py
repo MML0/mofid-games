@@ -1,4 +1,4 @@
-"""Every input source the game knows, as "module:Class" inside market_hockey.inputs (imported on first use).
+"""Every input source the game knows, as "module:Class" inside land_hockey.inputs (imported on first use).
 
 To add a sensor (a LiDAR, a depth camera, ...): write one InputAdapter subclass in its own file and add one line here.
 The control panel's dropdown, the JSON validation and tests/test_input_contract.py pick it up automatically.

@@ -9,7 +9,7 @@ Each scene is staged in the real engine and renderer (headless) with the current
   layout.svg           editable vector rebuilt from the same moment, with named layers and live Persian text
   layout_outlined.svg  the same with the text converted to curves (needs pymupdf in the system python3)
   layout.pdf           the same as a one-page vector PDF
-plus design/states/elements_png/ (transparent sprites) and design/MarketHockey_Screens_and_Effects.pdf (one page per
+plus design/states/elements_png/ (transparent sprites) and design/LandHockey_Screens_and_Effects.pdf (one page per
 screen, power-up and feature). The settings file is only read, never written.
 """
 
@@ -37,15 +37,15 @@ import export_design_kit as kit  # noqa: E402
 import pygame  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from market_hockey.config import Config  # noqa: E402
-from market_hockey.core.engine import Engine  # noqa: E402
-from market_hockey.inputs.ai import AIAdapter  # noqa: E402
-from market_hockey.paths import SETTINGS_PATH  # noqa: E402
-from market_hockey.render.colors import boost, hex_rgb, mix  # noqa: E402
-from market_hockey.render.renderer import Renderer  # noqa: E402
+from land_hockey.config import Config  # noqa: E402
+from land_hockey.core.engine import Engine  # noqa: E402
+from land_hockey.inputs.ai import AIAdapter  # noqa: E402
+from land_hockey.paths import SETTINGS_PATH  # noqa: E402
+from land_hockey.render.colors import boost, hex_rgb, mix  # noqa: E402
+from land_hockey.render.renderer import Renderer  # noqa: E402
 
 OUT = ROOT / "design" / "states"
-CATALOG = ROOT / "design" / "MarketHockey_Screens_and_Effects.pdf"
+CATALOG = ROOT / "design" / "LandHockey_Screens_and_Effects.pdf"
 HZ, FPS = 240, 60
 hx, fm = kit.hx, kit.f
 WEIGHT = {"persian_title": 900, "digits": 900, "persian": 700, "latin": 700}
@@ -91,7 +91,7 @@ class Scene:
 
     @staticmethod
     def _types():
-        from market_hockey.powerups import registry
+        from land_hockey.powerups import registry
         return registry.all_types()
 
     def run(self, seconds):
@@ -239,7 +239,7 @@ class Vector:
             t = self.eng.types.get(o.type_id)
             k, a = 1.0, 1.0
             if o.state == "spawning":
-                from market_hockey.render.renderer import ease_out_back
+                from land_hockey.render.renderer import ease_out_back
                 k = ease_out_back(o.state_t / max(0.01, cfg["powerups.spawn_anim_s"]))
             elif o.state == "despawning":
                 k = a = 1 - o.state_t / 0.3
@@ -426,7 +426,7 @@ class Vector:
                 n = len(ch["candidates"])
                 t = ch["t"] / max(0.01, ch.get("select_len", ch["p"]["select_s"]))
                 locked = t >= 0.82
-                from market_hockey.render.renderer import ease_out_cubic
+                from land_hockey.render.renderer import ease_out_cubic
                 total = (2 if ch["rolls_done"] == 0 else 1) * n + ch["chosen"]
                 hi = ch["chosen"] if locked else int(ease_out_cubic(t / 0.82) * total) % n
                 out.append(self.glow(sx, sy, b.r * 3.6, colb, 0.75))
@@ -556,7 +556,7 @@ def shot(s: Scene, sid: str, caption: str, focus=None, expect=None):
     d.mkdir(parents=True, exist_ok=True)
     pygame.image.save(frame, str(d / "frame.png"))
     pygame.image.save(s.rend.bloom, str(d / "bloom.png"))
-    (d / "layout.svg").write_text(Vector(s).build(f"Market Hockey · {sid}"), encoding="utf-8")
+    (d / "layout.svg").write_text(Vector(s).build(f"Land Hockey · {sid}"), encoding="utf-8")
     fc = None
     if focus is not None:
         g = s.eng.geom
@@ -1039,7 +1039,7 @@ def build_catalog(tmp: Path) -> None:
         [fig(i, tmp, True) for i in S("features/orb_states/")], [("شعاع", f"{cfg['powerups.orb_radius']} پیکسل"), ("عمر", f"{cfg['powerups.orb_lifetime_s']} ثانیه"), ("شعاع مغناطیس", f"{cfg['powerups.magnet.radius']} پیکسل"), ("نوسان", f"{cfg['powerups.bob_px']} پیکسل")],
         "حرکت و شکل هر حالت. این حالت‌ها برای همه‌ی گوی‌ها یکسان‌اند و فقط نماد و رنگ حلقه عوض می‌شود.", files_line("features/orb_states/*") + '<div class="files" dir="ltr">design/states/elements_png/orbs/ · icons/</div>', cols=3)
 
-    cover = ('<section class="pg cover"><h1>هاکی بازار</h1><div class="en" dir="ltr">Market Hockey · Screens, power-ups and effects for design</div>'
+    cover = ('<section class="pg cover"><h1>لند هاکی</h1><div class="en" dir="ltr">Land Hockey · Screens, power-ups and effects for design</div>'
              f'<p>این فایل هر صفحه، حالت، قابلیت و افکت بازی را همان‌طور که امروز در بازی دیده می‌شود نشان می‌دهد ({num[0]} بخش). همه‌ی تصاویر از خود بازی گرفته شده‌اند.</p>'
              '<div class="flow" dir="ltr">ATTRACT → INTRO → COUNTDOWN → SERVE ⇄ PLAYING ⇄ GOAL → FINAL → RESULT → ATTRACT</div>'
              '<h2>فایل‌های هر بخش</h2><table class="legend">'

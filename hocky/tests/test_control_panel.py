@@ -6,11 +6,11 @@ import tkinter as tk
 import pytest
 
 from conftest import free_udp_port, wait_for
-from market_hockey.config import TABS, Config, get_schema
-from market_hockey.config.live_link import LiveLinkServer
-from market_hockey.ui import settings_window as sw
-from market_hockey.ui import widgets
-from market_hockey.ui.preview import draw_preview
+from land_hockey.config import TABS, Config, get_schema
+from land_hockey.config.live_link import LiveLinkServer
+from land_hockey.ui import settings_window as sw
+from land_hockey.ui import widgets
+from land_hockey.ui.preview import draw_preview
 
 
 @pytest.fixture

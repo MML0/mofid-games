@@ -4,8 +4,8 @@ import random
 import pytest
 
 from conftest import add_ball, playing, run
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
 
 
 def _shoot_at_goal(engine, goal_idx, angle_offset=40.0):

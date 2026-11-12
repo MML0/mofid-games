@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Market Hockey (هاکی بازار): run the game.
+"""Land Hockey (لند هاکی): run the game.
 
     python main.py                      # fullscreen, using config/settings.json
     python main.py --windowed           # windowed (development)
@@ -17,7 +17,7 @@ def main() -> int:
     for stream in (sys.stdout, sys.stderr):  # a console without Persian letters must never stop the game
         if stream is not None:
             stream.reconfigure(errors="replace")
-    ap = argparse.ArgumentParser(description="Market Hockey (هاکی بازار)")
+    ap = argparse.ArgumentParser(description="Land Hockey (لند هاکی)")
     ap.add_argument("--windowed", action="store_true", help="run in a window instead of fullscreen")
     ap.add_argument("--config", type=Path, default=None, help="settings JSON (default config/settings.json)")
     ap.add_argument("--seed", type=int, default=None, help="random seed")
@@ -27,8 +27,8 @@ def main() -> int:
     ap.add_argument("--selftest-text", type=Path, metavar="DIR")
     args = ap.parse_args()
 
-    from market_hockey import app
-    from market_hockey.paths import SETTINGS_PATH, install_crash_log
+    from land_hockey import app
+    from land_hockey.paths import SETTINGS_PATH, install_crash_log
 
     install_crash_log("game")
 
@@ -45,7 +45,7 @@ def main() -> int:
             print(p)
         return 0
     if not SETTINGS_PATH.exists():
-        from market_hockey.config.generate_defaults import main as gen
+        from land_hockey.config.generate_defaults import main as gen
         gen()
     game = app.GameApp(config_path=args.config or SETTINGS_PATH, windowed=args.windowed, seed=args.seed)
     try:

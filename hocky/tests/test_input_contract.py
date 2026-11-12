@@ -1,5 +1,5 @@
 """The rules every input source must follow. Parametrized over the registry, so a new sensor (LiDAR, ...) added to
-market_hockey/inputs/registry.py is held to all of them with no new test code."""
+land_hockey/inputs/registry.py is held to all of them with no new test code."""
 
 import ast
 import math
@@ -9,10 +9,10 @@ import pygame
 import pytest
 
 from conftest import free_udp_port, playing
-from market_hockey.config import get_schema
-from market_hockey.inputs.base import InputAdapter, PlayerSample
-from market_hockey.inputs.manager import InputManager
-from market_hockey.inputs.registry import ADAPTERS, load
+from land_hockey.config import get_schema
+from land_hockey.inputs.base import InputAdapter, PlayerSample
+from land_hockey.inputs.manager import InputManager
+from land_hockey.inputs.registry import ADAPTERS, load
 
 SOURCES = sorted(ADAPTERS)
 
@@ -113,7 +113,7 @@ def test_runs_through_the_manager_for_both_players(cfg, engine, name):
 @pytest.mark.parametrize("name", SOURCES)
 def test_is_loaded_lazily_so_a_missing_driver_only_affects_that_source(name):
     """No adapter module may be imported by the engine, the renderer or the schema."""
-    root = Path(__file__).resolve().parent.parent / "market_hockey"
+    root = Path(__file__).resolve().parent.parent / "land_hockey"
     module = ADAPTERS[name].split(":")[0]
     for sub in ("core", "render", "powerups", "prediction"):
         for f in (root / sub).rglob("*.py"):

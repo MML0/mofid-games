@@ -1,6 +1,6 @@
 """Generate config/defaults.json and docs/CONFIG_REFERENCE.md from the schema.
 
-    python -m market_hockey.config.generate_defaults
+    python -m land_hockey.config.generate_defaults
 """
 
 from __future__ import annotations
@@ -29,8 +29,8 @@ PRESETS = {
 
 def write_reference(path) -> None:
     schema = get_schema()
-    lines = ["# Market Hockey: configuration reference", "",
-             "Generated from `market_hockey/config/schema.py`. Every key lives in `config/settings.json` "
+    lines = ["# Land Hockey: configuration reference", "",
+             "Generated from `land_hockey/config/schema.py`. Every key lives in `config/settings.json` "
              "and is editable in the control panel (`python settings_app.py`).", "",
              "Live = applies instantly while the game runs; restart = applies on the next launch.", ""]
     for tab in TABS:

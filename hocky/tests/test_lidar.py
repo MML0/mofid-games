@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 from conftest import free_udp_port, playing, wait_for
-from market_hockey.inputs import osc
-from market_hockey.inputs.lidar import LidarAdapter, tracker_command
+from land_hockey.inputs import osc
+from land_hockey.inputs.lidar import LidarAdapter, tracker_command
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = ROOT / "LIdar" / "samples" / "session_2players.pkl"
@@ -150,7 +150,7 @@ def test_the_real_tracker_drives_the_paddles_from_its_recording(cfg, engine):
 
 def test_a_lidar_paddle_follows_at_once_but_others_keep_the_slide_limit(lidar, engine, cfg):
     """The tracker already smooths and teleports on a jump, so the game adds no speed limit of its own (a switch)."""
-    from market_hockey.inputs.base import PlayerSample
+    from land_hockey.inputs.base import PlayerSample
 
     playing(engine)
     dt = 1 / 60

@@ -6,9 +6,9 @@ import random
 
 import pytest
 
-from market_hockey.config import SCHEMA_VERSION, Config, get_schema
-from market_hockey.config.live_link import LiveLinkClient, LiveLinkServer, MAX_DATAGRAM, _decode
-from market_hockey.config.store import MIGRATIONS, coerce, flatten, nest
+from land_hockey.config import SCHEMA_VERSION, Config, get_schema
+from land_hockey.config.live_link import LiveLinkClient, LiveLinkServer, MAX_DATAGRAM, _decode
+from land_hockey.config.store import MIGRATIONS, coerce, flatten, nest
 
 
 @pytest.mark.parametrize("text", [
@@ -228,7 +228,7 @@ def test_persian_survives_the_link(link):
 
 
 def test_state_marks_the_client_connected_then_it_expires(link, monkeypatch):
-    import market_hockey.config.live_link as ll
+    import land_hockey.config.live_link as ll
 
     srv, cl = link
     assert not cl.connected
@@ -246,7 +246,7 @@ def test_state_marks_the_client_connected_then_it_expires(link, monkeypatch):
 
 
 def test_broadcast_reaches_clients_and_forgets_silent_ones(link, monkeypatch):
-    import market_hockey.config.live_link as ll
+    import land_hockey.config.live_link as ll
 
     srv, cl = link
     cl.hello()

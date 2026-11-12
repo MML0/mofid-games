@@ -1,4 +1,4 @@
-"""Market Hockey control panel (Tkinter). Every setting from the schema, live-linked to the running game."""
+"""Land Hockey control panel (Tkinter). Every setting from the schema, live-linked to the running game."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ class ControlPanel:
         self._last_hello = 0.0
         self.telemetry: dict = {}
 
-        root.title("Market Hockey — Control Panel · هاکی بازار")
+        root.title("Land Hockey — Control Panel · لند هاکی")
         root.geometry("1360x860")
         root.minsize(1100, 680)
         theme.apply(root)
@@ -87,8 +87,8 @@ class ControlPanel:
         r = self.root
         top = ttk.Frame(r, padding=(14, 10))
         top.pack(side="top", fill="x")
-        ttk.Label(top, text="Market Hockey", style="Title.TLabel").pack(side="left")
-        ttk.Label(top, text="  هاکی بازار · Control Panel", style="MutedBg.TLabel").pack(side="left")
+        ttk.Label(top, text="Land Hockey", style="Title.TLabel").pack(side="left")
+        ttk.Label(top, text="  لند هاکی · Control Panel", style="MutedBg.TLabel").pack(side="left")
         self.pill = tk.Label(top, text="○ Game offline — editing file", bg=theme.CARD2, fg=theme.MUTED, padx=10, pady=4)
         self.pill.pack(side="left", padx=16)
         btns = ttk.Frame(top)
@@ -258,7 +258,7 @@ class ControlPanel:
             note.pack(anchor="w", pady=8)
         if tab == "Power-ups" and sub == GLOBAL:
             ttk.Label(self.inner, text="Each power-up has its own page in the sidebar (◦). Add a power-up by dropping "
-                                       "a file in market_hockey/powerups/types/ — it appears there automatically.",
+                                       "a file in land_hockey/powerups/types/ — it appears there automatically.",
                       style="MutedBg.TLabel", wraplength=700).pack(anchor="w", pady=8)
 
     def _group(self, title: str, plist: list) -> None:

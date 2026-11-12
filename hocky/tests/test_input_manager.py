@@ -7,13 +7,13 @@ import pygame
 import pytest
 
 from conftest import free_udp_port, playing
-from market_hockey.inputs import registry
-from market_hockey.inputs.base import InputAdapter, PlayerSample
-from market_hockey.inputs.filters import OneEuro, PlayerFilter
-from market_hockey.inputs.keyboard import KeyboardAdapter, key_code
-from market_hockey.inputs.manager import InputManager
-from market_hockey.inputs.mouse import MouseAdapter
-from market_hockey.inputs.replay import Recorder, ReplayAdapter
+from land_hockey.inputs import registry
+from land_hockey.inputs.base import InputAdapter, PlayerSample
+from land_hockey.inputs.filters import OneEuro, PlayerFilter
+from land_hockey.inputs.keyboard import KeyboardAdapter, key_code
+from land_hockey.inputs.manager import InputManager
+from land_hockey.inputs.mouse import MouseAdapter
+from land_hockey.inputs.replay import Recorder, ReplayAdapter
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -59,7 +59,7 @@ def use(cfg, monkeypatch, name, cls):
     """Register a test adapter the same way a real sensor module is added."""
     monkeypatch.setitem(registry.ADAPTERS, name, f"test:{cls.__name__}")
     real = registry.load
-    monkeypatch.setattr("market_hockey.inputs.manager.load", lambda n: cls if n == name else real(n))
+    monkeypatch.setattr("land_hockey.inputs.manager.load", lambda n: cls if n == name else real(n))
     m = InputManager(cfg)
     m.adapters[name] = m.adapter(name)
     cfg.values["input.p1.source"] = name  # the enum list was built before the test registered this source
@@ -155,7 +155,7 @@ def test_a_sensor_that_cannot_even_start_reads_as_absent(cfg, engine, monkeypatc
     def boom(_name):
         raise ImportError("no module named rplidar")
 
-    monkeypatch.setattr("market_hockey.inputs.manager.load", boom)
+    monkeypatch.setattr("land_hockey.inputs.manager.load", boom)
     m = InputManager(cfg)
     samples, presence = m.poll(100.0, 1 / 60, engine)
     assert presence == [False, False] and samples[0].u is None

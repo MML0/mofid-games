@@ -6,9 +6,9 @@ import random
 import pytest
 
 from conftest import add_ball, advance_to_playing, playing, run
-from market_hockey.config import Config
-from market_hockey.core.engine import ATTRACT, COUNTDOWN, FINAL, GOAL, INTRO, PLAYING, RESULT, SERVE, Engine
-from market_hockey.inputs.base import PlayerSample
+from land_hockey.config import Config
+from land_hockey.core.engine import ATTRACT, COUNTDOWN, FINAL, GOAL, INTRO, PLAYING, RESULT, SERVE, Engine
+from land_hockey.inputs.base import PlayerSample
 
 
 def make(values=None, seed=3):

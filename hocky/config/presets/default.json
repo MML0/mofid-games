@@ -82,8 +82,8 @@
     "banner_size": 46,
     "toast_duration": 1.8,
     "toast_radius": 0.66,
-    "title": "هاکی بازار",
-    "subtitle": "MARKET HOCKEY",
+    "title": "لند هاکی",
+    "subtitle": "LAND HOCKEY",
     "attract_prompt": "برای شروع، روبه‌روی هم بایستید",
     "ready": "آماده‌اید؟",
     "go": "شروع!",
@@ -554,10 +554,10 @@
     "moment_pace": 1.0,
     "density": 55,
     "font_scale": 0.9,
-    "attract_text": "MOFID SECURITIES|STEADY PROGRESS|MARKET HOCKEY",
+    "attract_text": "MOFID SECURITIES|STEADY PROGRESS|LAND HOCKEY",
     "text_interval_s": 9.0,
     "space_marks": true,
-    "text_start": "MARKET HOCKEY",
+    "text_start": "LAND HOCKEY",
     "text_ready": "READY",
     "text_go": "GO",
     "text_goal": "GOAL",
@@ -750,8 +750,8 @@
     "log_matches": true
   },
   "_meta": {
-    "schema_version": 16,
-    "saved_at": "2026-11-10 14:50:04",
-    "app": "Market Hockey"
+    "schema_version": 17,
+    "saved_at": "2026-11-12 17:38:18",
+    "app": "Land Hockey"
   }
 }

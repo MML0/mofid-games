@@ -6,12 +6,12 @@ import json
 import pygame
 import pytest
 
-from market_hockey import app as app_mod
-from market_hockey.app import GameApp
-from market_hockey.config import Config
-from market_hockey.config.live_link import LiveLinkClient, LiveLinkServer
-from market_hockey.core.engine import ATTRACT, INTRO, RESULT
-from market_hockey.web import history
+from land_hockey import app as app_mod
+from land_hockey.app import GameApp
+from land_hockey.config import Config
+from land_hockey.config.live_link import LiveLinkClient, LiveLinkServer
+from land_hockey.core.engine import ATTRACT, INTRO, RESULT
+from land_hockey.web import history
 
 from conftest import free_udp_port, wait_for
 
@@ -367,7 +367,7 @@ def test_supervisor_browser_failure_is_harmless(web, monkeypatch):
 
 
 def test_web_port_in_use_keeps_the_game_running(tmp_path):
-    from market_hockey.web.server import SupervisorServer
+    from land_hockey.web.server import SupervisorServer
 
     blocker = SupervisorServer("127.0.0.1", 0)
     assert blocker.start()

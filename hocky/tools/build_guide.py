@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render docs/guide/guide_fa.html to docs/MarketHockey_Guide_FA.pdf with headless Chrome/Edge.
+"""Render docs/guide/guide_fa.html to docs/LandHockey_Guide_FA.pdf with headless Chrome/Edge.
 
     python tools/build_guide.py
 Chrome lays out Persian (RTL, joined letters) perfectly, so the guide is written as HTML + CSS.
@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "docs" / "guide" / "guide_fa.html"
-OUT = ROOT / "docs" / "MarketHockey_Guide_FA.pdf"
+OUT = ROOT / "docs" / "LandHockey_Guide_FA.pdf"
 CANDIDATES = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",

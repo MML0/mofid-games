@@ -128,7 +128,7 @@ class SupervisorServer:
 
 class _Handler(BaseHTTPRequestHandler):
     owner: SupervisorServer = None  # set per server
-    server_version = "MarketHockey"
+    server_version = "LandHockey"
 
     def log_message(self, fmt, *args):  # keep the console quiet
         log.debug("web: " + fmt, *args)
@@ -176,7 +176,7 @@ class _Handler(BaseHTTPRequestHandler):
         elif route == "/api/history.csv":
             body = history.to_csv(history.read_all(self.owner.history_path)).encode("utf-8-sig")
             self._send(200, body, "text/csv; charset=utf-8",
-                       {"Content-Disposition": 'attachment; filename="market_hockey_history.csv"'})
+                       {"Content-Disposition": 'attachment; filename="land_hockey_history.csv"'})
         else:
             self._json({"error": "not found"}, 404)
 

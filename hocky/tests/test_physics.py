@@ -2,7 +2,7 @@ import math
 
 from conftest import add_ball, playing, run
 
-from market_hockey.core.collisions import HitParams, PaddleShape, paddle_contact, paddle_response
+from land_hockey.core.collisions import HitParams, PaddleShape, paddle_contact, paddle_response
 
 
 def _hit(theta, offset, ratio=1.0, blend=0.0, speed=500.0):
@@ -96,7 +96,7 @@ def test_ball_never_left_inside_paddle(engine):
         sh = engine.paddle_shape(0)
         b = add_ball(engine, sh.mx + sh.fx * 20, sh.my + sh.fy * 20, -600, (k - 15) * 30, owner=1)
         run(engine, 1 / 60)
-        from market_hockey.core.collisions import paddle_contact
+        from land_hockey.core.collisions import paddle_contact
         c = paddle_contact(b.x, b.y, b.r - 1.0, engine.paddle_shape(0))
         assert c is None
         engine.balls.clear()

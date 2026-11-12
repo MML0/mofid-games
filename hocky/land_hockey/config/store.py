@@ -231,6 +231,15 @@ def _v15_to_v16(flat: dict) -> dict:
     return flat
 
 
+# The game is renamed from «هاکی بازار» / Market Hockey to «لند هاکی» / Land Hockey (texts the operator changed stay).
+V17_DEFAULT_CHANGES = {
+    "text.title": ("هاکی بازار", "لند هاکی"),
+    "text.subtitle": ("MARKET HOCKEY", "LAND HOCKEY"),
+    "kinetic.attract_text": ("MOFID SECURITIES|STEADY PROGRESS|MARKET HOCKEY", "MOFID SECURITIES|STEADY PROGRESS|LAND HOCKEY"),
+    "kinetic.text_start": ("MARKET HOCKEY", "LAND HOCKEY"),
+}
+
+
 MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: _changes(V4_DEFAULT_CHANGES),
                               4: _changes(V5_DEFAULT_CHANGES), 5: _changes(V6_DEFAULT_CHANGES),
                               6: _changes(V7_DEFAULT_CHANGES), 7: _changes(V8_DEFAULT_CHANGES),
@@ -240,7 +249,8 @@ MIGRATIONS: dict[int, Any] = {1: _v1_to_v2, 2: _changes(V3_DEFAULT_CHANGES), 3: 
                               11: _changes(V12_DEFAULT_CHANGES),
                               12: _changes(V13_DEFAULT_CHANGES),
                               13: _changes(V14_DEFAULT_CHANGES),
-                              14: _changes(V15_DEFAULT_CHANGES), 15: _v15_to_v16}
+                              14: _changes(V15_DEFAULT_CHANGES), 15: _v15_to_v16,
+                              16: _changes(V17_DEFAULT_CHANGES)}
 
 
 class Config:
@@ -310,7 +320,7 @@ class Config:
     def to_json_obj(self) -> dict:
         data = nest({**self.extra, **self.values})
         data[META_KEY] = {"schema_version": SCHEMA_VERSION, "saved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-                          "app": "Market Hockey"}
+                          "app": "Land Hockey"}
         return data
 
     def save(self, path: Path, backup: Path | None = None) -> None:

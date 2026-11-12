@@ -1,6 +1,6 @@
 """Base class for power-up types.
 
-To add a power-up: create one file in `market_hockey/powerups/types/`, subclass `PowerUpType`, decorate it
+To add a power-up: create one file in `land_hockey/powerups/types/`, subclass `PowerUpType`, decorate it
 with `@register`, and implement `collect()`. Its settings appear in config/settings.json and in the control
 panel automatically. To remove one, switch it off in the panel (or delete the file).
 """

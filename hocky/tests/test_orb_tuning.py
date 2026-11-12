@@ -8,9 +8,9 @@ import pygame
 import pytest
 
 from conftest import add_ball, playing
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.render.renderer import Renderer
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.render.renderer import Renderer
 
 
 @pytest.fixture(scope="module", autouse=True)

@@ -3,10 +3,10 @@ import os
 
 import pytest
 
-from market_hockey.config import SCHEMA_VERSION, Config, get_schema
-from market_hockey.config.schema import KINDS
-from market_hockey.config.store import coerce
-from market_hockey.ui.widgets import widget_kind
+from land_hockey.config import SCHEMA_VERSION, Config, get_schema
+from land_hockey.config.schema import KINDS
+from land_hockey.config.store import coerce
+from land_hockey.ui.widgets import widget_kind
 
 
 def test_schema_is_complete():
@@ -97,7 +97,7 @@ def test_change_tracking():
 
 
 def test_live_link_roundtrip():
-    from market_hockey.config.live_link import LiveLinkClient, LiveLinkServer
+    from land_hockey.config.live_link import LiveLinkClient, LiveLinkServer
     import time
 
     srv = LiveLinkServer(0)
@@ -125,7 +125,7 @@ def test_live_link_roundtrip():
 
 
 def test_v1_settings_migrate_but_keep_custom_values(tmp_path):
-    from market_hockey.config.store import V2_DEFAULT_CHANGES
+    from land_hockey.config.store import V2_DEFAULT_CHANGES
 
     path = tmp_path / "old.json"
     old = {"_meta": {"schema_version": 1}, "ball": {"radius": 15},

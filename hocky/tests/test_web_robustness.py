@@ -6,8 +6,8 @@ import urllib.request
 
 import pytest
 
-from market_hockey.web import history
-from market_hockey.web.server import MAX_BODY, SupervisorServer, local_addresses
+from land_hockey.web import history
+from land_hockey.web.server import MAX_BODY, SupervisorServer, local_addresses
 
 
 @pytest.fixture

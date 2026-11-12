@@ -5,7 +5,7 @@
 
 Everything is rebuilt as clean SVG from the game's real geometry, colours and current settings
 (config/settings.json), so the vectors line up 1:1 with what the game draws. It also writes:
-  - MarketHockey_DesignKit.pdf  (vector, one artboard per page; rendered by headless Chrome/Edge)
+  - LandHockey_DesignKit.pdf  (vector, one artboard per page; rendered by headless Chrome/Edge)
   - outlined versions of the Persian text (needs PyMuPDF: `pip install pymupdf`; skipped if missing)
   - palette (.ase for Adobe apps, .json, .css, .svg), fonts, reference screenshots and the player guide.
 Uses only pure-Python parts of the game, so any Python 3.10+ works (no pygame needed).
@@ -25,12 +25,12 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from market_hockey.config import Config  # noqa: E402
-from market_hockey.core.collisions import PaddleShape  # noqa: E402
-from market_hockey.core.geometry import Geometry, pp  # noqa: E402
-from market_hockey.paths import FONTS_DIR, SETTINGS_PATH  # noqa: E402
-from market_hockey.powerups import registry  # noqa: E402
-from market_hockey.render.colors import boost, hex_rgb, mix  # noqa: E402
+from land_hockey.config import Config  # noqa: E402
+from land_hockey.core.collisions import PaddleShape  # noqa: E402
+from land_hockey.core.geometry import Geometry, pp  # noqa: E402
+from land_hockey.paths import FONTS_DIR, SETTINGS_PATH  # noqa: E402
+from land_hockey.powerups import registry  # noqa: E402
+from land_hockey.render.colors import boost, hex_rgb, mix  # noqa: E402
 
 OUT = ROOT / "design"
 FONT = "'IRANSansX', sans-serif"
@@ -108,7 +108,7 @@ def write_ase(path: Path, colors: dict) -> None:
         return struct.pack(">H", len(u) // 2) + u
 
     blocks = []
-    grp = name_block("Market Hockey")
+    grp = name_block("Land Hockey")
     blocks.append(struct.pack(">HI", 0xC001, len(grp)) + grp)
     for key, rgb in colors.items():
         payload = name_block(PALETTE_NAMES.get(key, key)) + b"RGB " + struct.pack(
@@ -121,7 +121,7 @@ def write_ase(path: Path, colors: dict) -> None:
 def export_palette(c) -> str:
     cols = {k: c[k] for k in PALETTE_NAMES}
     (OUT / "palette").mkdir(parents=True, exist_ok=True)
-    write_ase(OUT / "palette" / "MarketHockey_colors.ase", cols)
+    write_ase(OUT / "palette" / "LandHockey_colors.ase", cols)
     write("palette/colors.json", json.dumps({k: {"hex": hx(v), "rgb": list(v[:3]), "name": PALETTE_NAMES[k]}
                                              for k, v in cols.items()}, ensure_ascii=False, indent=2))
     write("palette/colors.css", ":root {\n" + "".join(f"  --{k.replace('_', '-')}: {hx(v)};  /* {PALETTE_NAMES[k]} */\n"
@@ -129,7 +129,7 @@ def export_palette(c) -> str:
     sw, cols_n = 150, 5
     rows = (len(cols) + cols_n - 1) // cols_n
     W, H = cols_n * (sw + 30) + 30, rows * (sw + 90) + 100
-    body = [text(30, 50, "Market Hockey — colour palette", 28, "#13252E", 900, "start")]
+    body = [text(30, 50, "Land Hockey — colour palette", 28, "#13252E", 900, "start")]
     for i, (k, v) in enumerate(cols.items()):
         x, y = 30 + (i % cols_n) * (sw + 30), 90 + (i // cols_n) * (sw + 90)
         body.append(f'<g id="swatch_{k}"><rect x="{x}" y="{y}" width="{sw}" height="{sw}" rx="18" fill="{hx(v)}" '
@@ -524,7 +524,7 @@ def export_all() -> None:
     defs = A.defs() + od + bd + td
     layers = [A.background(), A.center_line(), A.tracks(), A.slots(), A.rim(), A.goals(), A.walls(), A.hud(),
               orb_layer, ball_layer, paddle_layers, A.mask()]
-    full = svg(W, H, "\n".join(layers), "Market Hockey — arena (all layers)", defs)
+    full = svg(W, H, "\n".join(layers), "Land Hockey — arena (all layers)", defs)
     write("svg/arena/arena_full.svg", full)
     sheets.append(("Arena — all layers", full))
     for name, layer in (("background", A.background()), ("center_line", A.center_line()), ("paddle_tracks", A.tracks()),
@@ -607,9 +607,9 @@ def export_all() -> None:
     sheets.append(("Palette", export_palette(c)))
 
     # ---- typography and Persian messages (live text)
-    typo = [text(1040, 70, "تایپوگرافی هاکی بازار", 34, "#13252E", 900, "end"),
-            text(1040, 190, "هاکی بازار", 110, "#004C6A", 900, "end"),
-            text(40, 190, "MARKET HOCKEY", 40, "#00A796", 700, "start", 'letter-spacing="10"'),
+    typo = [text(1040, 70, "تایپوگرافی لند هاکی", 34, "#13252E", 900, "end"),
+            text(1040, 190, "لند هاکی", 110, "#004C6A", 900, "end"),
+            text(40, 190, "LAND HOCKEY", 40, "#00A796", 700, "start", 'letter-spacing="10"'),
             text(1040, 300, "IRANSansX Black — عنوان‌ها و اعداد", 22, "#5C7480", 400, "end"),
             text(1040, 380, "0 1 2 3 4 5 6 7 8 9", 64, "#13252E", 900, "end", 'direction="ltr"'),
             text(1040, 460, "اعداد بازی همیشه لاتین هستند (60، 7، 3·2·1).", 22, "#5C7480", 400, "end"),
@@ -635,9 +635,9 @@ def export_all() -> None:
                   "Persian messages", bg="#FFFFFF")
     write("text/persian_messages_live.svg", msg_svg)
     write("text/persian_messages.json", json.dumps(dict(msgs), ensure_ascii=False, indent=2))
-    lockup = svg(1080, 520, text(540, 200, "هاکی بازار", 170, "#FFFFFF", 900)
+    lockup = svg(1080, 520, text(540, 200, "لند هاکی", 170, "#FFFFFF", 900)
                  + f'<rect x="420" y="330" width="240" height="8" rx="4" fill="{hx(c["p1"])}"/>'
-                 + text(540, 400, "MARKET HOCKEY", 46, hx(c["p1_glow"]), 700, "middle", 'letter-spacing="14"'),
+                 + text(540, 400, "LAND HOCKEY", 46, hx(c["p1_glow"]), 700, "middle", 'letter-spacing="14"'),
                  "Title lockup", bg="#062A3A")
     write("text/title_lockup_live.svg", lockup)
     sheets.append(("Title lockup", lockup))
@@ -648,7 +648,7 @@ def export_all() -> None:
     (OUT / "fonts").mkdir(parents=True, exist_ok=True)
     for ttf in FONTS_DIR.glob("*.ttf"):
         shutil.copy2(ttf, OUT / "fonts" / ttf.name)
-    guide = ROOT / "docs" / "MarketHockey_Guide_FA.pdf"
+    guide = ROOT / "docs" / "LandHockey_Guide_FA.pdf"
     if guide.exists():
         (OUT / "guide").mkdir(exist_ok=True)
         shutil.copy2(guide, OUT / "guide" / guide.name)
@@ -692,7 +692,7 @@ def build_pdf(sheets) -> None:
     tmp = OUT / "pdf" / "_kit.html"
     tmp.parent.mkdir(parents=True, exist_ok=True)
     tmp.write_text(html, encoding="utf-8")
-    pdf = OUT / "MarketHockey_DesignKit.pdf"
+    pdf = OUT / "LandHockey_DesignKit.pdf"
     subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", "--allow-file-access-from-files",
                     "--virtual-time-budget=8000", f"--print-to-pdf={pdf}", tmp.as_uri()],
                    check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

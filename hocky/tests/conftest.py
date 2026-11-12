@@ -12,8 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402
 
-from market_hockey.config import Config  # noqa: E402
-from market_hockey.core.engine import Engine  # noqa: E402
+from land_hockey.config import Config  # noqa: E402
+from land_hockey.core.engine import Engine  # noqa: E402
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def _no_lidar_tracker(monkeypatch, request):
     """A test that switches a player to "lidar" must not start a real tracker process on a serial port. Tests of the
     tracker itself ask for it with @pytest.mark.real_tracker."""
     if "real_tracker" not in request.keywords:
-        from market_hockey.inputs import lidar
+        from land_hockey.inputs import lidar
 
         monkeypatch.setattr(lidar.LidarAdapter, "_launch", lambda self: None)
 
@@ -50,7 +50,7 @@ def playing(engine):
 
 
 def add_ball(engine, x, y, vx, vy, owner=None):
-    from market_hockey.core.entities import Ball
+    from land_hockey.core.entities import Ball
 
     b = Ball(engine._next_ball_id, x, y, engine.cfg["ball.radius"], engine.time)
     engine._next_ball_id += 1

@@ -7,11 +7,11 @@ import numpy as np
 import pygame
 import pytest
 
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.render.kinetic import (BRAND_MARKS, MOMENTS, SITE_CANVAS, KineticBackdrop, KineticField, KineticParams,
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.render.kinetic import (BRAND_MARKS, MOMENTS, SITE_CANVAS, KineticBackdrop, KineticField, KineticParams,
                                           clean_chars)
-from market_hockey.render.renderer import Renderer
+from land_hockey.render.renderer import Renderer
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -422,7 +422,7 @@ def test_letter_rings_can_differ_from_color_rings():
 
 
 def test_brand_fonts_are_the_defaults_and_exist():
-    from market_hockey.paths import FONTS_DIR
+    from land_hockey.paths import FONTS_DIR
     cfg = Config({})
     assert cfg["fonts.persian_title"] == "Pinar-Black.ttf" and cfg["fonts.latin"].startswith("SF-Compact")
     for key in ("fonts.persian", "fonts.persian_title", "fonts.digits", "fonts.latin", "kinetic.font_latin", "kinetic.font_persian"):

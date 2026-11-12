@@ -18,11 +18,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pygame  # noqa: E402
 
-from market_hockey.config import Config  # noqa: E402
-from market_hockey.render.brand_motion import BrandMotion  # noqa: E402
-from market_hockey.render.colors import hex_rgb  # noqa: E402
-from market_hockey.render.kinetic import REF_SIZE, SITE_CANVAS, KineticBackdrop, KineticField, KineticParams  # noqa: E402
-from market_hockey.render.text import TextRenderer  # noqa: E402
+from land_hockey.config import Config  # noqa: E402
+from land_hockey.render.brand_motion import BrandMotion  # noqa: E402
+from land_hockey.render.colors import hex_rgb  # noqa: E402
+from land_hockey.render.kinetic import REF_SIZE, SITE_CANVAS, KineticBackdrop, KineticField, KineticParams  # noqa: E402
+from land_hockey.render.text import TextRenderer  # noqa: E402
 
 W, H = 1280, 880
 PANEL = 480
@@ -290,7 +290,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.parse_args()
     pygame.init()
-    pygame.display.set_caption("Market Hockey: kinetic type lab")
+    pygame.display.set_caption("Land Hockey: kinetic type lab")
     screen = pygame.display.set_mode((W, H))
     lab = Lab(screen)
     clock = pygame.time.Clock()

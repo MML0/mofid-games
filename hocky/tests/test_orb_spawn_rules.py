@@ -8,9 +8,9 @@ import pygame
 import pytest
 
 from conftest import playing
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.paths import ORBS_DIR
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.paths import ORBS_DIR
 
 ROOT = ORBS_DIR.parent.parent
 

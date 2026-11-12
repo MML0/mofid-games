@@ -2,7 +2,7 @@
 
 The faint wave of letters behind the splash, countdown, goals and results. It is a port of the Brik sketch
 [circle wave kinetic typography](https://brik.space/tools/remix-of-circle-wave-kinetic-typography-movrkwb1), in
-`market_hockey/render/kinetic.py`. Preview and tune it with:
+`land_hockey/render/kinetic.py`. Preview and tune it with:
 
 ```bash
 .venv/bin/python tools/kinetic_lab.py
@@ -53,7 +53,7 @@ effect text is English, and every effect is centered on the arena.
 |---|---|---|
 | Splash, on launch | Brand texts | Density falls from 45 while the rings reveal from the center. |
 | Waiting | Brand texts, in turn | Stretch, frequency and ring width drift on slow sines, and each new text spreads out from the center. |
-| Match start | `MARKET HOCKEY` | The grid folds from fine to large type. |
+| Match start | `LAND HOCKEY` | The grid folds from fine to large type. |
 | Ready | `READY` | Steady letters around a clear center. |
 | 3, 2, 1 | The digit | The grid stays fixed at 13 and the digit stays whole. Each beat is a gentle swell around a clear center. |
 | Go | `GO` | The widest stretch of the countdown, then a hole opens from the middle to clear the arena for play. |
@@ -100,7 +100,7 @@ Site mode keeps pygame's FreeSansBold, the closest match to the sketch's Helveti
 
 ## Moving brand objects
 
-`market_hockey/render/brand_motion.py` adds moving objects between the letters and the game. Reference: the Meta "Chat Circle" floor projection, especially seconds 28 to 32. Settings are in the **Brand Motion** tab. Try each object with the buttons at the bottom of `tools/kinetic_lab.py`.
+`land_hockey/render/brand_motion.py` adds moving objects between the letters and the game. Reference: the Meta "Chat Circle" floor projection, especially seconds 28 to 32. Settings are in the **Brand Motion** tab. Try each object with the buttons at the bottom of `tools/kinetic_lab.py`.
 
 | Object | From the reference | From the brand book |
 |---|---|---|

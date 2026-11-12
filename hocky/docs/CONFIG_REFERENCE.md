@@ -1,6 +1,6 @@
-# Market Hockey: configuration reference
+# Land Hockey: configuration reference
 
-Generated from `market_hockey/config/schema.py`. Every key lives in `config/settings.json` and is editable in the control panel (`python settings_app.py`).
+Generated from `land_hockey/config/schema.py`. Every key lives in `config/settings.json` and is editable in the control panel (`python settings_app.py`).
 
 Live = applies instantly while the game runs; restart = applies on the next launch.
 
@@ -92,8 +92,8 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `text.banner_size` | 46 | 20 … 200 px | live | Banner size |
 | `text.toast_duration` | 1.8 | 0.3 … 6 s | live | Message duration |
 | `text.toast_radius` | 0.66 | 0.1 … 0.9 ×R | live | Message distance from center |
-| `text.title` | هاکی بازار | str | live | Title |
-| `text.subtitle` | MARKET HOCKEY | str | live | Subtitle |
+| `text.title` | لند هاکی | str | live | Title |
+| `text.subtitle` | LAND HOCKEY | str | live | Subtitle |
 | `text.attract_prompt` | برای شروع، روبه‌روی هم بایستید | str | live | Attract prompt |
 | `text.ready` | آماده‌اید؟ | str | live | Countdown: ready |
 | `text.go` | شروع! | str | live | Countdown: go |
@@ -548,10 +548,10 @@ Live = applies instantly while the game runs; restart = applies on the next laun
 | `kinetic.moment_pace` | 1.0 | 0.4 … 2 × | live | Moment pace — Below 1 plays goal, go, result and splash slower. |
 | `kinetic.density` | 55 | 10 … 120 | live | Grid density — Cells per side. On a 4 m floor, 55 makes letters about 5 cm tall. |
 | `kinetic.font_scale` | 0.9 | 0.3 … 2 | live | Font scale — Letter height as a share of the row height. |
-| `kinetic.attract_text` | MOFID SECURITIES/STEADY PROGRESS/MARKET HOCKEY | str | live | Waiting-screen texts — Separate with / . They take turns, each spreading out from the center. |
+| `kinetic.attract_text` | MOFID SECURITIES/STEADY PROGRESS/LAND HOCKEY | str | live | Waiting-screen texts — Separate with / . They take turns, each spreading out from the center. |
 | `kinetic.text_interval_s` | 9.0 | 2 … 60 s | live | Text change interval |
 | `kinetic.space_marks` | True | bool | live | Spaces become brand dots — Echoes the dot grid of the brand book. Off leaves empty rings. |
-| `kinetic.text_start` | MARKET HOCKEY | str | live | Match start text |
+| `kinetic.text_start` | LAND HOCKEY | str | live | Match start text |
 | `kinetic.text_ready` | READY | str | live | Ready text |
 | `kinetic.text_go` | GO | str | live | Go text |
 | `kinetic.text_goal` | GOAL | str | live | Goal text |

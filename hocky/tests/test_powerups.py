@@ -2,9 +2,9 @@ import math
 
 from conftest import add_ball, playing, run
 
-from market_hockey.core.entities import Orb
-from market_hockey.powerups import registry
-from market_hockey.powerups.base import PowerUpType
+from land_hockey.core.entities import Orb
+from land_hockey.powerups import registry
+from land_hockey.powerups.base import PowerUpType
 
 
 def _collect(engine, tid, owner=0, ball=None):

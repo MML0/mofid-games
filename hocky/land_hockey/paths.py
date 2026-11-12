@@ -2,7 +2,7 @@
 
 Works both from source and from a PyInstaller build:
 - APP_DIR: where the user-editable files live (config/, logs/, assets/). From source this is the project folder;
-  in a build it is the folder that contains MarketHockey.exe, so settings are saved next to the .exe.
+  in a build it is the folder that contains LandHockey.exe, so settings are saved next to the .exe.
 - BUNDLE_DIR: read-only files packed inside the build (fallback for assets).
 """
 
@@ -31,7 +31,7 @@ IMAGES_DIR = ASSETS_DIR / "images"
 LOGS_DIR = APP_DIR / "logs"
 DOCS_DIR = APP_DIR / "docs"
 
-GAME_EXE = "MarketHockey"
+GAME_EXE = "LandHockey"
 PANEL_EXE = "ControlPanel"
 
 

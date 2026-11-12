@@ -9,11 +9,11 @@ import pygame
 import pytest
 
 from conftest import add_ball, playing
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.inputs.base import PlayerSample
-from market_hockey.paths import ORBS_DIR
-from market_hockey.render.renderer import result_sentence
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.inputs.base import PlayerSample
+from land_hockey.paths import ORBS_DIR
+from land_hockey.render.renderer import result_sentence
 
 ROOT = ORBS_DIR.parent.parent
 
@@ -231,7 +231,7 @@ def _pg():
 
 
 def test_the_result_screen_draws_points_and_the_sentence(_pg):
-    from market_hockey.render.renderer import Renderer
+    from land_hockey.render.renderer import Renderer
 
     for scores in ([3, 1], [2, 2]):
         engine = _finished(scores)
@@ -244,9 +244,29 @@ def test_the_result_screen_draws_points_and_the_sentence(_pg):
 
 
 def test_a_number_inside_persian_text_gets_room(_pg):
-    from market_hockey.render.text import TextRenderer
+    from land_hockey.render.text import TextRenderer
 
     t = TextRenderer(Config())
     joined = t.render("علی1امتیاز", 40, (255, 255, 255)).get_width()
     spaced = t.render("علی 1 امتیاز", 40, (255, 255, 255)).get_width()
     assert spaced >= joined + 8
+
+
+# ---------------------------------------------------------------- the game is called «لند هاکی» / Land Hockey
+def test_v16_settings_take_the_new_game_name_but_keep_custom_titles(tmp_path):
+    path = tmp_path / "v16.json"
+    path.write_text(json.dumps({"_meta": {"schema_version": 16},
+                                "text": {"title": "هاکی بازار", "subtitle": "MARKET HOCKEY"},
+                                "kinetic": {"text_start": "MARKET HOCKEY"}}), encoding="utf-8")
+    cfg = Config.load(path)
+    assert (cfg["text.title"], cfg["text.subtitle"], cfg["kinetic.text_start"]) == ("لند هاکی", "LAND HOCKEY", "LAND HOCKEY")
+    path.write_text(json.dumps({"_meta": {"schema_version": 16}, "text": {"title": "بازی ما"}}), encoding="utf-8")
+    assert Config.load(path)["text.title"] == "بازی ما"
+
+
+def test_the_old_name_is_gone_from_the_shipped_files():
+    for rel in ("config/settings.json", "config/defaults.json", "assets/web/index.html", "docs/guide/guide_fa.html"):
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        assert "هاکی بازار" not in text and "MARKET HOCKEY" not in text.upper(), rel
+    shipped = Config.load(ROOT / "config" / "settings.json")
+    assert shipped["text.title"] == "لند هاکی" and shipped["text.subtitle"] == "LAND HOCKEY"

@@ -3,7 +3,7 @@ import math
 import pygame
 import pytest
 
-from market_hockey.render.text import TextRenderer, latin_digits, split_runs
+from land_hockey.render.text import TextRenderer, latin_digits, split_runs
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -35,9 +35,9 @@ def test_persian_renders(cfg, backend):
 
 
 def test_mask_has_no_leaks(tmp_path):
-    from market_hockey.app import capture_states
-    from market_hockey.config import Config
-    from market_hockey.core.geometry import Geometry
+    from land_hockey.app import capture_states
+    from land_hockey.config import Config
+    from land_hockey.core.geometry import Geometry
 
     shots = capture_states(tmp_path, seed=11)
     assert len(shots) >= 9

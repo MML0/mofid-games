@@ -6,12 +6,12 @@ import pygame
 import pytest
 
 from conftest import add_ball, playing
-from market_hockey.config import Config
-from market_hockey.core.engine import Engine
-from market_hockey.paths import ORBS_DIR
-from market_hockey.render.colors import hex_rgb
-from market_hockey.render.icons import IconCache
-from market_hockey.render.renderer import Renderer
+from land_hockey.config import Config
+from land_hockey.core.engine import Engine
+from land_hockey.paths import ORBS_DIR
+from land_hockey.render.colors import hex_rgb
+from land_hockey.render.icons import IconCache
+from land_hockey.render.renderer import Renderer
 
 BRANDED = {"expand": "بالکر بزرگ", "speed_up": "زیاد شدن سرعت", "double_ball": "دو توپ", "shrink": "بالکر حریف کوچک",
            "trajectory_reveal": "تحلیل مسیر"}

@@ -13,7 +13,7 @@ from typing import Any
 from ..inputs.registry import ADAPTERS
 from ..paths import FONTS_DIR
 
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 TABS = [
     "Display & Projection",
@@ -212,8 +212,8 @@ def _core(sb: SchemaBuilder) -> None:
     sb.f("text.toast_duration", 1.8, 0.3, 6, 0.1, "s", "Message duration")
     sb.f("text.toast_radius", 0.66, 0.1, 0.9, 0.01, "×R", "Message distance from center")
     strings = [
-        ("title", "هاکی بازار", "Title"),
-        ("subtitle", "MARKET HOCKEY", "Subtitle"),
+        ("title", "لند هاکی", "Title"),
+        ("subtitle", "LAND HOCKEY", "Subtitle"),
         ("attract_prompt", f"برای شروع، روبه{ZWNJ}روی هم بایستید", "Attract prompt"),
         ("ready", f"آماده{ZWNJ}اید؟", "Countdown: ready"),
         ("go", "شروع!", "Countdown: go"),
@@ -505,11 +505,11 @@ def _core(sb: SchemaBuilder) -> None:
     sb.section("Kinetic Type", "Grid & typography")
     sb.i("kinetic.density", 55, 10, 120, 1, "", "Grid density", "Cells per side. On a 4 m floor, 55 makes letters about 5 cm tall.")
     sb.f("kinetic.font_scale", 0.9, 0.3, 2, 0.05, "", "Font scale", "Letter height as a share of the row height.")
-    sb.s("kinetic.attract_text", "MOFID SECURITIES|STEADY PROGRESS|MARKET HOCKEY",
+    sb.s("kinetic.attract_text", "MOFID SECURITIES|STEADY PROGRESS|LAND HOCKEY",
          "Waiting-screen texts", "Separate with | . They take turns, each spreading out from the center.")
     sb.f("kinetic.text_interval_s", 9.0, 2, 60, 0.5, "s", "Text change interval")
     sb.b("kinetic.space_marks", True, "Spaces become brand dots", "Echoes the dot grid of the brand book. Off leaves empty rings.")
-    sb.s("kinetic.text_start", "MARKET HOCKEY", "Match start text")
+    sb.s("kinetic.text_start", "LAND HOCKEY", "Match start text")
     sb.s("kinetic.text_ready", "READY", "Ready text")
     sb.s("kinetic.text_go", "GO", "Go text")
     sb.s("kinetic.text_goal", "GOAL", "Goal text")
