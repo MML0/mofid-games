@@ -111,7 +111,7 @@
     "timer_enabled": true,
     "duration_s": 60,
     "score_limit_enabled": true,
-    "score_limit": 7,
+    "score_limit": 10,
     "tie_rule": "draw",
     "points_win": 4,
     "points_loss": 1,
@@ -184,6 +184,8 @@
       "enabled": true,
       "strength": 0.5,
       "reach_px": 160,
+      "speed_px_s": 160.0,
+      "dead_zone": 0.3,
       "ball_range_px": 380
     },
     "p1": {
@@ -252,14 +254,14 @@
   },
   "powerups": {
     "enabled": true,
-    "spawn_interval_min_s": 3.5,
-    "spawn_interval_max_s": 6.0,
-    "min_active_orbs": 1,
+    "spawn_interval_min_s": 2.5,
+    "spawn_interval_max_s": 4.5,
+    "min_active_orbs": 2,
     "max_active_orbs": 4,
     "warmup_max_orbs": 2,
-    "warmup_first_s": 3.0,
+    "warmup_first_s": 2.0,
     "warmup_interval_min_s": 2.0,
-    "warmup_interval_max_s": 8.0,
+    "warmup_interval_max_s": 5.0,
     "unique_orbs": true,
     "max_bad_orbs": 1,
     "orb_radius": 60,
@@ -749,7 +751,7 @@
   },
   "_meta": {
     "schema_version": 16,
-    "saved_at": "2026-11-10 14:50:48",
+    "saved_at": "2026-11-12 16:19:11",
     "app": "Market Hockey"
   }
 }

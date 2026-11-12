@@ -37,8 +37,8 @@ def test_defaults_keep_one_to_four_unique_orbs():
 
 def test_shipped_settings_use_the_new_rules():
     shipped = Config.load(ROOT / "config" / "settings.json")
-    assert (shipped["powerups.min_active_orbs"], shipped["powerups.max_active_orbs"]) == (1, 4)
-    assert shipped["powerups.warmup_max_orbs"] == 2 and shipped["powerups.spawn_interval_min_s"] == 3.5
+    assert (shipped["powerups.min_active_orbs"], shipped["powerups.max_active_orbs"]) == (2, 4)
+    assert shipped["powerups.warmup_max_orbs"] == 2 and shipped["powerups.spawn_interval_min_s"] == 2.5
     assert shipped["powerups.unique_orbs"] and shipped["powerups.types.shrink.max_per_match"] == 2
     assert shipped["powerups.types.expand.glow_color"] == "#3CAA5C"
 

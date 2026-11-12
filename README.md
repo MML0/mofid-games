@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/MML0/mofid-games/actions/workflows/tests.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml"><img src="https://github.com/MML0/mofid-games/actions/workflows/build-windows.yml/badge.svg" alt="Build Windows"></a>
-  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.7-00B8A0" alt="Download v1.0.7"></a>
+  <a href="https://github.com/MML0/mofid-games/releases/latest"><img src="https://img.shields.io/badge/download-v1.0.8-00B8A0" alt="Download v1.0.8"></a>
 </p>
 
 <p align="center"><b>The floor is the game.</b> Interactive projection-floor games for the<br>Mofid Securities (کارگزاری مفید) exhibition: walk up, step on the light and play.</p>
